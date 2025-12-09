@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Nuevo Préstamo - Diamante Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        .simulador-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+        .cuota-display {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+        .badge-vip {
+            background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/dashboard">
+                <span class="fs-4">💎</span> Diamante Pro
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="text-white me-3">
+                    <i class="bi bi-person-circle"></i> {{ nombre }} 
+                    <span class="badge bg-light text-primary">{{ rol }}</span>
+                </span>
+                <a href="/logout" class="btn btn-light btn-sm">
+                    <i class="bi bi-box-arrow-right"></i> Salir
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h4><i class="bi bi-cash-coin"></i> Crear Nuevo Préstamo</h4>
+                    </div>
+                    <div class="card-body">
+                        {% if error %}
+                        <div class="alert alert-danger">{{ error }}</div>
+                        {% endif %}
+
+                        <form method="POST" action="/prestamos/guardar" id="formPrestamo">
+                            <!-- Selección de Cliente -->
+                            <h5 class="mb-3 text-primary">1. Seleccionar Cliente</h5>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Cliente *</label>
+                                <select name="cliente_id" class="form-select" required id="selectCliente">
+                                    <option value="">-- Seleccione un cliente --</option>
+                                    {% for cliente in clientes %}
+                                    <option value="{{ cliente.id }}" 
+                                            data-vip="{{ cliente.es_vip }}"
+                                            data-nombre="{{ cliente.nombre }}">
+                                        {{ cliente.nombre }} - {{ cliente.documento }}
+                                        {% if cliente.es_vip %}⭐ VIP{% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Cobrador Asignado *</label>
+                                <select name="cobrador_id" class="form-select" required>
+                                    <option value="">-- Seleccione un cobrador --</option>
+                                    {% for cobrador in cobradores %}
+                                    <option value="{{ cobrador.id }}">{{ cobrador.nombre }} - {{ cobrador.rol }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Configuración del Préstamo -->
+                            <h5 class="mb-3 text-primary mt-4">2. Configurar Préstamo</h5>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Monto a Prestar *</label>
+                                    <input type="number" name="monto_prestado" class="form-control" 
+                                           id="montoPrestado" required min="1" step="1" 
+                                           placeholder="Ej: 500000">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Tasa de Interés (%) *</label>
+                                    <input type="number" name="tasa_interes_input" class="form-control" 
+                                           id="tasaInteresInput" value="20" min="0" max="100" step="1"
+                                           placeholder="20">
+                                    <small class="text-muted">Estándar: 20%</small>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Moneda *</label>
+                                    <select name="moneda" class="form-select" id="moneda">
+                                        <option value="COP">🇨🇴 Pesos Colombianos (COP)</option>
+                                        <option value="USD">🇺🇸 Dólares (USD)</option>
+                                        <option value="PEN">🇵🇪 Soles Peruanos (PEN)</option>
+                                        <option value="BRL">🇧🇷 Reales Brasileños (BRL)</option>
+                                        <option value="ARS">🇦🇷 Pesos Argentinos (ARS)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Frecuencia de Pago *</label>
+                                    <select name="frecuencia" class="form-select" id="frecuencia">
+                                        <option value="DIARIO">Diario (Lunes a Sábado)</option>
+                                        <option value="BISEMANAL">Bisemanal (2 veces por semana)</option>
+                                        <option value="SEMANAL">Semanal</option>
+                                        <option value="QUINCENAL">Quincenal</option>
+                                        <option value="MENSUAL">Mensual</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Número de Cuotas *</label>
+                                    <input type="number" name="numero_cuotas" class="form-control" 
+                                           id="numeroCuotas" required min="1" max="100" value="24"
+                                           placeholder="Ej: 24">
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Fecha de Inicio</label>
+                                <input type="date" name="fecha_inicio" class="form-control" 
+                                       value="{{ fecha_hoy }}" required>
+                            </div>
+
+                            <!-- Campos ocultos calculados -->
+                            <input type="hidden" name="tasa_interes" id="tasaInteres" value="0.20">
+                            <input type="hidden" name="monto_a_pagar" id="montoAPagar">
+                            <input type="hidden" name="valor_cuota" id="valorCuota">
+
+                            <div class="d-grid gap-2 mt-4">
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="bi bi-save"></i> Otorgar Préstamo
+                                </button>
+                                <a href="/dashboard" class="btn btn-secondary">
+                                    <i class="bi bi-x-circle"></i> Cancelar
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Simulador en tiempo real -->
+            <div class="col-md-4">
+                <div class="card simulador-box">
+                    <h5><i class="bi bi-calculator"></i> Simulador Automático</h5>
+                    <hr class="bg-white">
+                    
+                    <div class="mb-3">
+                        <small>Monto Prestado</small>
+                        <h4 id="simMonto">$0</h4>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <small>Tasa de Interés</small>
+                        <h4 id="simTasa">20%</h4>
+                        <small id="simTextoTasa">Cliente Regular</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <small>Total a Pagar</small>
+                        <h3 id="simTotal">$0</h3>
+                    </div>
+                    
+                    <hr class="bg-white">
+                    
+                    <div class="mb-3">
+                        <small>Valor de Cada Cuota</small>
+                        <div class="cuota-display" id="simCuota">$0</div>
+                        <small id="simFrecuencia">Pago diario</small>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h6><i class="bi bi-lightbulb"></i> Ventaja Diamante Pro</h6>
+                        <ul class="small mb-0">
+                            <li>Cálculo automático sin errores</li>
+                            <li>Soporte multidivisa (5 monedas)</li>
+                            <li>Plan de pagos generado al instante</li>
+                            <li>Sin costos ocultos</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Simulador en tiempo real
+        const selectCliente = document.getElementById('selectCliente');
+        const montoPrestado = document.getElementById('montoPrestado');
+        const numeroCuotas = document.getElementById('numeroCuotas');
+        const moneda = document.getElementById('moneda');
+        const frecuencia = document.getElementById('frecuencia');
+        const tasaInteresInput = document.getElementById('tasaInteresInput');
+        
+        function actualizarSimulador() {
+            const monto = parseFloat(montoPrestado.value) || 0;
+            const cuotas = parseInt(numeroCuotas.value) || 1;
+            const tasaPorcentaje = parseFloat(tasaInteresInput.value) || 20;
+            const tasa = tasaPorcentaje / 100;
+            const simboloMoneda = moneda.value === 'COP' ? '$' : moneda.value + ' ';
+            
+            // Calcular
+            const montoTotal = monto * (1 + tasa);
+            const valorCuota = montoTotal / cuotas;
+            
+            // Actualizar campos ocultos
+            document.getElementById('tasaInteres').value = tasa;
+            document.getElementById('montoAPagar').value = montoTotal.toFixed(2);
+            document.getElementById('valorCuota').value = valorCuota.toFixed(2);
+            
+            // Actualizar simulador
+            document.getElementById('simMonto').textContent = simboloMoneda + monto.toLocaleString();
+            document.getElementById('simTasa').textContent = tasaPorcentaje + '%';
+            document.getElementById('simTextoTasa').textContent = tasaPorcentaje == 20 ? 'Tasa Estándar' : 'Tasa Personalizada';
+            document.getElementById('simTotal').textContent = simboloMoneda + montoTotal.toLocaleString();
+            document.getElementById('simCuota').textContent = simboloMoneda + Math.ceil(valorCuota).toLocaleString();
+            
+            const textoFrecuencia = {
+                'DIARIO': 'Pago diario (Lun-Sáb)',
+                'BISEMANAL': 'Pago 2 veces/semana',
+                'SEMANAL': 'Pago semanal',
+                'QUINCENAL': 'Pago quincenal',
+                'MENSUAL': 'Pago mensual'
+            };
+            document.getElementById('simFrecuencia').textContent = textoFrecuencia[frecuencia.value] || '';
+        }
+        
+        selectCliente.addEventListener('change', actualizarSimulador);
+        montoPrestado.addEventListener('input', actualizarSimulador);
+        numeroCuotas.addEventListener('input', actualizarSimulador);
+        moneda.addEventListener('change', actualizarSimulador);
+        frecuencia.addEventListener('change', actualizarSimulador);
+        tasaInteresInput.addEventListener('input', actualizarSimulador);
+    </script>
+</body>
+</html>

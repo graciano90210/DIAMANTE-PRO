@@ -34,18 +34,55 @@ class Prestamo(db.Model):
     cliente_id = db.Column(db.Integer, db.ForeignKey('clientes.id'), nullable=False)
     cobrador_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
     
+    # Montos
     monto_prestado = db.Column(db.Float, nullable=False)
-    tasa_interes = db.Column(db.Float, default=0.20)
+    tasa_interes = db.Column(db.Float, default=0.20)  # 20% o 15% VIP
     monto_a_pagar = db.Column(db.Float, nullable=False)
     saldo_actual = db.Column(db.Float, nullable=False)
+    valor_cuota = db.Column(db.Float, nullable=False)
     
-    frecuencia = db.Column(db.String(20), default='DIARIO')
-    estado = db.Column(db.String(20), default='ACTIVO')
+    # Multidivisa
+    moneda = db.Column(db.String(3), default='COP')  # COP, USD, PEN, BRL, ARS
     
+    # Configuración
+    frecuencia = db.Column(db.String(20), default='DIARIO')  # DIARIO, SEMANAL, QUINCENAL
+    numero_cuotas = db.Column(db.Integer, nullable=False)
+    cuotas_pagadas = db.Column(db.Integer, default=0)
+    cuotas_atrasadas = db.Column(db.Integer, default=0)
+    
+    # Estado
+    estado = db.Column(db.String(20), default='ACTIVO')  # ACTIVO, CANCELADO, MORA
+    
+    # Fechas
     fecha_inicio = db.Column(db.DateTime, default=datetime.utcnow)
     fecha_fin_estimada = db.Column(db.DateTime)
+    fecha_ultimo_pago = db.Column(db.DateTime)
+    
+    # Relaciones
+    cliente = db.relationship('Cliente', backref='prestamos')
+    cobrador = db.relationship('Usuario', backref='prestamos_asignados')
 
-# 4. LA CAJA
+# 4. LOS PAGOS
+class Pago(db.Model):
+    __tablename__ = 'pagos'
+    id = db.Column(db.Integer, primary_key=True)
+    prestamo_id = db.Column(db.Integer, db.ForeignKey('prestamos.id'), nullable=False)
+    cobrador_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
+    
+    monto = db.Column(db.Float, nullable=False)
+    numero_cuotas_pagadas = db.Column(db.Integer, default=1)
+    saldo_anterior = db.Column(db.Float, nullable=False)
+    saldo_nuevo = db.Column(db.Float, nullable=False)
+    
+    fecha_pago = db.Column(db.DateTime, default=datetime.utcnow)
+    observaciones = db.Column(db.String(500))
+    tipo_pago = db.Column(db.String(20), default='NORMAL')  # NORMAL, ABONO, COMPLETO
+    
+    # Relaciones
+    prestamo = db.relationship('Prestamo', backref='pagos')
+    cobrador = db.relationship('Usuario', backref='pagos_realizados')
+
+# 5. LA CAJA
 class Transaccion(db.Model):
     __tablename__ = 'transacciones'
     id = db.Column(db.Integer, primary_key=True)

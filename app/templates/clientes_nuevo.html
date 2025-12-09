@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Nuevo Cliente - Diamante Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/dashboard">
+                <span class="fs-4">💎</span> Diamante Pro
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="text-white me-3">
+                    <i class="bi bi-person-circle"></i> {{ nombre }} 
+                    <span class="badge bg-light text-primary">{{ rol }}</span>
+                </span>
+                <a href="/logout" class="btn btn-light btn-sm">
+                    <i class="bi bi-box-arrow-right"></i> Salir
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h4><i class="bi bi-person-plus"></i> Registrar Nuevo Cliente</h4>
+                    </div>
+                    <div class="card-body">
+                        {% if error %}
+                        <div class="alert alert-danger">{{ error }}</div>
+                        {% endif %}
+
+                        <form method="POST" action="/clientes/guardar">
+                            <!-- Información Personal -->
+                            <h5 class="mb-3 text-primary">Información Personal</h5>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-8">
+                                    <label class="form-label">Nombre Completo *</label>
+                                    <input type="text" name="nombre" class="form-control" required 
+                                           placeholder="Ej: Juan Pérez García">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Documento (Cédula) *</label>
+                                    <input type="text" name="documento" class="form-control" required 
+                                           placeholder="Ej: 1234567890">
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Teléfono *</label>
+                                    <input type="tel" name="telefono" class="form-control" required 
+                                           placeholder="Ej: 3001234567">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">RUT / Cámara de Comercio</label>
+                                    <input type="text" name="documento_negocio" class="form-control" 
+                                           placeholder="Opcional">
+                                </div>
+                            </div>
+
+                            <!-- Información del Negocio -->
+                            <h5 class="mb-3 text-primary mt-4">Información del Negocio</h5>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Dirección del Negocio</label>
+                                <input type="text" name="direccion_negocio" class="form-control" 
+                                       placeholder="Ej: Calle 10 # 20-30, Local 5, Barrio Centro">
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">GPS Latitud</label>
+                                    <input type="number" step="any" name="gps_latitud" class="form-control" 
+                                           placeholder="Ej: 4.6097">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">GPS Longitud</label>
+                                    <input type="number" step="any" name="gps_longitud" class="form-control" 
+                                           placeholder="Ej: -74.0817">
+                                </div>
+                            </div>
+
+                            <!-- Clasificación (Opcional) -->
+                            <h5 class="mb-3 text-primary mt-4">Clasificación</h5>
+                            
+                            <div class="form-check mb-4">
+                                <input class="form-check-input" type="checkbox" name="es_vip" id="esVip">
+                                <label class="form-check-label" for="esVip">
+                                    <i class="bi bi-star-fill text-warning"></i> 
+                                    <strong>Marcar como VIP</strong> (Solo para identificación visual)
+                                </label>
+                                <small class="text-muted d-block mt-1">La tasa de interés se configura al crear el préstamo</small>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-save"></i> Guardar Cliente
+                                </button>
+                                <a href="/clientes" class="btn btn-secondary">
+                                    <i class="bi bi-x-circle"></i> Cancelar
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Préstamos - Diamante Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        .badge-activo { background: #28a745; }
+        .badge-cancelado { background: #6c757d; }
+        .badge-mora { background: #dc3545; }
+        .progress-cuotas {
+            height: 25px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/dashboard">
+                <span class="fs-4">💎</span> Diamante Pro
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="text-white me-3">
+                    <i class="bi bi-person-circle"></i> {{ nombre }} 
+                    <span class="badge bg-light text-primary">{{ rol }}</span>
+                </span>
+                <a href="/logout" class="btn btn-light btn-sm">
+                    <i class="bi bi-box-arrow-right"></i> Salir
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container-fluid mt-4">
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h2><i class="bi bi-cash-stack"></i> Gestión de Préstamos</h2>
+            </div>
+            <div class="col-md-6 text-end">
+                <a href="/prestamos/nuevo" class="btn btn-success">
+                    <i class="bi bi-plus-circle"></i> Nuevo Préstamo
+                </a>
+            </div>
+        </div>
+
+        {% if mensaje %}
+        <div class="alert alert-success alert-dismissible fade show">
+            {{ mensaje }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endif %}
+
+        <!-- Filtros -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <select class="form-select" id="filtroEstado">
+                            <option value="">Todos los estados</option>
+                            <option value="ACTIVO">Activos</option>
+                            <option value="CANCELADO">Cancelados</option>
+                            <option value="MORA">En Mora</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" class="form-control" placeholder="Buscar cliente..." id="buscarCliente">
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="filtroMoneda">
+                            <option value="">Todas las monedas</option>
+                            <option value="COP">COP</option>
+                            <option value="USD">USD</option>
+                            <option value="PEN">PEN</option>
+                            <option value="BRL">BRL</option>
+                            <option value="ARS">ARS</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de Préstamos -->
+        <div class="card">
+            <div class="card-body">
+                {% if prestamos %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Cliente</th>
+                                <th>Monto Prestado</th>
+                                <th>Total a Pagar</th>
+                                <th>Saldo Actual</th>
+                                <th>Progreso</th>
+                                <th>Cuota</th>
+                                <th>Frecuencia</th>
+                                <th>Estado</th>
+                                <th>Cobrador</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for prestamo in prestamos %}
+                            <tr>
+                                <td><strong>#{{ prestamo.id }}</strong></td>
+                                <td>
+                                    <strong>{{ prestamo.cliente.nombre }}</strong><br>
+                                    <small class="text-muted">{{ prestamo.cliente.documento }}</small>
+                                </td>
+                                <td>{{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.monto_prestado) }}</td>
+                                <td>{{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.monto_a_pagar) }}</td>
+                                <td>
+                                    <strong class="text-primary">
+                                        {{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.saldo_actual) }}
+                                    </strong>
+                                </td>
+                                <td style="min-width: 200px;">
+                                    {% set progreso = (prestamo.cuotas_pagadas / prestamo.numero_cuotas * 100) | int %}
+                                    <div class="progress progress-cuotas">
+                                        <div class="progress-bar bg-success" style="width: {{ progreso }}%">
+                                            {{ prestamo.cuotas_pagadas }}/{{ prestamo.numero_cuotas }}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.valor_cuota) }}</td>
+                                <td>
+                                    <span class="badge bg-info">{{ prestamo.frecuencia }}</span>
+                                </td>
+                                <td>
+                                    {% if prestamo.estado == 'ACTIVO' %}
+                                    <span class="badge badge-activo">ACTIVO</span>
+                                    {% elif prestamo.estado == 'CANCELADO' %}
+                                    <span class="badge badge-cancelado">CANCELADO</span>
+                                    {% else %}
+                                    <span class="badge badge-mora">MORA</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small>{{ prestamo.cobrador.nombre }}</small>
+                                </td>
+                                <td>
+                                    <a href="/prestamos/ver/{{ prestamo.id }}" class="btn btn-sm btn-info" title="Ver Detalles">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    {% if prestamo.estado == 'ACTIVO' %}
+                                    <a href="/cobro/registrar/{{ prestamo.id }}" class="btn btn-sm btn-success" title="Cobrar">
+                                        <i class="bi bi-cash"></i>
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-cash-stack fs-1 text-muted"></i>
+                    <p class="text-muted mt-3">No hay préstamos registrados</p>
+                    <a href="/prestamos/nuevo" class="btn btn-success">
+                        <i class="bi bi-plus-circle"></i> Otorgar Primer Préstamo
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Resumen Estadístico -->
+        <div class="row mt-4">
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <h6>Total Prestado</h6>
+                        <h3>${{ "{:,.0f}".format(total_prestado) }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <h6>Total en Cartera</h6>
+                        <h3>${{ "{:,.0f}".format(total_cartera) }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-dark">
+                    <div class="card-body">
+                        <h6>Préstamos Activos</h6>
+                        <h3>{{ prestamos_activos }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <h6>Ganancia Esperada</h6>
+                        <h3>${{ "{:,.0f}".format(ganancia_esperada) }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
