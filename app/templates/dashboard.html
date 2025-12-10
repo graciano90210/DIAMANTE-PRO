@@ -4,13 +4,109 @@
     <title>Dashboard - Diamante Pro</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: #f5f7fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .brand-logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            font-size: 1.25rem;
+            letter-spacing: 0.5px;
+        }
+        .diamond-svg {
+            width: 28px;
+            height: 28px;
+            fill: #60a5fa;
+        }
+        .stat-card {
+            border-radius: 12px;
+            border: none;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+        .stat-card.primary {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        }
+        .stat-card.success {
+            background: linear-gradient(135deg, #2c5f2d 0%, #00ab41 100%);
+        }
+        .stat-card.warning {
+            background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+        }
+        .stat-card.info {
+            background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+        }
+        .menu-card {
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: white;
+        }
+        .menu-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+            border-color: #1e3c72;
+        }
+        .menu-card .card-body {
+            padding: 25px;
+        }
+        .menu-icon {
+            font-size: 2.5rem;
+            color: #1e3c72;
+        }
+        h2 {
+            color: #1f2937;
+            font-weight: 700;
+        }
+        h4 {
+            color: #374151;
+            font-weight: 600;
+        }
+        .badge {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        .btn-outline-primary {
+            border-color: #1e3c72;
+            color: #1e3c72;
+        }
+        .btn-outline-primary:hover {
+            background: #1e3c72;
+            border-color: #1e3c72;
+        }
+        .btn-outline-success {
+            border-color: #00ab41;
+            color: #00ab41;
+        }
+        .btn-outline-success:hover {
+            background: #00ab41;
+            border-color: #00ab41;
+        }
+    </style>
 </head>
 <body>
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container-fluid">
-            <a class="navbar-brand" href="/dashboard">
-                <span class="fs-4">💎</span> Diamante Pro
+            <a class="navbar-brand brand-logo" href="/dashboard">
+                <svg class="diamond-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L3 7v10l9 5 9-5V7l-9-5zm0 2.18L18.18 7 12 10.82 5.82 7 12 4.18zM5 8.82l6 3.5v7.86l-6-3.33V8.82zm8 11.36v-7.86l6-3.5v8.03l-6 3.33z"/>
+                </svg>
+                <span>DIAMANTE PRO</span>
             </a>
             <div class="d-flex align-items-center">
                 <span class="text-white me-3">
@@ -28,19 +124,20 @@
     <div class="container-fluid mt-4">
         <div class="row">
             <div class="col-12">
-                <h2 class="mb-4">Bienvenido al Sistema Diamante Pro 💎</h2>
+                <h2 class="mb-4">Panel de Control</h2>
             </div>
         </div>
 
         <!-- Stats Cards -->
-        <div class="row g-3 mb-4">
+        <div class="row g-4 mb-4">
             <div class="col-md-3">
-                <div class="card text-white bg-primary">
+                <div class="card stat-card primary text-white">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <h6 class="card-title">Préstamos Activos</h6>
-                                <h2 class="mb-0">0</h2>
+                                <h2 class="mb-0">{{ total_prestamos_activos }}</h2>
+                                <small>{{ prestamos_al_dia }} al día | {{ prestamos_atrasados }} atrasados</small>
                             </div>
                             <i class="bi bi-cash-stack fs-1"></i>
                         </div>
@@ -48,12 +145,13 @@
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card text-white bg-success">
+                <div class="card stat-card success text-white">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <h6 class="card-title">Clientes</h6>
-                                <h2 class="mb-0">0</h2>
+                                <h2 class="mb-0">{{ total_clientes }}</h2>
+                                <small>{% if clientes_vip > 0 %}{{ clientes_vip }} VIP{% else %}Todos regulares{% endif %}</small>
                             </div>
                             <i class="bi bi-people fs-1"></i>
                         </div>
@@ -61,12 +159,13 @@
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card text-white bg-warning">
+                <div class="card stat-card warning text-white">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <h6 class="card-title">Por Cobrar Hoy</h6>
-                                <h2 class="mb-0">$0</h2>
+                                <h2 class="mb-0">${{ "{:,.0f}".format(por_cobrar_hoy) }}</h2>
+                                <small>Cobros diarios/bisemanales</small>
                             </div>
                             <i class="bi bi-calendar-check fs-1"></i>
                         </div>
@@ -74,12 +173,13 @@
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card text-white bg-info">
+                <div class="card stat-card info text-white">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <h6 class="card-title">Total en Cartera</h6>
-                                <h2 class="mb-0">$0</h2>
+                                <h2 class="mb-0">${{ "{:,.0f}".format(total_cartera) }}</h2>
+                                <small>Saldo por cobrar</small>
                             </div>
                             <i class="bi bi-graph-up fs-1"></i>
                         </div>
@@ -88,56 +188,87 @@
             </div>
         </div>
 
+        <!-- Additional Stats -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-4">
+                <div class="card menu-card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="card-title text-primary fw-bold"><i class="bi bi-piggy-bank"></i> Capital Prestado</h6>
+                        <h3 class="mb-0 fw-bold">${{ "{:,.0f}".format(capital_prestado) }}</h3>
+                        <small class="text-muted">Suma de préstamos activos</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card menu-card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="card-title text-success fw-bold"><i class="bi bi-cash-coin"></i> Cobrado Hoy</h6>
+                        <h3 class="mb-0 fw-bold">${{ "{:,.0f}".format(total_cobrado_hoy) }}</h3>
+                        <small class="text-muted">{{ num_pagos_hoy }} pagos recibidos</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card menu-card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="card-title text-danger fw-bold"><i class="bi bi-exclamation-triangle"></i> En Mora</h6>
+                        <h3 class="mb-0 fw-bold">{{ prestamos_mora }}</h3>
+                        <small class="text-muted">Más de 3 cuotas atrasadas</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Quick Actions -->
-        <div class="row g-3">
+        <div class="row g-4">
             <div class="col-12">
-                <h4 class="mb-3">Acciones Rápidas</h4>
+                <h4 class="mb-3 fw-bold">Acciones Rápidas</h4>
             </div>
             <div class="col-md-12 mb-3">
-                <a href="/clientes" class="btn btn-outline-primary me-2">
+                <a href="/clientes" class="btn btn-outline-primary me-2 px-4 py-2 rounded-pill">
                     <i class="bi bi-people"></i> Ver Todos los Clientes
                 </a>
-                <a href="/prestamos" class="btn btn-outline-success">
+                <a href="/prestamos" class="btn btn-outline-success px-4 py-2 rounded-pill">
                     <i class="bi bi-cash-stack"></i> Ver Todos los Préstamos
                 </a>
             </div>
             <div class="col-md-3">
-                <div class="card h-100">
+                <div class="card menu-card h-100 border-0 shadow-sm">
                     <div class="card-body text-center">
-                        <i class="bi bi-person-plus fs-1 text-primary mb-3"></i>
-                        <h5>Nuevo Cliente</h5>
+                        <div class="menu-icon mb-3"><i class="bi bi-person-plus-fill"></i></div>
+                        <h5 class="fw-bold" style="color: #1f2937;">Nuevo Cliente</h5>
                         <p class="text-muted small">Registrar un nuevo cliente</p>
-                        <a href="/clientes/nuevo" class="btn btn-primary">Registrar</a>
+                        <a href="/clientes/nuevo" class="btn btn-primary px-4" style="background: #1e3c72; border: none;">Registrar</a>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card h-100">
+                <div class="card menu-card h-100 border-0 shadow-sm">
                     <div class="card-body text-center">
-                        <i class="bi bi-cash-coin fs-1 text-success mb-3"></i>
-                        <h5>Nuevo Préstamo</h5>
+                        <div class="menu-icon mb-3"><i class="bi bi-cash-stack"></i></div>
+                        <h5 class="fw-bold" style="color: #1f2937;">Nuevo Préstamo</h5>
                         <p class="text-muted small">Otorgar un préstamo</p>
-                        <a href="/prestamos/nuevo" class="btn btn-success">Otorgar</a>
+                        <a href="/prestamos/nuevo" class="btn btn-success px-4" style="background: #00ab41; border: none;">Otorgar</a>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card h-100">
+                <div class="card menu-card h-100 border-0 shadow-sm">
                     <div class="card-body text-center">
-                        <i class="bi bi-wallet2 fs-1 text-warning mb-3"></i>
-                        <h5>Ruta de Cobro</h5>
+                        <div class="menu-icon mb-3"><i class="bi bi-wallet2"></i></div>
+                        <h5 class="fw-bold" style="color: #1f2937;">Ruta de Cobro</h5>
                         <p class="text-muted small">Lista de cobros del día</p>
-                        <a href="/cobro/lista" class="btn btn-warning">Ir a Cobrar</a>
+                        <a href="/cobro/lista" class="btn btn-warning px-4" style="background: #d97706; border: none; color: white;">Ir a Cobrar</a>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card h-100">
+                <div class="card menu-card h-100 border-0 shadow-sm">
                     <div class="card-body text-center">
-                        <i class="bi bi-file-earmark-text fs-1 text-info mb-3"></i>
-                        <h5>Reportes</h5>
+                        <div class="menu-icon mb-3"><i class="bi bi-graph-up"></i></div>
+                        <h5 class="fw-bold" style="color: #1f2937;">Reportes</h5>
                         <p class="text-muted small">Ver estadísticas</p>
-                        <button class="btn btn-info" disabled>Próximamente</button>
+                        <a href="/reportes" class="btn px-4" style="background: #0891b2; border: none; color: white;">Ver Reportes</a>
                     </div>
                 </div>
             </div>

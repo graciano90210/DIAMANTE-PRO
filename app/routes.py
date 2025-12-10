@@ -30,7 +30,51 @@ def init_routes(app):
     def dashboard():
         if 'usuario_id' not in session:
             return redirect(url_for('home'))
-        return render_template('dashboard.html', nombre=session.get('nombre'), rol=session.get('rol'))
+        
+        # Estadísticas generales
+        total_clientes = Cliente.query.count()
+        clientes_vip = Cliente.query.filter_by(es_vip=True).count()
+        
+        # Préstamos activos
+        prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO').all()
+        total_prestamos_activos = len(prestamos_activos)
+        
+        # Cartera total (suma de saldos pendientes)
+        total_cartera = db.session.query(func.sum(Prestamo.saldo_actual)).filter_by(estado='ACTIVO').scalar()
+        total_cartera = float(total_cartera) if total_cartera else 0
+        
+        # Capital prestado (suma de montos originales activos)
+        capital_prestado = db.session.query(func.sum(Prestamo.monto_prestado)).filter_by(estado='ACTIVO').scalar()
+        capital_prestado = float(capital_prestado) if capital_prestado else 0
+        
+        # Por cobrar hoy (suma de valores de cuota de préstamos activos con pago diario o bisemanal)
+        por_cobrar_hoy = sum(float(p.valor_cuota) for p in prestamos_activos if p.frecuencia in ['DIARIO', 'BISEMANAL']) if prestamos_activos else 0
+        
+        # Préstamos al día vs atrasados
+        prestamos_al_dia = sum(1 for p in prestamos_activos if p.cuotas_atrasadas == 0) if prestamos_activos else 0
+        prestamos_atrasados = sum(1 for p in prestamos_activos if p.cuotas_atrasadas > 0) if prestamos_activos else 0
+        prestamos_mora = sum(1 for p in prestamos_activos if p.cuotas_atrasadas > 3) if prestamos_activos else 0
+        
+        # Total pagos realizados hoy
+        hoy = datetime.now().date()
+        pagos_hoy = Pago.query.filter(func.date(Pago.fecha_pago) == hoy).all()
+        total_cobrado_hoy = sum(float(p.monto) for p in pagos_hoy) if pagos_hoy else 0
+        num_pagos_hoy = len(pagos_hoy)
+        
+        return render_template('dashboard.html', 
+                             nombre=session.get('nombre'), 
+                             rol=session.get('rol'),
+                             total_clientes=total_clientes,
+                             clientes_vip=clientes_vip,
+                             total_prestamos_activos=total_prestamos_activos,
+                             total_cartera=total_cartera,
+                             capital_prestado=capital_prestado,
+                             por_cobrar_hoy=por_cobrar_hoy,
+                             prestamos_al_dia=prestamos_al_dia,
+                             prestamos_atrasados=prestamos_atrasados,
+                             prestamos_mora=prestamos_mora,
+                             total_cobrado_hoy=total_cobrado_hoy,
+                             num_pagos_hoy=num_pagos_hoy)
     
     @app.route('/logout')
     def logout():
@@ -135,7 +179,8 @@ def init_routes(app):
             return redirect(url_for('home'))
         
         clientes = Cliente.query.order_by(Cliente.nombre).all()
-        cobradores = Usuario.query.filter(Usuario.rol.in_(['admin', 'cobrador'])).all()
+        # Cobradores pueden ser: supervisor, cobrador, o admin (por compatibilidad)
+        cobradores = Usuario.query.filter(Usuario.rol.in_(['admin', 'dueno', 'supervisor', 'cobrador'])).all()
         
         return render_template('prestamos_nuevo.html',
                              clientes=clientes,
@@ -260,9 +305,33 @@ def init_routes(app):
             prestamo_id = int(request.form.get('prestamo_id'))
             prestamo = Prestamo.query.get_or_404(prestamo_id)
             
+            # Refrescar el objeto desde la base de datos para obtener el saldo más actual
+            db.session.refresh(prestamo)
+            
             monto = float(request.form.get('monto'))
             tipo_pago = request.form.get('tipo_pago')
-            saldo_anterior = float(request.form.get('saldo_anterior'))
+            forzar_pago = request.form.get('forzar_pago', '0')
+            # Usar el saldo actual del préstamo, no el del formulario
+            saldo_anterior = prestamo.saldo_actual
+            
+            # Verificar si ya existe un pago con el mismo monto hoy (solo si no está forzando)
+            if forzar_pago != '1':
+                hoy_inicio = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+                hoy_fin = datetime.now().replace(hour=23, minute=59, second=59, microsecond=999999)
+                
+                pago_duplicado = Pago.query.filter(
+                    Pago.prestamo_id == prestamo_id,
+                    Pago.monto == monto,
+                    Pago.fecha_pago >= hoy_inicio,
+                    Pago.fecha_pago <= hoy_fin
+                ).first()
+                
+                if pago_duplicado:
+                    return render_template('cobro_registrar.html',
+                                         prestamo=prestamo,
+                                         error=f'⚠️ Ya se registró un pago de {prestamo.moneda} {monto:,.0f} para este cliente hoy a las {pago_duplicado.fecha_pago.strftime("%H:%M")}. ¿Está seguro de registrar otro pago con el mismo valor?',
+                                         nombre=session.get('nombre'),
+                                         rol=session.get('rol'))
             
             # Calcular nuevo saldo
             nuevo_saldo = max(0, saldo_anterior - monto)
@@ -349,6 +418,115 @@ def init_routes(app):
                              prestamo=prestamo,
                              cliente=cliente,
                              whatsapp_url=whatsapp_url,
+                             nombre=session.get('nombre'),
+                             rol=session.get('rol'))
+
+    # ==================== REPORTES ====================
+    @app.route('/reportes')
+    def reportes():
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        # Obtener fecha de inicio y fin (por defecto últimos 30 días)
+        fecha_fin = datetime.now()
+        fecha_inicio = fecha_fin - timedelta(days=30)
+        
+        # Si hay filtros en la query
+        if request.args.get('fecha_inicio'):
+            fecha_inicio = datetime.strptime(request.args.get('fecha_inicio'), '%Y-%m-%d')
+        if request.args.get('fecha_fin'):
+            fecha_fin = datetime.strptime(request.args.get('fecha_fin'), '%Y-%m-%d')
+            fecha_fin = fecha_fin.replace(hour=23, minute=59, second=59)
+        
+        # ===== ESTADÍSTICAS GENERALES =====
+        total_clientes = Cliente.query.count()
+        total_prestamos = Prestamo.query.count()
+        prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO').count()
+        prestamos_cancelados = Prestamo.query.filter_by(estado='CANCELADO').count()
+        
+        # ===== DATOS FINANCIEROS =====
+        # Total prestado en el período
+        prestamos_periodo = Prestamo.query.filter(
+            Prestamo.fecha_inicio >= fecha_inicio,
+            Prestamo.fecha_inicio <= fecha_fin
+        ).all()
+        
+        total_prestado_periodo = sum(p.monto_prestado for p in prestamos_periodo)
+        
+        # Total cobrado en el período
+        pagos_periodo = Pago.query.filter(
+            Pago.fecha_pago >= fecha_inicio,
+            Pago.fecha_pago <= fecha_fin
+        ).all()
+        
+        total_cobrado_periodo = sum(p.monto for p in pagos_periodo)
+        num_pagos_periodo = len(pagos_periodo)
+        
+        # Cartera actual
+        cartera_actual = db.session.query(func.sum(Prestamo.saldo_actual)).filter_by(estado='ACTIVO').scalar()
+        cartera_actual = float(cartera_actual) if cartera_actual else 0
+        
+        # Capital en circulación
+        capital_circulacion = db.session.query(func.sum(Prestamo.monto_prestado)).filter_by(estado='ACTIVO').scalar()
+        capital_circulacion = float(capital_circulacion) if capital_circulacion else 0
+        
+        # ===== DATOS PARA GRÁFICOS =====
+        # Pagos por día (últimos 30 días)
+        pagos_por_dia = db.session.query(
+            func.date(Pago.fecha_pago).label('fecha'),
+            func.sum(Pago.monto).label('total')
+        ).filter(
+            Pago.fecha_pago >= fecha_inicio,
+            Pago.fecha_pago <= fecha_fin
+        ).group_by(func.date(Pago.fecha_pago)).order_by('fecha').all()
+        
+        # Préstamos por estado
+        estados_prestamos = db.session.query(
+            Prestamo.estado,
+            func.count(Prestamo.id).label('cantidad')
+        ).group_by(Prestamo.estado).all()
+        
+        # Top 5 clientes que más deben
+        top_deudores = db.session.query(
+            Cliente.nombre,
+            Prestamo.saldo_actual
+        ).join(Prestamo).filter(
+            Prestamo.estado == 'ACTIVO'
+        ).order_by(Prestamo.saldo_actual.desc()).limit(5).all()
+        
+        # Préstamos por frecuencia de pago
+        prestamos_por_frecuencia = db.session.query(
+            Prestamo.frecuencia,
+            func.count(Prestamo.id).label('cantidad')
+        ).filter_by(estado='ACTIVO').group_by(Prestamo.frecuencia).all()
+        
+        # Cobros por cobrador
+        cobros_por_cobrador = db.session.query(
+            Usuario.nombre,
+            func.count(Pago.id).label('num_pagos'),
+            func.sum(Pago.monto).label('total_cobrado')
+        ).join(Pago, Usuario.id == Pago.cobrador_id).filter(
+            Pago.fecha_pago >= fecha_inicio,
+            Pago.fecha_pago <= fecha_fin
+        ).group_by(Usuario.nombre).all()
+        
+        return render_template('reportes.html',
+                             fecha_inicio=fecha_inicio.strftime('%Y-%m-%d'),
+                             fecha_fin=fecha_fin.strftime('%Y-%m-%d'),
+                             total_clientes=total_clientes,
+                             total_prestamos=total_prestamos,
+                             prestamos_activos=prestamos_activos,
+                             prestamos_cancelados=prestamos_cancelados,
+                             total_prestado_periodo=total_prestado_periodo,
+                             total_cobrado_periodo=total_cobrado_periodo,
+                             num_pagos_periodo=num_pagos_periodo,
+                             cartera_actual=cartera_actual,
+                             capital_circulacion=capital_circulacion,
+                             pagos_por_dia=pagos_por_dia,
+                             estados_prestamos=estados_prestamos,
+                             top_deudores=top_deudores,
+                             prestamos_por_frecuencia=prestamos_por_frecuencia,
+                             cobros_por_cobrador=cobros_por_cobrador,
                              nombre=session.get('nombre'),
                              rol=session.get('rol'))
 

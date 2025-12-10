@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Reportes y Estadísticas - Diamante Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <style>
+        body {
+            background: #f5f7fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .stat-card {
+            border-radius: 12px;
+            border: none;
+            background: white;
+            transition: all 0.3s ease;
+            height: 100%;
+        }
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .filter-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        h2, h4, h5 {
+            color: #1f2937;
+            font-weight: 600;
+        }
+        .badge {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        .icon-primary { background: rgba(30, 60, 114, 0.1); color: #1e3c72; }
+        .icon-success { background: rgba(0, 171, 65, 0.1); color: #00ab41; }
+        .icon-warning { background: rgba(217, 119, 6, 0.1); color: #d97706; }
+        .icon-info { background: rgba(8, 145, 178, 0.1); color: #0891b2; }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/dashboard" style="display: inline-flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: 0.5px;">
+                <svg style="width: 28px; height: 28px; fill: #60a5fa;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L3 7v10l9 5 9-5V7l-9-5zm0 2.18L18.18 7 12 10.82 5.82 7 12 4.18zM5 8.82l6 3.5v7.86l-6-3.33V8.82zm8 11.36v-7.86l6-3.5v8.03l-6 3.33z"/>
+                </svg>
+                <span>DIAMANTE PRO</span>
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="text-white me-3">
+                    <i class="bi bi-person-circle"></i> {{ nombre }}
+                    <span class="badge bg-light text-dark">{{ rol }}</span>
+                </span>
+                <a href="/dashboard" class="btn btn-light btn-sm me-2">
+                    <i class="bi bi-house"></i> Inicio
+                </a>
+                <a href="/logout" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-box-arrow-right"></i> Salir
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container-fluid mt-4 mb-5">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2><i class="bi bi-graph-up"></i> Reportes y Estadísticas</h2>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filter-card">
+            <form method="GET" action="/reportes">
+                <div class="row align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Fecha Inicio</label>
+                        <input type="date" name="fecha_inicio" class="form-control" value="{{ fecha_inicio }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Fecha Fin</label>
+                        <input type="date" name="fecha_fin" class="form-control" value="{{ fecha_fin }}">
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-primary w-100" style="background: #1e3c72; border: none;">
+                            <i class="bi bi-filter"></i> Filtrar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Estadísticas Principales -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="text-muted mb-1 small">Prestado en Período</p>
+                                <h4 class="mb-0">${{ "{:,.0f}".format(total_prestado_periodo) }}</h4>
+                            </div>
+                            <div class="stat-icon icon-primary">
+                                <i class="bi bi-cash-stack"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="text-muted mb-1 small">Cobrado en Período</p>
+                                <h4 class="mb-0">${{ "{:,.0f}".format(total_cobrado_periodo) }}</h4>
+                                <small class="text-success">{{ num_pagos_periodo }} pagos</small>
+                            </div>
+                            <div class="stat-icon icon-success">
+                                <i class="bi bi-wallet2"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="text-muted mb-1 small">Cartera Actual</p>
+                                <h4 class="mb-0">${{ "{:,.0f}".format(cartera_actual) }}</h4>
+                                <small class="text-muted">Por cobrar</small>
+                            </div>
+                            <div class="stat-icon icon-warning">
+                                <i class="bi bi-graph-up"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="text-muted mb-1 small">Capital en Circulación</p>
+                                <h4 class="mb-0">${{ "{:,.0f}".format(capital_circulacion) }}</h4>
+                                <small class="text-muted">Activos</small>
+                            </div>
+                            <div class="stat-icon icon-info">
+                                <i class="bi bi-piggy-bank"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráficos -->
+        <div class="row">
+            <!-- Gráfico de Pagos por Día -->
+            <div class="col-md-8 mb-4">
+                <div class="chart-container">
+                    <h5 class="mb-3"><i class="bi bi-bar-chart-line"></i> Ingresos Diarios</h5>
+                    <canvas id="chartPagosDiarios" height="80"></canvas>
+                </div>
+            </div>
+
+            <!-- Gráfico de Estado de Préstamos -->
+            <div class="col-md-4 mb-4">
+                <div class="chart-container">
+                    <h5 class="mb-3"><i class="bi bi-pie-chart"></i> Estado de Préstamos</h5>
+                    <canvas id="chartEstadoPrestamos"></canvas>
+                </div>
+            </div>
+
+            <!-- Gráfico de Préstamos por Frecuencia -->
+            <div class="col-md-6 mb-4">
+                <div class="chart-container">
+                    <h5 class="mb-3"><i class="bi bi-calendar3"></i> Préstamos por Frecuencia</h5>
+                    <canvas id="chartFrecuencia"></canvas>
+                </div>
+            </div>
+
+            <!-- Top Deudores -->
+            <div class="col-md-6 mb-4">
+                <div class="chart-container">
+                    <h5 class="mb-3"><i class="bi bi-people"></i> Top 5 Mayores Deudores</h5>
+                    <canvas id="chartTopDeudores"></canvas>
+                </div>
+            </div>
+
+            <!-- Cobros por Cobrador -->
+            <div class="col-md-12 mb-4">
+                <div class="chart-container">
+                    <h5 class="mb-3"><i class="bi bi-person-badge"></i> Desempeño por Cobrador</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Cobrador</th>
+                                    <th>Número de Pagos</th>
+                                    <th>Total Cobrado</th>
+                                    <th>Promedio por Pago</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cobrador in cobros_por_cobrador %}
+                                <tr>
+                                    <td><i class="bi bi-person-circle text-primary"></i> {{ cobrador.nombre }}</td>
+                                    <td><span class="badge bg-primary">{{ cobrador.num_pagos }}</span></td>
+                                    <td class="fw-bold text-success">${{ "{:,.0f}".format(cobrador.total_cobrado) }}</td>
+                                    <td>${{ "{:,.0f}".format(cobrador.total_cobrado / cobrador.num_pagos) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen General -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="chart-container">
+                    <h5 class="mb-3"><i class="bi bi-clipboard-data"></i> Resumen General</h5>
+                    <div class="row">
+                        <div class="col-md-3 text-center mb-3">
+                            <h2 class="text-primary">{{ total_clientes }}</h2>
+                            <p class="text-muted mb-0">Total Clientes</p>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <h2 class="text-success">{{ prestamos_activos }}</h2>
+                            <p class="text-muted mb-0">Préstamos Activos</p>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <h2 class="text-info">{{ prestamos_cancelados }}</h2>
+                            <p class="text-muted mb-0">Préstamos Cancelados</p>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <h2 class="text-warning">{{ total_prestamos }}</h2>
+                            <p class="text-muted mb-0">Total Préstamos</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Configuración de colores
+        const colors = {
+            primary: '#1e3c72',
+            success: '#00ab41',
+            warning: '#d97706',
+            info: '#0891b2',
+            danger: '#dc2626'
+        };
+
+        // Gráfico de Pagos Diarios
+        const ctxPagos = document.getElementById('chartPagosDiarios');
+        new Chart(ctxPagos, {
+            type: 'line',
+            data: {
+                labels: [{% for pago in pagos_por_dia %}'{{ pago.fecha }}'{% if not loop.last %},{% endif %}{% endfor %}],
+                datasets: [{
+                    label: 'Ingresos Diarios',
+                    data: [{% for pago in pagos_por_dia %}{{ pago.total }}{% if not loop.last %},{% endif %}{% endfor %}],
+                    borderColor: colors.primary,
+                    backgroundColor: 'rgba(30, 60, 114, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Gráfico de Estado de Préstamos
+        const ctxEstado = document.getElementById('chartEstadoPrestamos');
+        new Chart(ctxEstado, {
+            type: 'doughnut',
+            data: {
+                labels: [{% for estado in estados_prestamos %}'{{ estado.estado }}'{% if not loop.last %},{% endif %}{% endfor %}],
+                datasets: [{
+                    data: [{% for estado in estados_prestamos %}{{ estado.cantidad }}{% if not loop.last %},{% endif %}{% endfor %}],
+                    backgroundColor: [colors.success, colors.info, colors.warning, colors.danger]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+
+        // Gráfico de Frecuencia
+        const ctxFrecuencia = document.getElementById('chartFrecuencia');
+        new Chart(ctxFrecuencia, {
+            type: 'bar',
+            data: {
+                labels: [{% for freq in prestamos_por_frecuencia %}'{{ freq.frecuencia }}'{% if not loop.last %},{% endif %}{% endfor %}],
+                datasets: [{
+                    label: 'Cantidad',
+                    data: [{% for freq in prestamos_por_frecuencia %}{{ freq.cantidad }}{% if not loop.last %},{% endif %}{% endfor %}],
+                    backgroundColor: [colors.primary, colors.success, colors.warning, colors.info]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+
+        // Gráfico de Top Deudores
+        const ctxDeudores = document.getElementById('chartTopDeudores');
+        new Chart(ctxDeudores, {
+            type: 'bar',
+            data: {
+                labels: [{% for deudor in top_deudores %}'{{ deudor.nombre }}'{% if not loop.last %},{% endif %}{% endfor %}],
+                datasets: [{
+                    label: 'Saldo Pendiente',
+                    data: [{% for deudor in top_deudores %}{{ deudor.saldo_actual }}{% if not loop.last %},{% endif %}{% endfor %}],
+                    backgroundColor: colors.warning
+                }]
+            },
+            options: {
+                responsive: true,
+                indexAxis: 'y',
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

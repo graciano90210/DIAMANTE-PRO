@@ -10,8 +10,9 @@ class Usuario(db.Model):
     nombre = db.Column(db.String(100), nullable=False)
     usuario = db.Column(db.String(50), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
-    rol = db.Column(db.String(20), nullable=False) # 'admin', 'cobrador', 'inversionista'
+    rol = db.Column(db.String(20), nullable=False) # 'dueno', 'secretaria', 'supervisor', 'cobrador'
     activo = db.Column(db.Boolean, default=True)
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
 
 # 2. LOS CLIENTES (Comerciantes)
 class Cliente(db.Model):
