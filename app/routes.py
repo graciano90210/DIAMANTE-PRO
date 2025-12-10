@@ -530,6 +530,166 @@ def init_routes(app):
                              nombre=session.get('nombre'),
                              rol=session.get('rol'))
 
+    # ==================== GESTIÓN DE USUARIOS ====================
+    @app.route('/usuarios')
+    def usuarios_lista():
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        # Solo dueños y gerentes pueden ver usuarios
+        if session.get('rol') not in ['dueno', 'gerente']:
+            flash('No tienes permisos para acceder a esta sección')
+            return redirect(url_for('dashboard'))
+        
+        usuarios = Usuario.query.all()
+        
+        # Contar cobros por usuario
+        stats_usuarios = []
+        for usuario in usuarios:
+            num_cobros = Pago.query.filter_by(cobrador_id=usuario.id).count()
+            total_cobrado = db.session.query(func.sum(Pago.monto)).filter_by(cobrador_id=usuario.id).scalar()
+            total_cobrado = float(total_cobrado) if total_cobrado else 0
+            
+            stats_usuarios.append({
+                'usuario': usuario,
+                'num_cobros': num_cobros,
+                'total_cobrado': total_cobrado
+            })
+        
+        return render_template('usuarios_lista.html',
+                             stats_usuarios=stats_usuarios,
+                             nombre=session.get('nombre'),
+                             rol=session.get('rol'))
+    
+    @app.route('/usuarios/nuevo')
+    def usuarios_nuevo():
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        if session.get('rol') not in ['dueno', 'gerente']:
+            return redirect(url_for('dashboard'))
+        
+        return render_template('usuarios_nuevo.html',
+                             nombre=session.get('nombre'),
+                             rol=session.get('rol'))
+    
+    @app.route('/usuarios/guardar', methods=['POST'])
+    def usuarios_guardar():
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        if session.get('rol') not in ['dueno', 'gerente']:
+            return redirect(url_for('dashboard'))
+        
+        try:
+            nombre = request.form.get('nombre')
+            usuario = request.form.get('usuario')
+            password = request.form.get('password')
+            rol = request.form.get('rol')
+            
+            # Validar que no exista el usuario
+            usuario_existente = Usuario.query.filter_by(usuario=usuario).first()
+            if usuario_existente:
+                return render_template('usuarios_nuevo.html',
+                                     error='El nombre de usuario ya existe',
+                                     nombre=session.get('nombre'),
+                                     rol=session.get('rol'))
+            
+            nuevo_usuario = Usuario(
+                nombre=nombre,
+                usuario=usuario,
+                password=password,
+                rol=rol,
+                activo=True
+            )
+            
+            db.session.add(nuevo_usuario)
+            db.session.commit()
+            
+            return redirect(url_for('usuarios_lista'))
+        
+        except Exception as e:
+            db.session.rollback()
+            return render_template('usuarios_nuevo.html',
+                                 error=f'Error al crear usuario: {str(e)}',
+                                 nombre=session.get('nombre'),
+                                 rol=session.get('rol'))
+    
+    @app.route('/usuarios/editar/<int:usuario_id>')
+    def usuarios_editar(usuario_id):
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        if session.get('rol') not in ['dueno', 'gerente']:
+            return redirect(url_for('dashboard'))
+        
+        usuario = Usuario.query.get_or_404(usuario_id)
+        
+        return render_template('usuarios_editar.html',
+                             usuario=usuario,
+                             nombre=session.get('nombre'),
+                             rol=session.get('rol'))
+    
+    @app.route('/usuarios/actualizar/<int:usuario_id>', methods=['POST'])
+    def usuarios_actualizar(usuario_id):
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        if session.get('rol') not in ['dueno', 'gerente']:
+            return redirect(url_for('dashboard'))
+        
+        try:
+            usuario = Usuario.query.get_or_404(usuario_id)
+            
+            usuario.nombre = request.form.get('nombre')
+            usuario.rol = request.form.get('rol')
+            
+            # Solo actualizar contraseña si se proporciona una nueva
+            nueva_password = request.form.get('password')
+            if nueva_password:
+                usuario.password = nueva_password
+            
+            activo = request.form.get('activo')
+            usuario.activo = (activo == 'on')
+            
+            db.session.commit()
+            
+            return redirect(url_for('usuarios_lista'))
+        
+        except Exception as e:
+            db.session.rollback()
+            return render_template('usuarios_editar.html',
+                                 usuario=usuario,
+                                 error=f'Error al actualizar usuario: {str(e)}',
+                                 nombre=session.get('nombre'),
+                                 rol=session.get('rol'))
+    
+    @app.route('/usuarios/eliminar/<int:usuario_id>')
+    def usuarios_eliminar(usuario_id):
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        # Solo el dueño puede eliminar usuarios
+        if session.get('rol') != 'dueno':
+            return redirect(url_for('dashboard'))
+        
+        # No permitir eliminar el propio usuario
+        if usuario_id == session.get('usuario_id'):
+            return redirect(url_for('usuarios_lista'))
+        
+        try:
+            usuario = Usuario.query.get_or_404(usuario_id)
+            
+            # En lugar de eliminar, desactivar
+            usuario.activo = False
+            db.session.commit()
+            
+            return redirect(url_for('usuarios_lista'))
+        
+        except Exception as e:
+            db.session.rollback()
+            return redirect(url_for('usuarios_lista'))
+
     @app.route('/estado')
     def estado():
         return {"estado": "OK", "version": "1.0"}

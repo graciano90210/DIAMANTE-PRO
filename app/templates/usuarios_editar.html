@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Editar Usuario - Diamante Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: #f5f7fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .form-card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/dashboard" style="display: inline-flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: 0.5px;">
+                <svg style="width: 28px; height: 28px; fill: #60a5fa;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L3 7v10l9 5 9-5V7l-9-5zm0 2.18L18.18 7 12 10.82 5.82 7 12 4.18zM5 8.82l6 3.5v7.86l-6-3.33V8.82zm8 11.36v-7.86l6-3.5v8.03l-6 3.33z"/>
+                </svg>
+                <span>DIAMANTE PRO</span>
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="text-white me-3">
+                    <i class="bi bi-person-circle"></i> {{ nombre }}
+                </span>
+                <a href="/usuarios" class="btn btn-light btn-sm">
+                    <i class="bi bi-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="form-card">
+                    <h3 class="mb-4"><i class="bi bi-pencil-square"></i> Editar Usuario</h3>
+
+                    {% if error %}
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i> {{ error }}
+                    </div>
+                    {% endif %}
+
+                    <form method="POST" action="/usuarios/actualizar/{{ usuario.id }}">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Nombre Completo *</label>
+                            <input type="text" name="nombre" class="form-control" required 
+                                   value="{{ usuario.nombre }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Usuario (Login)</label>
+                            <input type="text" class="form-control" value="{{ usuario.usuario }}" disabled>
+                            <small class="text-muted">El nombre de usuario no se puede cambiar</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Nueva Contraseña</label>
+                            <input type="password" name="password" class="form-control" 
+                                   placeholder="Dejar vacío para mantener la actual" autocomplete="new-password">
+                            <small class="text-muted">Solo llena este campo si deseas cambiar la contraseña</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Rol *</label>
+                            <select name="rol" class="form-select" required>
+                                {% if rol == 'dueno' %}
+                                <option value="dueno" {% if usuario.rol == 'dueno' %}selected{% endif %}>Dueño</option>
+                                {% endif %}
+                                <option value="gerente" {% if usuario.rol == 'gerente' %}selected{% endif %}>Gerente</option>
+                                <option value="cobrador" {% if usuario.rol == 'cobrador' %}selected{% endif %}>Cobrador</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="activo" 
+                                       id="activo" {% if usuario.activo %}checked{% endif %}>
+                                <label class="form-check-label fw-bold" for="activo">
+                                    Usuario Activo
+                                </label>
+                            </div>
+                            <small class="text-muted">Los usuarios inactivos no pueden iniciar sesión</small>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg" style="background: #1e3c72; border: none;">
+                                <i class="bi bi-check-circle"></i> Guardar Cambios
+                            </button>
+                            <a href="/usuarios" class="btn btn-outline-secondary">
+                                Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
