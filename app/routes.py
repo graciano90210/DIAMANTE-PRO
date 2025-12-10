@@ -1,7 +1,13 @@
-from flask import render_template, request, redirect, url_for, session, flash
+from flask import render_template, request, redirect, url_for, session, flash, make_response
 from .models import Usuario, Cliente, Prestamo, Pago, db
 from datetime import datetime, timedelta
 from sqlalchemy import func
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.units import inch
+from io import BytesIO
 
 def init_routes(app):
     # ==================== AUTENTICACIÓN ====================
@@ -689,6 +695,180 @@ def init_routes(app):
         except Exception as e:
             db.session.rollback()
             return redirect(url_for('usuarios_lista'))
+
+    # ==================== REPORTES PDF ====================
+    @app.route('/reporte/cuadre-pdf')
+    def reporte_cuadre_pdf():
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        # Solo secretaria, gerente y dueño pueden descargar
+        if session.get('rol') not in ['secretaria', 'gerente', 'dueno']:
+            return redirect(url_for('dashboard'))
+        
+        # Obtener fecha (hoy por defecto)
+        fecha = datetime.now()
+        if request.args.get('fecha'):
+            fecha = datetime.strptime(request.args.get('fecha'), '%Y-%m-%d')
+        
+        fecha_inicio = fecha.replace(hour=0, minute=0, second=0)
+        fecha_fin = fecha.replace(hour=23, minute=59, second=59)
+        
+        # Usuario actual
+        usuario = Usuario.query.get(session.get('usuario_id'))
+        
+        # ABONOS (pagos recibidos hoy)
+        pagos_hoy = Pago.query.filter(
+            Pago.fecha_pago >= fecha_inicio,
+            Pago.fecha_pago <= fecha_fin,
+            Pago.cobrador_id == session.get('usuario_id')
+        ).all()
+        
+        total_abonos = sum(p.monto for p in pagos_hoy)
+        
+        # DESEMBOLSOS (préstamos creados hoy)
+        prestamos_hoy = Prestamo.query.filter(
+            Prestamo.fecha_inicio >= fecha_inicio,
+            Prestamo.fecha_inicio <= fecha_fin
+        ).all()
+        
+        total_desembolsos = sum(p.monto_prestado for p in prestamos_hoy)
+        
+        # TOTAL CAJA
+        total_caja = total_abonos - total_desembolsos
+        
+        # GASTOS Y MOVIMIENTOS (ejemplo - puedes agregar una tabla de gastos)
+        gastos = []
+        
+        # CLIENTES SIN PAGO (préstamos activos que debían pagar hoy y no pagaron)
+        prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO').all()
+        clientes_sin_pago = []
+        
+        for prestamo in prestamos_activos:
+            # Si tiene cuotas atrasadas
+            if prestamo.cuotas_atrasadas and prestamo.cuotas_atrasadas > 0:
+                clientes_sin_pago.append({
+                    'numero': prestamo.id,
+                    'cliente': prestamo.cliente.nombre,
+                    'celular': prestamo.cliente.telefono,
+                    'valor': prestamo.valor_cuota
+                })
+        
+        # CREAR PDF
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        elements = []
+        styles = getSampleStyleSheet()
+        
+        # Título
+        title = Paragraph(f"<b>{usuario.nombre.upper()} - INFORME</b>", styles['Title'])
+        elements.append(title)
+        elements.append(Spacer(1, 0.2*inch))
+        
+        # Fecha
+        fecha_text = Paragraph(f"Fecha {fecha.strftime('%d/%m/%Y')}", styles['Normal'])
+        elements.append(fecha_text)
+        elements.append(Spacer(1, 0.3*inch))
+        
+        # CUADRE RUTA
+        elements.append(Paragraph("<b>CUADRE RUTA</b>", styles['Heading2']))
+        cuadre_data = [
+            ['ABONOS', 'DESEMBOLSOS', 'TOTAL CAJA'],
+            [f'${total_abonos:,.2f}', f'${total_desembolsos:,.2f}', f'${total_caja:,.2f}']
+        ]
+        cuadre_table = Table(cuadre_data, colWidths=[2*inch, 2*inch, 2*inch])
+        cuadre_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+        elements.append(cuadre_table)
+        elements.append(Spacer(1, 0.3*inch))
+        
+        # GASTOS Y MOVIMIENTOS
+        elements.append(Paragraph("<b>GASTOS Y MOVIMIENTOS</b>", styles['Heading2']))
+        if gastos:
+            gastos_data = [['OBSERVACIÓN', 'VALOR ($)']]
+            for gasto in gastos:
+                gastos_data.append([gasto['observacion'], f"${gasto['valor']:,.2f}"])
+            gastos_table = Table(gastos_data, colWidths=[4*inch, 2*inch])
+            gastos_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, -1), 10),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ]))
+            elements.append(gastos_table)
+        else:
+            elements.append(Paragraph("No hay gastos registrados", styles['Normal']))
+        elements.append(Spacer(1, 0.3*inch))
+        
+        # CRÉDITOS (PRÉSTAMOS OTORGADOS HOY)
+        if prestamos_hoy:
+            elements.append(Paragraph("<b>CRÉDITOS</b>", styles['Heading2']))
+            creditos_data = [['CLIENTE', 'CELULAR', 'VALOR CRÉDITO ($)']]
+            for prestamo in prestamos_hoy:
+                creditos_data.append([
+                    prestamo.cliente.nombre,
+                    prestamo.cliente.telefono,
+                    f"${prestamo.monto_prestado:,.2f}"
+                ])
+            creditos_table = Table(creditos_data, colWidths=[3*inch, 1.5*inch, 1.5*inch])
+            creditos_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('ALIGN', (2, 0), (2, -1), 'RIGHT'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, -1), 9),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ]))
+            elements.append(creditos_table)
+            elements.append(Spacer(1, 0.3*inch))
+        
+        # CLIENTES SIN PAGO
+        if clientes_sin_pago:
+            elements.append(Paragraph("<b>CLIENTES SIN PAGO</b>", styles['Heading2']))
+            sin_pago_data = [['N°', 'CLIENTE', 'CELULAR', 'VALOR']]
+            for idx, cliente in enumerate(clientes_sin_pago[:10], 1):  # Máximo 10
+                sin_pago_data.append([
+                    str(idx),
+                    cliente['cliente'],
+                    cliente['celular'],
+                    f"${cliente['valor']:,.2f}"
+                ])
+            sin_pago_table = Table(sin_pago_data, colWidths=[0.5*inch, 2.5*inch, 1.5*inch, 1.5*inch])
+            sin_pago_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('ALIGN', (3, 0), (3, -1), 'RIGHT'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, -1), 9),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ]))
+            elements.append(sin_pago_table)
+        
+        # Construir PDF
+        doc.build(elements)
+        
+        # Preparar respuesta
+        pdf = buffer.getvalue()
+        buffer.close()
+        
+        response = make_response(pdf)
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'attachment; filename=cuadre_ruta_{fecha.strftime("%Y%m%d")}.pdf'
+        
+        return response
 
     @app.route('/estado')
     def estado():
