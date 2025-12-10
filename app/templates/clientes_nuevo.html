@@ -62,11 +62,45 @@
                                     <label class="form-label">Teléfono *</label>
                                     <input type="tel" name="telefono" class="form-control" required 
                                            placeholder="Ej: 3001234567">
+                                    <small class="text-muted">Número local sin código de país</small>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">RUT / Cámara de Comercio</label>
                                     <input type="text" name="documento_negocio" class="form-control" 
                                            placeholder="Opcional">
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">Código País WhatsApp *</label>
+                                    <select name="whatsapp_codigo_pais" class="form-select" id="whatsappCodigo">
+                                        <option value="57" selected>🇨🇴 +57 (Colombia)</option>
+                                        <option value="1">🇺🇸 +1 (USA/Canadá)</option>
+                                        <option value="52">🇲🇽 +52 (México)</option>
+                                        <option value="51">🇵🇪 +51 (Perú)</option>
+                                        <option value="55">🇧🇷 +55 (Brasil)</option>
+                                        <option value="54">🇦🇷 +54 (Argentina)</option>
+                                        <option value="56">🇨🇱 +56 (Chile)</option>
+                                        <option value="593">🇪🇨 +593 (Ecuador)</option>
+                                        <option value="58">🇻🇪 +58 (Venezuela)</option>
+                                        <option value="507">🇵🇦 +507 (Panamá)</option>
+                                        <option value="503">🇸🇻 +503 (El Salvador)</option>
+                                        <option value="502">🇬🇹 +502 (Guatemala)</option>
+                                        <option value="504">🇭🇳 +504 (Honduras)</option>
+                                        <option value="505">🇳🇮 +505 (Nicaragua)</option>
+                                        <option value="506">🇨🇷 +506 (Costa Rica)</option>
+                                        <option value="34">🇪🇸 +34 (España)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-9">
+                                    <label class="form-label">Número WhatsApp *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text" id="whatsappPrefix">+57</span>
+                                        <input type="tel" name="whatsapp_numero" class="form-control" required 
+                                               placeholder="Ej: 3001234567" id="whatsappNumero">
+                                    </div>
+                                    <small class="text-muted">Sin código de país, solo el número local</small>
                                 </div>
                             </div>
 
@@ -120,5 +154,17 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Actualizar prefijo de WhatsApp cuando cambia el código de país
+        document.getElementById('whatsappCodigo').addEventListener('change', function() {
+            const codigo = this.value;
+            document.getElementById('whatsappPrefix').textContent = '+' + codigo;
+        });
+
+        // Validar que solo se ingresen números en el WhatsApp
+        document.getElementById('whatsappNumero').addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+    </script>
 </body>
 </html>

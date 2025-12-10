@@ -281,6 +281,206 @@
                 </div>
             </div>
         </div>
+
+        <!-- Secciones Detalladas para Cobradores -->
+        {% if rol == 'cobrador' %}
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <h4 class="mb-3"><i class="bi bi-journal-text"></i> Detalles de Actividad</h4>
+            </div>
+        </div>
+
+        <!-- Lista de Clientes que Pagaron -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="chart-container">
+                    <h5 class="mb-3"><i class="bi bi-people-fill text-success"></i> Clientes que Pagaron ({{ lista_pagos|length }})</h5>
+                    {% if lista_pagos %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Cliente</th>
+                                    <th>Crédito #</th>
+                                    <th>Monto</th>
+                                    <th>Saldo Anterior</th>
+                                    <th>Saldo Nuevo</th>
+                                    <th>Observaciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pago in lista_pagos %}
+                                <tr>
+                                    <td>{{ pago.fecha_pago.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td><strong>{{ pago.prestamo.cliente.nombre }}</strong></td>
+                                    <td><span class="badge bg-primary">#{{ pago.prestamo_id }}</span></td>
+                                    <td><span class="text-success fw-bold">{{ pago.prestamo.moneda }} {{ "{:,.0f}".format(pago.monto) }}</span></td>
+                                    <td>{{ pago.prestamo.moneda }} {{ "{:,.0f}".format(pago.saldo_anterior) }}</td>
+                                    <td>{{ pago.prestamo.moneda }} {{ "{:,.0f}".format(pago.saldo_nuevo) }}</td>
+                                    <td><small>{{ pago.observaciones or '-' }}</small></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <th colspan="3" class="text-end">TOTAL COBRADO:</th>
+                                    <th><span class="text-success">${{ "{:,.0f}".format(lista_pagos|sum(attribute='monto')) }}</span></th>
+                                    <th colspan="3"></th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center py-4">No hay pagos registrados en este período</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de Créditos Creados -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="chart-container">
+                    <h5 class="mb-3"><i class="bi bi-cash-stack text-primary"></i> Créditos Creados ({{ lista_creditos|length }})</h5>
+                    {% if lista_creditos %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Cliente</th>
+                                    <th>Crédito #</th>
+                                    <th>Monto Prestado</th>
+                                    <th>A Pagar</th>
+                                    <th>Frecuencia</th>
+                                    <th>Cuotas</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for credito in lista_creditos %}
+                                <tr>
+                                    <td>{{ credito.fecha_inicio.strftime('%d/%m/%Y') }}</td>
+                                    <td><strong>{{ credito.cliente.nombre }}</strong></td>
+                                    <td><span class="badge bg-primary">#{{ credito.id }}</span></td>
+                                    <td>{{ credito.moneda }} {{ "{:,.0f}".format(credito.monto_prestado) }}</td>
+                                    <td>{{ credito.moneda }} {{ "{:,.0f}".format(credito.monto_a_pagar) }}</td>
+                                    <td><span class="badge bg-info">{{ credito.frecuencia }}</span></td>
+                                    <td>{{ credito.numero_cuotas }}</td>
+                                    <td>
+                                        {% if credito.estado == 'ACTIVO' %}
+                                        <span class="badge bg-success">ACTIVO</span>
+                                        {% elif credito.estado == 'CANCELADO' %}
+                                        <span class="badge bg-secondary">CANCELADO</span>
+                                        {% else %}
+                                        <span class="badge bg-warning">{{ credito.estado }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <th colspan="3" class="text-end">TOTAL PRESTADO:</th>
+                                    <th><span class="text-primary">${{ "{:,.0f}".format(lista_creditos|sum(attribute='monto_prestado')) }}</span></th>
+                                    <th colspan="4"></th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center py-4">No hay créditos creados en este período</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de Gastos -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="chart-container">
+                    <h5 class="mb-3"><i class="bi bi-receipt text-danger"></i> Gastos Registrados ({{ lista_gastos|length }})</h5>
+                    {% if lista_gastos %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Concepto</th>
+                                    <th>Descripción</th>
+                                    <th>Monto</th>
+                                    <th>Naturaleza</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for gasto in lista_gastos %}
+                                <tr>
+                                    <td>{{ gasto.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td><strong>{{ gasto.concepto }}</strong></td>
+                                    <td>{{ gasto.descripcion or '-' }}</td>
+                                    <td><span class="text-danger fw-bold">${{ "{:,.0f}".format(gasto.monto) }}</span></td>
+                                    <td><span class="badge bg-secondary">{{ gasto.naturaleza }}</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <th colspan="3" class="text-end">TOTAL GASTOS:</th>
+                                    <th><span class="text-danger">${{ "{:,.0f}".format(lista_gastos|sum(attribute='monto')) }}</span></th>
+                                    <th></th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center py-4">No hay gastos registrados en este período</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen de Movimientos -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="chart-container">
+                    <h5 class="mb-3"><i class="bi bi-list-ul text-info"></i> Resumen de Todos los Movimientos ({{ lista_movimientos|length }})</h5>
+                    {% if lista_movimientos %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 50px;"></th>
+                                    <th>Fecha y Hora</th>
+                                    <th>Tipo</th>
+                                    <th>Descripción</th>
+                                    <th>Monto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for mov in lista_movimientos %}
+                                <tr>
+                                    <td><i class="bi {{ mov.icono }} text-{{ mov.color }} fs-4"></i></td>
+                                    <td>{{ mov.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td><span class="badge bg-{{ mov.color }}">{{ mov.tipo }}</span></td>
+                                    <td>{{ mov.descripcion }}</td>
+                                    <td>
+                                        <span class="text-{{ mov.color }} fw-bold">
+                                            {% if mov.tipo == 'GASTO' %}-{% endif %}${{ "{:,.0f}".format(mov.monto) }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center py-4">No hay movimientos en este período</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

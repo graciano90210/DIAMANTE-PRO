@@ -67,7 +67,8 @@
                                     {% for cliente in clientes %}
                                     <option value="{{ cliente.id }}" 
                                             data-vip="{{ cliente.es_vip }}"
-                                            data-nombre="{{ cliente.nombre }}">
+                                            data-nombre="{{ cliente.nombre }}"
+                                            {% if cliente_id_seleccionado and cliente.id == cliente_id_seleccionado %}selected{% endif %}>
                                         {{ cliente.nombre }} - {{ cliente.documento }}
                                         {% if cliente.es_vip %}⭐ VIP{% endif %}
                                     </option>
@@ -78,12 +79,20 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Cobrador Asignado *</label>
-                                <select name="cobrador_id" class="form-select" required>
-                                    <option value="">-- Seleccione un cobrador --</option>
-                                    {% for cobrador in cobradores %}
-                                    <option value="{{ cobrador.id }}">{{ cobrador.nombre }} - {{ cobrador.rol }}</option>
-                                    {% endfor %}
-                                </select>
+                                {% if rol == 'cobrador' %}
+                                    <!-- El cobrador solo puede asignarse a sí mismo -->
+                                    <input type="text" class="form-control" value="{{ nombre }}" readonly style="background-color: #e9ecef;">
+                                    <input type="hidden" name="cobrador_id" value="{{ usuario_id }}">
+                                    <small class="text-muted">Los créditos se asignan automáticamente a ti</small>
+                                {% else %}
+                                    <!-- Otros roles pueden seleccionar el cobrador -->
+                                    <select name="cobrador_id" class="form-select" required>
+                                        <option value="">-- Seleccione un cobrador --</option>
+                                        {% for cobrador in cobradores %}
+                                        <option value="{{ cobrador.id }}">{{ cobrador.nombre }} - {{ cobrador.rol }}</option>
+                                        {% endfor %}
+                                    </select>
+                                {% endif %}
                             </div>
 
                             <!-- Configuración del Préstamo -->

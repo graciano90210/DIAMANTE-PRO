@@ -87,8 +87,8 @@
                                 </td>
                                 <td>{{ cliente.fecha_registro.strftime('%d/%m/%Y') }}</td>
                                 <td>
-                                    <a href="/clientes/ver/{{ cliente.id }}" class="btn btn-sm btn-info" title="Ver">
-                                        <i class="bi bi-eye"></i>
+                                    <a href="/prestamos/nuevo?cliente_id={{ cliente.id }}" class="btn btn-sm btn-success" title="Nuevo Crédito">
+                                        <i class="bi bi-cash-stack"></i>
                                     </a>
                                     <a href="/clientes/editar/{{ cliente.id }}" class="btn btn-sm btn-warning" title="Editar">
                                         <i class="bi bi-pencil"></i>

@@ -1,5 +1,5 @@
-from flask import render_template, request, redirect, url_for, session, flash, make_response
-from .models import Usuario, Cliente, Prestamo, Pago, db
+from flask import render_template, request, redirect, url_for, session, flash, make_response, send_file
+from .models import Usuario, Cliente, Prestamo, Pago, Transaccion, db
 from datetime import datetime, timedelta
 from sqlalchemy import func
 from reportlab.lib.pagesizes import letter
@@ -7,6 +7,7 @@ from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.units import inch
+from reportlab.pdfgen import canvas
 from io import BytesIO
 
 def init_routes(app):
@@ -37,35 +38,69 @@ def init_routes(app):
         if 'usuario_id' not in session:
             return redirect(url_for('home'))
         
-        # Estadísticas generales
+        usuario_id = session.get('usuario_id')
+        rol = session.get('rol')
+        
+        # Estadísticas generales (todos ven total de clientes)
         total_clientes = Cliente.query.count()
         clientes_vip = Cliente.query.filter_by(es_vip=True).count()
         
-        # Préstamos activos
-        prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO').all()
-        total_prestamos_activos = len(prestamos_activos)
-        
-        # Cartera total (suma de saldos pendientes)
-        total_cartera = db.session.query(func.sum(Prestamo.saldo_actual)).filter_by(estado='ACTIVO').scalar()
-        total_cartera = float(total_cartera) if total_cartera else 0
-        
-        # Capital prestado (suma de montos originales activos)
-        capital_prestado = db.session.query(func.sum(Prestamo.monto_prestado)).filter_by(estado='ACTIVO').scalar()
-        capital_prestado = float(capital_prestado) if capital_prestado else 0
-        
-        # Por cobrar hoy (suma de valores de cuota de préstamos activos con pago diario o bisemanal)
-        por_cobrar_hoy = sum(float(p.valor_cuota) for p in prestamos_activos if p.frecuencia in ['DIARIO', 'BISEMANAL']) if prestamos_activos else 0
-        
-        # Préstamos al día vs atrasados
-        prestamos_al_dia = sum(1 for p in prestamos_activos if p.cuotas_atrasadas == 0) if prestamos_activos else 0
-        prestamos_atrasados = sum(1 for p in prestamos_activos if p.cuotas_atrasadas > 0) if prestamos_activos else 0
-        prestamos_mora = sum(1 for p in prestamos_activos if p.cuotas_atrasadas > 3) if prestamos_activos else 0
-        
-        # Total pagos realizados hoy
-        hoy = datetime.now().date()
-        pagos_hoy = Pago.query.filter(func.date(Pago.fecha_pago) == hoy).all()
-        total_cobrado_hoy = sum(float(p.monto) for p in pagos_hoy) if pagos_hoy else 0
-        num_pagos_hoy = len(pagos_hoy)
+        # Si es cobrador, filtrar solo sus préstamos
+        if rol == 'cobrador':
+            # Préstamos activos del cobrador
+            prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO', cobrador_id=usuario_id).all()
+            total_prestamos_activos = len(prestamos_activos)
+            
+            # Cartera total del cobrador
+            total_cartera = db.session.query(func.sum(Prestamo.saldo_actual)).filter_by(estado='ACTIVO', cobrador_id=usuario_id).scalar()
+            total_cartera = float(total_cartera) if total_cartera else 0
+            
+            # Capital prestado del cobrador
+            capital_prestado = db.session.query(func.sum(Prestamo.monto_prestado)).filter_by(estado='ACTIVO', cobrador_id=usuario_id).scalar()
+            capital_prestado = float(capital_prestado) if capital_prestado else 0
+            
+            # Por cobrar hoy del cobrador
+            por_cobrar_hoy = sum(float(p.valor_cuota) for p in prestamos_activos if p.frecuencia in ['DIARIO', 'BISEMANAL']) if prestamos_activos else 0
+            
+            # Préstamos al día vs atrasados del cobrador
+            prestamos_al_dia = sum(1 for p in prestamos_activos if p.cuotas_atrasadas == 0) if prestamos_activos else 0
+            prestamos_atrasados = sum(1 for p in prestamos_activos if p.cuotas_atrasadas > 0) if prestamos_activos else 0
+            prestamos_mora = sum(1 for p in prestamos_activos if p.cuotas_atrasadas > 3) if prestamos_activos else 0
+            
+            # Pagos realizados hoy por el cobrador
+            hoy = datetime.now().date()
+            pagos_hoy = Pago.query.join(Prestamo).filter(
+                func.date(Pago.fecha_pago) == hoy,
+                Prestamo.cobrador_id == usuario_id
+            ).all()
+            total_cobrado_hoy = sum(float(p.monto) for p in pagos_hoy) if pagos_hoy else 0
+            num_pagos_hoy = len(pagos_hoy)
+        else:
+            # Dueño, gerente, secretaria ven todas las estadísticas
+            prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO').all()
+            total_prestamos_activos = len(prestamos_activos)
+            
+            # Cartera total
+            total_cartera = db.session.query(func.sum(Prestamo.saldo_actual)).filter_by(estado='ACTIVO').scalar()
+            total_cartera = float(total_cartera) if total_cartera else 0
+            
+            # Capital prestado
+            capital_prestado = db.session.query(func.sum(Prestamo.monto_prestado)).filter_by(estado='ACTIVO').scalar()
+            capital_prestado = float(capital_prestado) if capital_prestado else 0
+            
+            # Por cobrar hoy
+            por_cobrar_hoy = sum(float(p.valor_cuota) for p in prestamos_activos if p.frecuencia in ['DIARIO', 'BISEMANAL']) if prestamos_activos else 0
+            
+            # Préstamos al día vs atrasados
+            prestamos_al_dia = sum(1 for p in prestamos_activos if p.cuotas_atrasadas == 0) if prestamos_activos else 0
+            prestamos_atrasados = sum(1 for p in prestamos_activos if p.cuotas_atrasadas > 0) if prestamos_activos else 0
+            prestamos_mora = sum(1 for p in prestamos_activos if p.cuotas_atrasadas > 3) if prestamos_activos else 0
+            
+            # Total pagos realizados hoy
+            hoy = datetime.now().date()
+            pagos_hoy = Pago.query.filter(func.date(Pago.fecha_pago) == hoy).all()
+            total_cobrado_hoy = sum(float(p.monto) for p in pagos_hoy) if pagos_hoy else 0
+            num_pagos_hoy = len(pagos_hoy)
         
         return render_template('dashboard.html', 
                              nombre=session.get('nombre'), 
@@ -128,6 +163,8 @@ def init_routes(app):
                 documento=documento,
                 documento_negocio=request.form.get('documento_negocio'),
                 telefono=request.form.get('telefono'),
+                whatsapp_codigo_pais=request.form.get('whatsapp_codigo_pais', '57'),
+                whatsapp_numero=request.form.get('whatsapp_numero'),
                 direccion_negocio=request.form.get('direccion_negocio'),
                 gps_latitud=request.form.get('gps_latitud') or None,
                 gps_longitud=request.form.get('gps_longitud') or None,
@@ -152,22 +189,47 @@ def init_routes(app):
         if 'usuario_id' not in session:
             return redirect(url_for('home'))
         
-        prestamos = Prestamo.query.order_by(Prestamo.fecha_inicio.desc()).all()
+        usuario_id = session.get('usuario_id')
+        rol = session.get('rol')
         
-        # Estadísticas
-        total_prestado = db.session.query(func.sum(Prestamo.monto_prestado)).filter(
-            Prestamo.estado == 'ACTIVO'
-        ).scalar() or 0
-        
-        total_cartera = db.session.query(func.sum(Prestamo.saldo_actual)).filter(
-            Prestamo.estado == 'ACTIVO'
-        ).scalar() or 0
-        
-        prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO').count()
-        
-        ganancia_esperada = db.session.query(
-            func.sum(Prestamo.monto_a_pagar - Prestamo.monto_prestado)
-        ).filter(Prestamo.estado == 'ACTIVO').scalar() or 0
+        # Si es cobrador, solo ver sus préstamos asignados
+        if rol == 'cobrador':
+            prestamos = Prestamo.query.filter_by(cobrador_id=usuario_id).order_by(Prestamo.fecha_inicio.desc()).all()
+            
+            # Estadísticas solo de sus préstamos
+            total_prestado = db.session.query(func.sum(Prestamo.monto_prestado)).filter(
+                Prestamo.estado == 'ACTIVO',
+                Prestamo.cobrador_id == usuario_id
+            ).scalar() or 0
+            
+            total_cartera = db.session.query(func.sum(Prestamo.saldo_actual)).filter(
+                Prestamo.estado == 'ACTIVO',
+                Prestamo.cobrador_id == usuario_id
+            ).scalar() or 0
+            
+            prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO', cobrador_id=usuario_id).count()
+            
+            ganancia_esperada = db.session.query(
+                func.sum(Prestamo.monto_a_pagar - Prestamo.monto_prestado)
+            ).filter(Prestamo.estado == 'ACTIVO', Prestamo.cobrador_id == usuario_id).scalar() or 0
+        else:
+            # Dueño, gerente y secretaria ven todos los préstamos
+            prestamos = Prestamo.query.order_by(Prestamo.fecha_inicio.desc()).all()
+            
+            # Estadísticas generales
+            total_prestado = db.session.query(func.sum(Prestamo.monto_prestado)).filter(
+                Prestamo.estado == 'ACTIVO'
+            ).scalar() or 0
+            
+            total_cartera = db.session.query(func.sum(Prestamo.saldo_actual)).filter(
+                Prestamo.estado == 'ACTIVO'
+            ).scalar() or 0
+            
+            prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO').count()
+            
+            ganancia_esperada = db.session.query(
+                func.sum(Prestamo.monto_a_pagar - Prestamo.monto_prestado)
+            ).filter(Prestamo.estado == 'ACTIVO').scalar() or 0
         
         return render_template('prestamos_lista.html',
                              prestamos=prestamos,
@@ -188,12 +250,17 @@ def init_routes(app):
         # Cobradores pueden ser: supervisor, cobrador, o admin (por compatibilidad)
         cobradores = Usuario.query.filter(Usuario.rol.in_(['admin', 'dueno', 'supervisor', 'cobrador'])).all()
         
+        # Obtener cliente_id de los parámetros de URL si existe
+        cliente_id_seleccionado = request.args.get('cliente_id', type=int)
+        
         return render_template('prestamos_nuevo.html',
                              clientes=clientes,
                              cobradores=cobradores,
                              fecha_hoy=datetime.now().strftime('%Y-%m-%d'),
                              nombre=session.get('nombre'),
-                             rol=session.get('rol'))
+                             rol=session.get('rol'),
+                             usuario_id=session.get('usuario_id'),
+                             cliente_id_seleccionado=cliente_id_seleccionado)
     
     @app.route('/prestamos/guardar', methods=['POST'])
     def prestamos_guardar():
@@ -249,7 +316,8 @@ def init_routes(app):
             db.session.add(nuevo_prestamo)
             db.session.commit()
             
-            return redirect(url_for('prestamos_lista', mensaje='Préstamo otorgado exitosamente'))
+            # Redirigir a página de éxito con comprobante
+            return redirect(url_for('prestamo_exito', prestamo_id=nuevo_prestamo.id))
         
         except Exception as e:
             db.session.rollback()
@@ -262,6 +330,183 @@ def init_routes(app):
                                  error=f'Error al crear préstamo: {str(e)}',
                                  nombre=session.get('nombre'),
                                  rol=session.get('rol'))
+    
+    @app.route('/prestamos/exito/<int:prestamo_id>')
+    def prestamo_exito(prestamo_id):
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        prestamo = Prestamo.query.get_or_404(prestamo_id)
+        cliente = prestamo.cliente
+        cobrador = prestamo.cobrador
+        
+        # Generar mensaje de WhatsApp simplificado (sin caracteres especiales problemáticos)
+        mensaje = f"""CREDITO APROBADO - DIAMANTE PRO
+
+Cliente: {cliente.nombre}
+Credito: #{prestamo.id}
+Fecha: {prestamo.fecha_inicio.strftime('%d/%m/%Y')}
+
+DETALLES DEL CREDITO
+Monto Prestado: {prestamo.moneda} {prestamo.monto_prestado:,.0f}
+Interes: {prestamo.tasa_interes:.0f}%
+Total a Pagar: {prestamo.moneda} {prestamo.monto_a_pagar:,.0f}
+
+PLAN DE PAGO
+Frecuencia: {prestamo.frecuencia}
+Numero de Cuotas: {prestamo.numero_cuotas}
+Valor por Cuota: {prestamo.moneda} {prestamo.valor_cuota:,.0f}
+Fecha Fin: {prestamo.fecha_fin_estimada.strftime('%d/%m/%Y')}
+
+Cobrador: {cobrador.nombre}
+
+Gracias por confiar en nosotros!"""
+        
+        whatsapp_url = f"https://wa.me/{cliente.whatsapp_completo}?text={mensaje.replace(' ', '%20').replace('\n', '%0A')}"
+        
+        return render_template('prestamo_exito.html',
+                             prestamo=prestamo,
+                             cliente=cliente,
+                             cobrador=cobrador,
+                             whatsapp_url=whatsapp_url,
+                             nombre=session.get('nombre'),
+                             rol=session.get('rol'))
+    
+    @app.route('/prestamos/comprobante-pdf/<int:prestamo_id>')
+    def prestamo_comprobante_pdf(prestamo_id):
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        prestamo = Prestamo.query.get_or_404(prestamo_id)
+        cliente = prestamo.cliente
+        cobrador = prestamo.cobrador
+        
+        # Crear PDF en memoria
+        buffer = BytesIO()
+        pdf = canvas.Canvas(buffer, pagesize=letter)
+        width, height = letter
+        
+        # Fondo y encabezado
+        pdf.setFillColorRGB(0.12, 0.24, 0.45)  # Azul oscuro
+        pdf.rect(0, height - 100, width, 100, fill=True, stroke=False)
+        
+        pdf.setFillColorRGB(1, 1, 1)
+        pdf.setFont("Helvetica-Bold", 24)
+        pdf.drawString(50, height - 50, "DIAMANTE PRO")
+        pdf.setFont("Helvetica", 12)
+        pdf.drawString(50, height - 70, "Comprobante de Crédito Aprobado")
+        
+        # Número de crédito
+        pdf.setFont("Helvetica-Bold", 14)
+        pdf.drawRightString(width - 50, height - 50, f"Crédito #{prestamo.id}")
+        pdf.setFont("Helvetica", 10)
+        pdf.drawRightString(width - 50, height - 70, prestamo.fecha_inicio.strftime('%d/%m/%Y'))
+        
+        # Información del cliente
+        y = height - 140
+        pdf.setFillColorRGB(0, 0, 0)
+        pdf.setFont("Helvetica-Bold", 14)
+        pdf.drawString(50, y, "INFORMACIÓN DEL CLIENTE")
+        y -= 25
+        
+        pdf.setFont("Helvetica", 11)
+        pdf.drawString(50, y, f"Nombre:")
+        pdf.drawString(200, y, cliente.nombre)
+        y -= 20
+        
+        pdf.drawString(50, y, f"Documento:")
+        pdf.drawString(200, y, cliente.documento)
+        y -= 20
+        
+        pdf.drawString(50, y, f"Teléfono:")
+        pdf.drawString(200, y, cliente.telefono)
+        y -= 35
+        
+        # Detalles del crédito (con fondo)
+        pdf.setFillColorRGB(0.4, 0.4, 0.9)
+        pdf.rect(40, y - 10, width - 80, 120, fill=True, stroke=False)
+        
+        pdf.setFillColorRGB(1, 1, 1)
+        pdf.setFont("Helvetica-Bold", 14)
+        pdf.drawString(50, y, "DETALLES DEL CRÉDITO")
+        y -= 30
+        
+        pdf.setFont("Helvetica-Bold", 12)
+        pdf.drawString(50, y, "Monto Prestado:")
+        pdf.setFont("Helvetica-Bold", 16)
+        pdf.drawString(200, y, f"{prestamo.moneda} {prestamo.monto_prestado:,.0f}")
+        y -= 25
+        
+        pdf.setFont("Helvetica", 11)
+        pdf.drawString(50, y, "Tasa de Interés:")
+        pdf.setFont("Helvetica-Bold", 12)
+        pdf.drawString(200, y, f"{prestamo.tasa_interes:.0f}%")
+        y -= 20
+        
+        pdf.setFont("Helvetica-Bold", 12)
+        pdf.drawString(50, y, "TOTAL A PAGAR:")
+        pdf.setFont("Helvetica-Bold", 16)
+        pdf.setFillColorRGB(1, 1, 0.6)
+        pdf.drawString(200, y, f"{prestamo.moneda} {prestamo.monto_a_pagar:,.0f}")
+        y -= 35
+        
+        # Plan de pago
+        pdf.setFillColorRGB(0, 0, 0)
+        pdf.setFont("Helvetica-Bold", 14)
+        pdf.drawString(50, y, "PLAN DE PAGO")
+        y -= 25
+        
+        pdf.setFont("Helvetica", 11)
+        pdf.drawString(50, y, f"Frecuencia de Pago:")
+        pdf.drawString(200, y, prestamo.frecuencia)
+        y -= 20
+        
+        pdf.drawString(50, y, f"Número de Cuotas:")
+        pdf.drawString(200, y, str(prestamo.numero_cuotas))
+        y -= 20
+        
+        pdf.setFont("Helvetica-Bold", 12)
+        pdf.drawString(50, y, f"Valor por Cuota:")
+        pdf.setFillColorRGB(0, 0.5, 0)
+        pdf.setFont("Helvetica-Bold", 14)
+        pdf.drawString(200, y, f"{prestamo.moneda} {prestamo.valor_cuota:,.0f}")
+        y -= 20
+        
+        pdf.setFillColorRGB(0, 0, 0)
+        pdf.setFont("Helvetica", 11)
+        pdf.drawString(50, y, f"Fecha Estimada de Fin:")
+        pdf.drawString(200, y, prestamo.fecha_fin_estimada.strftime('%d/%m/%Y'))
+        y -= 35
+        
+        # Información adicional
+        pdf.setFont("Helvetica-Bold", 12)
+        pdf.drawString(50, y, "Cobrador Asignado:")
+        pdf.setFont("Helvetica", 11)
+        pdf.drawString(200, y, cobrador.nombre)
+        y -= 20
+        
+        pdf.drawString(50, y, "Estado del Crédito:")
+        pdf.setFillColorRGB(0, 0.5, 0)
+        pdf.setFont("Helvetica-Bold", 11)
+        pdf.drawString(200, y, "ACTIVO")
+        
+        # Pie de página
+        pdf.setFillColorRGB(0, 0, 0)
+        pdf.line(50, 100, width - 50, 100)
+        pdf.setFont("Helvetica", 9)
+        pdf.drawString(50, 80, f"Generado el: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+        pdf.drawString(50, 65, f"Registrado por: {session.get('nombre')}")
+        pdf.drawCentredString(width / 2, 45, "¡Gracias por confiar en DIAMANTE PRO!")
+        
+        pdf.save()
+        buffer.seek(0)
+        
+        return send_file(
+            buffer,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=f'Comprobante_Credito_{prestamo.id}_{cliente.nombre.replace(" ", "_")}.pdf'
+        )
 
     # ==================== COBRO ====================
     @app.route('/cobro/lista')
@@ -269,10 +514,19 @@ def init_routes(app):
         if 'usuario_id' not in session:
             return redirect(url_for('home'))
         
-        # Lista de préstamos activos
-        prestamos = Prestamo.query.filter_by(estado='ACTIVO').order_by(
-            Prestamo.cuotas_atrasadas.desc()
-        ).all()
+        usuario_id = session.get('usuario_id')
+        rol = session.get('rol')
+        
+        # Si es cobrador, solo ver sus préstamos asignados
+        if rol == 'cobrador':
+            prestamos = Prestamo.query.filter_by(estado='ACTIVO', cobrador_id=usuario_id).order_by(
+                Prestamo.cuotas_atrasadas.desc()
+            ).all()
+        else:
+            # Lista de préstamos activos (todos)
+            prestamos = Prestamo.query.filter_by(estado='ACTIVO').order_by(
+                Prestamo.cuotas_atrasadas.desc()
+            ).all()
         
         # Estadísticas
         total_a_cobrar = sum(p.valor_cuota for p in prestamos)
@@ -402,22 +656,23 @@ def init_routes(app):
         prestamo = pago.prestamo
         cliente = prestamo.cliente
         
-        # Generar mensaje de WhatsApp
-        mensaje = f"""✅ *RECIBO DE PAGO - DIAMANTE PRO*
+        # Generar mensaje de WhatsApp simplificado
+        mensaje = f"""RECIBO DE PAGO - DIAMANTE PRO
 
-📋 *Crédito #:* {prestamo.id}
-👤 *Cliente:* {cliente.nombre}
-📅 *Fecha:* {pago.fecha_pago.strftime('%d/%m/%Y %H:%M')}
+Credito: #{prestamo.id}
+Cliente: {cliente.nombre}
+Fecha: {pago.fecha_pago.strftime('%d/%m/%Y %H:%M')}
 
-💰 *Monto Recibido:* {prestamo.moneda} {pago.monto:,.0f}
-📊 *Saldo Anterior:* {prestamo.moneda} {pago.saldo_anterior:,.0f}
-✨ *Saldo Nuevo:* {prestamo.moneda} {pago.saldo_nuevo:,.0f}
+Monto Recibido: {prestamo.moneda} {pago.monto:,.0f}
+Saldo Anterior: {prestamo.moneda} {pago.saldo_anterior:,.0f}
+Saldo Nuevo: {prestamo.moneda} {pago.saldo_nuevo:,.0f}
 
-🎯 *Cuotas Pagadas:* {prestamo.cuotas_pagadas}/{prestamo.numero_cuotas}
+Cuotas Pagadas: {prestamo.cuotas_pagadas}/{prestamo.numero_cuotas}
 
-¡Gracias por su pago! 💎"""
+Gracias por su pago!"""
         
-        whatsapp_url = f"https://wa.me/57{cliente.telefono}?text={mensaje.replace(' ', '%20').replace('\n', '%0A')}"
+        # Usar el número de WhatsApp completo (con código de país)
+        whatsapp_url = f"https://wa.me/{cliente.whatsapp_completo}?text={mensaje.replace(' ', '%20').replace('\n', '%0A')}"
         
         return render_template('cobro_exito.html',
                              pago=pago,
@@ -426,12 +681,140 @@ def init_routes(app):
                              whatsapp_url=whatsapp_url,
                              nombre=session.get('nombre'),
                              rol=session.get('rol'))
+    
+    @app.route('/cobro/recibo-pdf/<int:pago_id>')
+    def cobro_recibo_pdf(pago_id):
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        pago = Pago.query.get_or_404(pago_id)
+        prestamo = pago.prestamo
+        cliente = prestamo.cliente
+        
+        # Crear PDF en memoria
+        buffer = BytesIO()
+        pdf = canvas.Canvas(buffer, pagesize=letter)
+        width, height = letter
+        
+        # Encabezado
+        pdf.setFont("Helvetica-Bold", 20)
+        pdf.drawString(50, height - 50, "DIAMANTE PRO")
+        pdf.setFont("Helvetica", 10)
+        pdf.drawString(50, height - 70, "Sistema de Gestión de Préstamos")
+        
+        # Título
+        pdf.setFont("Helvetica-Bold", 16)
+        pdf.drawString(200, height - 120, "RECIBO DE PAGO")
+        
+        pdf.setFont("Helvetica", 11)
+        pdf.drawString(450, height - 120, f"#{pago.id}")
+        
+        # Línea divisoria
+        pdf.line(50, height - 130, width - 50, height - 130)
+        
+        # Información del cliente
+        y = height - 170
+        pdf.setFont("Helvetica-Bold", 12)
+        pdf.drawString(50, y, "INFORMACIÓN DEL CLIENTE")
+        y -= 25
+        
+        pdf.setFont("Helvetica", 11)
+        pdf.drawString(50, y, f"Nombre:")
+        pdf.drawString(200, y, cliente.nombre)
+        y -= 20
+        
+        pdf.drawString(50, y, f"Documento:")
+        pdf.drawString(200, y, cliente.documento)
+        y -= 20
+        
+        pdf.drawString(50, y, f"Teléfono:")
+        pdf.drawString(200, y, cliente.telefono)
+        y -= 35
+        
+        # Información del préstamo
+        pdf.setFont("Helvetica-Bold", 12)
+        pdf.drawString(50, y, "INFORMACIÓN DEL CRÉDITO")
+        y -= 25
+        
+        pdf.setFont("Helvetica", 11)
+        pdf.drawString(50, y, f"Crédito #:")
+        pdf.drawString(200, y, str(prestamo.id))
+        y -= 20
+        
+        pdf.drawString(50, y, f"Fecha de Pago:")
+        pdf.drawString(200, y, pago.fecha_pago.strftime('%d/%m/%Y %H:%M'))
+        y -= 35
+        
+        # Detalles del pago (con fondo)
+        pdf.setFillColorRGB(0.95, 0.95, 0.95)
+        pdf.rect(40, y - 10, width - 80, 90, fill=True, stroke=False)
+        
+        pdf.setFillColorRGB(0, 0, 0)
+        pdf.setFont("Helvetica-Bold", 12)
+        pdf.drawString(50, y, "DETALLES DEL PAGO")
+        y -= 25
+        
+        pdf.setFont("Helvetica-Bold", 11)
+        pdf.drawString(50, y, f"Monto Recibido:")
+        pdf.setFillColorRGB(0, 0.5, 0)
+        pdf.setFont("Helvetica-Bold", 14)
+        pdf.drawString(200, y, f"{prestamo.moneda} {pago.monto:,.0f}")
+        y -= 25
+        
+        pdf.setFillColorRGB(0, 0, 0)
+        pdf.setFont("Helvetica", 11)
+        pdf.drawString(50, y, f"Saldo Anterior:")
+        pdf.drawString(200, y, f"{prestamo.moneda} {pago.saldo_anterior:,.0f}")
+        y -= 20
+        
+        pdf.setFont("Helvetica-Bold", 11)
+        pdf.drawString(50, y, f"Saldo Nuevo:")
+        pdf.setFillColorRGB(0, 0, 0.8)
+        pdf.setFont("Helvetica-Bold", 14)
+        pdf.drawString(200, y, f"{prestamo.moneda} {pago.saldo_nuevo:,.0f}")
+        y -= 35
+        
+        # Cuotas
+        pdf.setFillColorRGB(0, 0, 0)
+        pdf.setFont("Helvetica", 11)
+        pdf.drawString(50, y, f"Cuotas Pagadas:")
+        pdf.drawString(200, y, f"{prestamo.cuotas_pagadas} / {prestamo.numero_cuotas}")
+        y -= 30
+        
+        # Observaciones si existen
+        if pago.observaciones:
+            pdf.setFont("Helvetica-Bold", 11)
+            pdf.drawString(50, y, "Observaciones:")
+            y -= 20
+            pdf.setFont("Helvetica-Oblique", 10)
+            pdf.drawString(50, y, pago.observaciones[:80])
+            y -= 30
+        
+        # Pie de página
+        pdf.line(50, 100, width - 50, 100)
+        pdf.setFont("Helvetica", 9)
+        pdf.drawString(50, 80, f"Generado el: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+        pdf.drawString(50, 65, f"Cobrador: {session.get('nombre')}")
+        pdf.drawString(width - 200, 65, "¡Gracias por su pago!")
+        
+        pdf.save()
+        buffer.seek(0)
+        
+        return send_file(
+            buffer,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=f'Recibo_Pago_{pago.id}_{cliente.nombre.replace(" ", "_")}.pdf'
+        )
 
     # ==================== REPORTES ====================
     @app.route('/reportes')
     def reportes():
         if 'usuario_id' not in session:
             return redirect(url_for('home'))
+        
+        usuario_id = session.get('usuario_id')
+        rol = session.get('rol')
         
         # Obtener fecha de inicio y fin (por defecto últimos 30 días)
         fecha_fin = datetime.now()
@@ -446,75 +829,221 @@ def init_routes(app):
         
         # ===== ESTADÍSTICAS GENERALES =====
         total_clientes = Cliente.query.count()
-        total_prestamos = Prestamo.query.count()
-        prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO').count()
-        prestamos_cancelados = Prestamo.query.filter_by(estado='CANCELADO').count()
+        
+        if rol == 'cobrador':
+            # Cobradores ven solo sus préstamos
+            total_prestamos = Prestamo.query.filter_by(cobrador_id=usuario_id).count()
+            prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO', cobrador_id=usuario_id).count()
+            prestamos_cancelados = Prestamo.query.filter_by(estado='CANCELADO', cobrador_id=usuario_id).count()
+        else:
+            # Otros roles ven todos los préstamos
+            total_prestamos = Prestamo.query.count()
+            prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO').count()
+            prestamos_cancelados = Prestamo.query.filter_by(estado='CANCELADO').count()
         
         # ===== DATOS FINANCIEROS =====
-        # Total prestado en el período
-        prestamos_periodo = Prestamo.query.filter(
-            Prestamo.fecha_inicio >= fecha_inicio,
-            Prestamo.fecha_inicio <= fecha_fin
-        ).all()
-        
-        total_prestado_periodo = sum(p.monto_prestado for p in prestamos_periodo)
-        
-        # Total cobrado en el período
-        pagos_periodo = Pago.query.filter(
-            Pago.fecha_pago >= fecha_inicio,
-            Pago.fecha_pago <= fecha_fin
-        ).all()
-        
-        total_cobrado_periodo = sum(p.monto for p in pagos_periodo)
-        num_pagos_periodo = len(pagos_periodo)
-        
-        # Cartera actual
-        cartera_actual = db.session.query(func.sum(Prestamo.saldo_actual)).filter_by(estado='ACTIVO').scalar()
-        cartera_actual = float(cartera_actual) if cartera_actual else 0
-        
-        # Capital en circulación
-        capital_circulacion = db.session.query(func.sum(Prestamo.monto_prestado)).filter_by(estado='ACTIVO').scalar()
-        capital_circulacion = float(capital_circulacion) if capital_circulacion else 0
+        if rol == 'cobrador':
+            # Total prestado en el período (solo del cobrador)
+            prestamos_periodo = Prestamo.query.filter(
+                Prestamo.fecha_inicio >= fecha_inicio,
+                Prestamo.fecha_inicio <= fecha_fin,
+                Prestamo.cobrador_id == usuario_id
+            ).all()
+            
+            total_prestado_periodo = sum(p.monto_prestado for p in prestamos_periodo)
+            
+            # Total cobrado en el período (solo sus pagos)
+            pagos_periodo = Pago.query.join(Prestamo).filter(
+                Pago.fecha_pago >= fecha_inicio,
+                Pago.fecha_pago <= fecha_fin,
+                Prestamo.cobrador_id == usuario_id
+            ).all()
+            
+            total_cobrado_periodo = sum(p.monto for p in pagos_periodo)
+            num_pagos_periodo = len(pagos_periodo)
+            
+            # Cartera actual (solo sus préstamos)
+            cartera_actual = db.session.query(func.sum(Prestamo.saldo_actual)).filter_by(estado='ACTIVO', cobrador_id=usuario_id).scalar()
+            cartera_actual = float(cartera_actual) if cartera_actual else 0
+            
+            # Capital en circulación (solo sus préstamos)
+            capital_circulacion = db.session.query(func.sum(Prestamo.monto_prestado)).filter_by(estado='ACTIVO', cobrador_id=usuario_id).scalar()
+            capital_circulacion = float(capital_circulacion) if capital_circulacion else 0
+        else:
+            # Total prestado en el período
+            prestamos_periodo = Prestamo.query.filter(
+                Prestamo.fecha_inicio >= fecha_inicio,
+                Prestamo.fecha_inicio <= fecha_fin
+            ).all()
+            
+            total_prestado_periodo = sum(p.monto_prestado for p in prestamos_periodo)
+            
+            # Total cobrado en el período
+            pagos_periodo = Pago.query.filter(
+                Pago.fecha_pago >= fecha_inicio,
+                Pago.fecha_pago <= fecha_fin
+            ).all()
+            
+            total_cobrado_periodo = sum(p.monto for p in pagos_periodo)
+            num_pagos_periodo = len(pagos_periodo)
+            
+            # Cartera actual
+            cartera_actual = db.session.query(func.sum(Prestamo.saldo_actual)).filter_by(estado='ACTIVO').scalar()
+            cartera_actual = float(cartera_actual) if cartera_actual else 0
+            
+            # Capital en circulación
+            capital_circulacion = db.session.query(func.sum(Prestamo.monto_prestado)).filter_by(estado='ACTIVO').scalar()
+            capital_circulacion = float(capital_circulacion) if capital_circulacion else 0
         
         # ===== DATOS PARA GRÁFICOS =====
-        # Pagos por día (últimos 30 días)
-        pagos_por_dia = db.session.query(
-            func.date(Pago.fecha_pago).label('fecha'),
-            func.sum(Pago.monto).label('total')
-        ).filter(
-            Pago.fecha_pago >= fecha_inicio,
-            Pago.fecha_pago <= fecha_fin
-        ).group_by(func.date(Pago.fecha_pago)).order_by('fecha').all()
+        if rol == 'cobrador':
+            # Pagos por día (solo sus pagos)
+            pagos_por_dia = db.session.query(
+                func.date(Pago.fecha_pago).label('fecha'),
+                func.sum(Pago.monto).label('total')
+            ).join(Prestamo).filter(
+                Pago.fecha_pago >= fecha_inicio,
+                Pago.fecha_pago <= fecha_fin,
+                Prestamo.cobrador_id == usuario_id
+            ).group_by(func.date(Pago.fecha_pago)).order_by('fecha').all()
+            
+            # Préstamos por estado (solo suyos)
+            estados_prestamos = db.session.query(
+                Prestamo.estado,
+                func.count(Prestamo.id).label('cantidad')
+            ).filter_by(cobrador_id=usuario_id).group_by(Prestamo.estado).all()
+            
+            # Top 5 clientes que más deben (solo sus préstamos)
+            top_deudores = db.session.query(
+                Cliente.nombre,
+                Prestamo.saldo_actual
+            ).join(Prestamo).filter(
+                Prestamo.estado == 'ACTIVO',
+                Prestamo.cobrador_id == usuario_id
+            ).order_by(Prestamo.saldo_actual.desc()).limit(5).all()
+            
+            # Préstamos por frecuencia de pago (solo suyos)
+            prestamos_por_frecuencia = db.session.query(
+                Prestamo.frecuencia,
+                func.count(Prestamo.id).label('cantidad')
+            ).filter_by(estado='ACTIVO', cobrador_id=usuario_id).group_by(Prestamo.frecuencia).all()
+            
+            # Cobros por cobrador (solo él mismo)
+            cobros_por_cobrador = db.session.query(
+                Usuario.nombre,
+                func.count(Pago.id).label('num_pagos'),
+                func.sum(Pago.monto).label('total_cobrado')
+            ).join(Pago, Usuario.id == Pago.cobrador_id).filter(
+                Pago.fecha_pago >= fecha_inicio,
+                Pago.fecha_pago <= fecha_fin,
+                Usuario.id == usuario_id
+            ).group_by(Usuario.nombre).all()
+        else:
+            # Pagos por día (todos)
+            pagos_por_dia = db.session.query(
+                func.date(Pago.fecha_pago).label('fecha'),
+                func.sum(Pago.monto).label('total')
+            ).filter(
+                Pago.fecha_pago >= fecha_inicio,
+                Pago.fecha_pago <= fecha_fin
+            ).group_by(func.date(Pago.fecha_pago)).order_by('fecha').all()
+            
+            # Préstamos por estado
+            estados_prestamos = db.session.query(
+                Prestamo.estado,
+                func.count(Prestamo.id).label('cantidad')
+            ).group_by(Prestamo.estado).all()
+            
+            # Top 5 clientes que más deben
+            top_deudores = db.session.query(
+                Cliente.nombre,
+                Prestamo.saldo_actual
+            ).join(Prestamo).filter(
+                Prestamo.estado == 'ACTIVO'
+            ).order_by(Prestamo.saldo_actual.desc()).limit(5).all()
+            
+            # Préstamos por frecuencia de pago
+            prestamos_por_frecuencia = db.session.query(
+                Prestamo.frecuencia,
+                func.count(Prestamo.id).label('cantidad')
+            ).filter_by(estado='ACTIVO').group_by(Prestamo.frecuencia).all()
+            
+            # Cobros por cobrador
+            cobros_por_cobrador = db.session.query(
+                Usuario.nombre,
+                func.count(Pago.id).label('num_pagos'),
+                func.sum(Pago.monto).label('total_cobrado')
+            ).join(Pago, Usuario.id == Pago.cobrador_id).filter(
+                Pago.fecha_pago >= fecha_inicio,
+                Pago.fecha_pago <= fecha_fin
+            ).group_by(Usuario.nombre).all()
         
-        # Préstamos por estado
-        estados_prestamos = db.session.query(
-            Prestamo.estado,
-            func.count(Prestamo.id).label('cantidad')
-        ).group_by(Prestamo.estado).all()
-        
-        # Top 5 clientes que más deben
-        top_deudores = db.session.query(
-            Cliente.nombre,
-            Prestamo.saldo_actual
-        ).join(Prestamo).filter(
-            Prestamo.estado == 'ACTIVO'
-        ).order_by(Prestamo.saldo_actual.desc()).limit(5).all()
-        
-        # Préstamos por frecuencia de pago
-        prestamos_por_frecuencia = db.session.query(
-            Prestamo.frecuencia,
-            func.count(Prestamo.id).label('cantidad')
-        ).filter_by(estado='ACTIVO').group_by(Prestamo.frecuencia).all()
-        
-        # Cobros por cobrador
-        cobros_por_cobrador = db.session.query(
-            Usuario.nombre,
-            func.count(Pago.id).label('num_pagos'),
-            func.sum(Pago.monto).label('total_cobrado')
-        ).join(Pago, Usuario.id == Pago.cobrador_id).filter(
-            Pago.fecha_pago >= fecha_inicio,
-            Pago.fecha_pago <= fecha_fin
-        ).group_by(Usuario.nombre).all()
+        # ===== LISTAS DETALLADAS PARA COBRADORES =====
+        if rol == 'cobrador':
+            # 1. Lista de pagos recibidos (clientes que pagaron)
+            lista_pagos = Pago.query.join(Prestamo).join(Cliente).filter(
+                Pago.fecha_pago >= fecha_inicio,
+                Pago.fecha_pago <= fecha_fin,
+                Prestamo.cobrador_id == usuario_id
+            ).order_by(Pago.fecha_pago.desc()).all()
+            
+            # 2. Lista de créditos creados
+            lista_creditos = Prestamo.query.join(Cliente).filter(
+                Prestamo.fecha_inicio >= fecha_inicio,
+                Prestamo.fecha_inicio <= fecha_fin,
+                Prestamo.cobrador_id == usuario_id
+            ).order_by(Prestamo.fecha_inicio.desc()).all()
+            
+            # 3. Lista de gastos/transacciones
+            lista_gastos = Transaccion.query.filter(
+                Transaccion.fecha >= fecha_inicio,
+                Transaccion.fecha <= fecha_fin,
+                Transaccion.usuario_origen_id == usuario_id
+            ).order_by(Transaccion.fecha.desc()).all()
+            
+            # 4. Resumen de movimientos (todos los registros de actividad)
+            lista_movimientos = []
+            
+            # Agregar pagos a movimientos
+            for pago in lista_pagos:
+                lista_movimientos.append({
+                    'tipo': 'PAGO',
+                    'fecha': pago.fecha_pago,
+                    'descripcion': f'Pago de {pago.prestamo.cliente.nombre} - Crédito #{pago.prestamo_id}',
+                    'monto': pago.monto,
+                    'icono': 'bi-cash-coin',
+                    'color': 'success'
+                })
+            
+            # Agregar créditos a movimientos
+            for credito in lista_creditos:
+                lista_movimientos.append({
+                    'tipo': 'CRÉDITO',
+                    'fecha': credito.fecha_inicio,
+                    'descripcion': f'Crédito creado para {credito.cliente.nombre} - #{credito.id}',
+                    'monto': credito.monto_prestado,
+                    'icono': 'bi-plus-circle',
+                    'color': 'primary'
+                })
+            
+            # Agregar gastos a movimientos
+            for gasto in lista_gastos:
+                lista_movimientos.append({
+                    'tipo': 'GASTO',
+                    'fecha': gasto.fecha,
+                    'descripcion': f'{gasto.concepto}: {gasto.descripcion}',
+                    'monto': gasto.monto,
+                    'icono': 'bi-arrow-down-circle',
+                    'color': 'danger'
+                })
+            
+            # Ordenar movimientos por fecha descendente
+            lista_movimientos.sort(key=lambda x: x['fecha'], reverse=True)
+        else:
+            lista_pagos = []
+            lista_creditos = []
+            lista_gastos = []
+            lista_movimientos = []
         
         return render_template('reportes.html',
                              fecha_inicio=fecha_inicio.strftime('%Y-%m-%d'),
@@ -533,6 +1062,10 @@ def init_routes(app):
                              top_deudores=top_deudores,
                              prestamos_por_frecuencia=prestamos_por_frecuencia,
                              cobros_por_cobrador=cobros_por_cobrador,
+                             lista_pagos=lista_pagos,
+                             lista_creditos=lista_creditos,
+                             lista_gastos=lista_gastos,
+                             lista_movimientos=lista_movimientos,
                              nombre=session.get('nombre'),
                              rol=session.get('rol'))
 

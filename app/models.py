@@ -22,11 +22,20 @@ class Cliente(db.Model):
     documento = db.Column(db.String(20), unique=True, nullable=False)
     documento_negocio = db.Column(db.String(30)) 
     telefono = db.Column(db.String(20), nullable=False)
+    whatsapp_codigo_pais = db.Column(db.String(5), default='57')  # Código de país para WhatsApp
+    whatsapp_numero = db.Column(db.String(20))  # Número WhatsApp sin código de país
     direccion_negocio = db.Column(db.String(200))
     gps_latitud = db.Column(db.Float)
     gps_longitud = db.Column(db.Float)
     es_vip = db.Column(db.Boolean, default=False)
     fecha_registro = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    @property
+    def whatsapp_completo(self):
+        """Retorna el número completo de WhatsApp con código de país"""
+        if self.whatsapp_numero:
+            return f"{self.whatsapp_codigo_pais}{self.whatsapp_numero}"
+        return self.telefono  # Fallback al teléfono regular
 
 # 3. LOS PRÉSTAMOS
 class Prestamo(db.Model):
