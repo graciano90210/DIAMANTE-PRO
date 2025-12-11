@@ -89,12 +89,22 @@
                         </div>
 
                         <!-- Acciones -->
-                        <div class="d-grid gap-2 mt-4">
-                            <a href="{{ whatsapp_url }}" target="_blank" class="btn btn-success btn-lg">
-                                <i class="bi bi-whatsapp"></i> Enviar Recibo por WhatsApp
+                        <div class="alert alert-info mt-4">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Para enviar por WhatsApp:</strong> 
+                            <ol class="mb-0 mt-2">
+                                <li>Descarga el recibo en imagen</li>
+                                <li>Abre WhatsApp del cliente</li>
+                                <li>Adjunta la imagen descargada</li>
+                            </ol>
+                        </div>
+                        
+                        <div class="d-grid gap-2 mt-3">
+                            <a href="/cobro/recibo-imagen/{{ pago.id }}" class="btn btn-success btn-lg" download>
+                                <i class="bi bi-download"></i> 1. Descargar Recibo (IMAGEN)
                             </a>
-                            <a href="/cobro/recibo-pdf/{{ pago.id }}" class="btn btn-info btn-lg" download>
-                                <i class="bi bi-file-earmark-pdf"></i> Descargar Recibo en PDF
+                            <a href="{{ whatsapp_url }}" target="_blank" class="btn btn-success btn-lg">
+                                <i class="bi bi-whatsapp"></i> 2. Abrir WhatsApp del Cliente
                             </a>
                             <a href="/cobro/lista" class="btn btn-primary">
                                 <i class="bi bi-list-check"></i> Continuar con la Ruta

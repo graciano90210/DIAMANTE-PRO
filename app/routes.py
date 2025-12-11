@@ -9,6 +9,9 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
 from io import BytesIO
+from PIL import Image, ImageDraw, ImageFont
+import os
+import base64
 
 def init_routes(app):
     # ==================== AUTENTICACIÓN ====================
@@ -128,7 +131,19 @@ def init_routes(app):
         if 'usuario_id' not in session:
             return redirect(url_for('home'))
         
-        clientes = Cliente.query.order_by(Cliente.fecha_registro.desc()).all()
+        rol = session.get('rol')
+        usuario_id = session.get('usuario_id')
+        
+        # Si es cobrador, solo ver sus clientes (que tienen préstamos asignados a él)
+        if rol == 'cobrador':
+            # Obtener IDs de clientes que tienen préstamos del cobrador
+            clientes_ids = db.session.query(Prestamo.cliente_id).filter_by(cobrador_id=usuario_id).distinct().all()
+            clientes_ids = [c[0] for c in clientes_ids]
+            clientes = Cliente.query.filter(Cliente.id.in_(clientes_ids)).order_by(Cliente.fecha_registro.desc()).all()
+        else:
+            # Dueño, gerente y secretaria ven todos los clientes
+            clientes = Cliente.query.order_by(Cliente.fecha_registro.desc()).all()
+        
         return render_template('clientes_lista.html', 
                              clientes=clientes,
                              nombre=session.get('nombre'), 
@@ -331,6 +346,22 @@ def init_routes(app):
                                  nombre=session.get('nombre'),
                                  rol=session.get('rol'))
     
+    @app.route('/prestamos/ver/<int:prestamo_id>')
+    def prestamo_detalle(prestamo_id):
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        prestamo = Prestamo.query.get_or_404(prestamo_id)
+        
+        # Obtener todos los pagos del préstamo ordenados por fecha
+        pagos = Pago.query.filter_by(prestamo_id=prestamo_id).order_by(Pago.fecha_pago.desc()).all()
+        
+        return render_template('prestamo_detalle.html',
+                             prestamo=prestamo,
+                             pagos=pagos,
+                             nombre=session.get('nombre'),
+                             rol=session.get('rol'))
+    
     @app.route('/prestamos/exito/<int:prestamo_id>')
     def prestamo_exito(prestamo_id):
         if 'usuario_id' not in session:
@@ -340,29 +371,8 @@ def init_routes(app):
         cliente = prestamo.cliente
         cobrador = prestamo.cobrador
         
-        # Generar mensaje de WhatsApp simplificado (sin caracteres especiales problemáticos)
-        mensaje = f"""CREDITO APROBADO - DIAMANTE PRO
-
-Cliente: {cliente.nombre}
-Credito: #{prestamo.id}
-Fecha: {prestamo.fecha_inicio.strftime('%d/%m/%Y')}
-
-DETALLES DEL CREDITO
-Monto Prestado: {prestamo.moneda} {prestamo.monto_prestado:,.0f}
-Interes: {prestamo.tasa_interes:.0f}%
-Total a Pagar: {prestamo.moneda} {prestamo.monto_a_pagar:,.0f}
-
-PLAN DE PAGO
-Frecuencia: {prestamo.frecuencia}
-Numero de Cuotas: {prestamo.numero_cuotas}
-Valor por Cuota: {prestamo.moneda} {prestamo.valor_cuota:,.0f}
-Fecha Fin: {prestamo.fecha_fin_estimada.strftime('%d/%m/%Y')}
-
-Cobrador: {cobrador.nombre}
-
-Gracias por confiar en nosotros!"""
-        
-        whatsapp_url = f"https://wa.me/{cliente.whatsapp_completo}?text={mensaje.replace(' ', '%20').replace('\n', '%0A')}"
+        # Generar URL de WhatsApp con imagen del comprobante
+        whatsapp_url = f"https://wa.me/{cliente.whatsapp_completo}"
         
         return render_template('prestamo_exito.html',
                              prestamo=prestamo,
@@ -372,8 +382,8 @@ Gracias por confiar en nosotros!"""
                              nombre=session.get('nombre'),
                              rol=session.get('rol'))
     
-    @app.route('/prestamos/comprobante-pdf/<int:prestamo_id>')
-    def prestamo_comprobante_pdf(prestamo_id):
+    @app.route('/prestamos/comprobante-imagen/<int:prestamo_id>')
+    def prestamo_comprobante_imagen(prestamo_id):
         if 'usuario_id' not in session:
             return redirect(url_for('home'))
         
@@ -381,131 +391,104 @@ Gracias por confiar en nosotros!"""
         cliente = prestamo.cliente
         cobrador = prestamo.cobrador
         
-        # Crear PDF en memoria
-        buffer = BytesIO()
-        pdf = canvas.Canvas(buffer, pagesize=letter)
-        width, height = letter
+        # Crear imagen en memoria (1080x1920 - Tamaño para móviles)
+        width, height = 1080, 1920
+        img = Image.new('RGB', (width, height), color='white')
+        draw = ImageDraw.Draw(img)
         
-        # Fondo y encabezado
-        pdf.setFillColorRGB(0.12, 0.24, 0.45)  # Azul oscuro
-        pdf.rect(0, height - 100, width, 100, fill=True, stroke=False)
+        # Usar fuentes del sistema (fallback a fuentes predeterminadas)
+        try:
+            font_title = ImageFont.truetype("arial.ttf", 80)
+            font_subtitle = ImageFont.truetype("arial.ttf", 40)
+            font_header = ImageFont.truetype("arialbd.ttf", 50)
+            font_label = ImageFont.truetype("arial.ttf", 38)
+            font_value = ImageFont.truetype("arialbd.ttf", 42)
+            font_big = ImageFont.truetype("arialbd.ttf", 65)
+            font_small = ImageFont.truetype("arial.ttf", 32)
+        except:
+            font_title = ImageFont.load_default()
+            font_subtitle = ImageFont.load_default()
+            font_header = ImageFont.load_default()
+            font_label = ImageFont.load_default()
+            font_value = ImageFont.load_default()
+            font_big = ImageFont.load_default()
+            font_small = ImageFont.load_default()
         
-        pdf.setFillColorRGB(1, 1, 1)
-        pdf.setFont("Helvetica-Bold", 24)
-        pdf.drawString(50, height - 50, "DIAMANTE PRO")
-        pdf.setFont("Helvetica", 12)
-        pdf.drawString(50, height - 70, "Comprobante de Crédito Aprobado")
+        # Encabezado con degradado azul
+        draw.rectangle([0, 0, width, 250], fill='#1e3c72')
+        draw.text((width//2, 80), "💎 DIAMANTE PRO", fill='white', font=font_title, anchor='mm')
+        draw.text((width//2, 160), "COMPROBANTE DE CRÉDITO", fill='white', font=font_subtitle, anchor='mm')
+        draw.text((width//2, 210), f"Crédito #{prestamo.id} - {prestamo.fecha_inicio.strftime('%d/%m/%Y')}", fill='#60a5fa', font=font_subtitle, anchor='mm')
         
-        # Número de crédito
-        pdf.setFont("Helvetica-Bold", 14)
-        pdf.drawRightString(width - 50, height - 50, f"Crédito #{prestamo.id}")
-        pdf.setFont("Helvetica", 10)
-        pdf.drawRightString(width - 50, height - 70, prestamo.fecha_inicio.strftime('%d/%m/%Y'))
+        y = 300
         
         # Información del cliente
-        y = height - 140
-        pdf.setFillColorRGB(0, 0, 0)
-        pdf.setFont("Helvetica-Bold", 14)
-        pdf.drawString(50, y, "INFORMACIÓN DEL CLIENTE")
-        y -= 25
+        draw.text((80, y), "INFORMACIÓN DEL CLIENTE", fill='#1e3c72', font=font_header)
+        y += 80
+        draw.rectangle([50, y, width-50, y+220], outline='#60a5fa', width=3)
+        y += 30
+        draw.text((80, y), "Nombre:", fill='#4b5563', font=font_label)
+        draw.text((80, y+50), cliente.nombre.upper(), fill='#111827', font=font_value)
+        y += 120
+        draw.text((80, y), f"Documento: {cliente.documento}", fill='#4b5563', font=font_label)
+        y += 180
         
-        pdf.setFont("Helvetica", 11)
-        pdf.drawString(50, y, f"Nombre:")
-        pdf.drawString(200, y, cliente.nombre)
-        y -= 20
+        # Detalles del crédito
+        draw.rectangle([0, y, width, y+550], fill='#e0e7ff')
+        y += 50
+        draw.text((width//2, y), "DETALLES DEL CRÉDITO", fill='#1e3c72', font=font_header, anchor='mm')
+        y += 100
         
-        pdf.drawString(50, y, f"Documento:")
-        pdf.drawString(200, y, cliente.documento)
-        y -= 20
+        draw.text((80, y), "Monto Prestado:", fill='#4b5563', font=font_label)
+        draw.text((80, y+55), f"{prestamo.moneda} ${prestamo.monto_prestado:,.0f}", fill='#059669', font=font_big)
+        y += 150
         
-        pdf.drawString(50, y, f"Teléfono:")
-        pdf.drawString(200, y, cliente.telefono)
-        y -= 35
+        draw.text((80, y), f"Tasa de Interés: {prestamo.tasa_interes:.0f}%", fill='#4b5563', font=font_label)
+        y += 80
         
-        # Detalles del crédito (con fondo)
-        pdf.setFillColorRGB(0.4, 0.4, 0.9)
-        pdf.rect(40, y - 10, width - 80, 120, fill=True, stroke=False)
-        
-        pdf.setFillColorRGB(1, 1, 1)
-        pdf.setFont("Helvetica-Bold", 14)
-        pdf.drawString(50, y, "DETALLES DEL CRÉDITO")
-        y -= 30
-        
-        pdf.setFont("Helvetica-Bold", 12)
-        pdf.drawString(50, y, "Monto Prestado:")
-        pdf.setFont("Helvetica-Bold", 16)
-        pdf.drawString(200, y, f"{prestamo.moneda} {prestamo.monto_prestado:,.0f}")
-        y -= 25
-        
-        pdf.setFont("Helvetica", 11)
-        pdf.drawString(50, y, "Tasa de Interés:")
-        pdf.setFont("Helvetica-Bold", 12)
-        pdf.drawString(200, y, f"{prestamo.tasa_interes:.0f}%")
-        y -= 20
-        
-        pdf.setFont("Helvetica-Bold", 12)
-        pdf.drawString(50, y, "TOTAL A PAGAR:")
-        pdf.setFont("Helvetica-Bold", 16)
-        pdf.setFillColorRGB(1, 1, 0.6)
-        pdf.drawString(200, y, f"{prestamo.moneda} {prestamo.monto_a_pagar:,.0f}")
-        y -= 35
+        draw.text((80, y), "TOTAL A PAGAR:", fill='#dc2626', font=font_value)
+        draw.text((80, y+55), f"{prestamo.moneda} ${prestamo.monto_a_pagar:,.0f}", fill='#dc2626', font=font_big)
+        y += 200
         
         # Plan de pago
-        pdf.setFillColorRGB(0, 0, 0)
-        pdf.setFont("Helvetica-Bold", 14)
-        pdf.drawString(50, y, "PLAN DE PAGO")
-        y -= 25
+        draw.text((80, y), "PLAN DE PAGO", fill='#1e3c72', font=font_header)
+        y += 80
+        draw.rectangle([50, y, width-50, y+350], outline='#60a5fa', width=3)
+        y += 30
         
-        pdf.setFont("Helvetica", 11)
-        pdf.drawString(50, y, f"Frecuencia de Pago:")
-        pdf.drawString(200, y, prestamo.frecuencia)
-        y -= 20
-        
-        pdf.drawString(50, y, f"Número de Cuotas:")
-        pdf.drawString(200, y, str(prestamo.numero_cuotas))
-        y -= 20
-        
-        pdf.setFont("Helvetica-Bold", 12)
-        pdf.drawString(50, y, f"Valor por Cuota:")
-        pdf.setFillColorRGB(0, 0.5, 0)
-        pdf.setFont("Helvetica-Bold", 14)
-        pdf.drawString(200, y, f"{prestamo.moneda} {prestamo.valor_cuota:,.0f}")
-        y -= 20
-        
-        pdf.setFillColorRGB(0, 0, 0)
-        pdf.setFont("Helvetica", 11)
-        pdf.drawString(50, y, f"Fecha Estimada de Fin:")
-        pdf.drawString(200, y, prestamo.fecha_fin_estimada.strftime('%d/%m/%Y'))
-        y -= 35
+        draw.text((80, y), f"Frecuencia: {prestamo.frecuencia}", fill='#4b5563', font=font_label)
+        y += 70
+        draw.text((80, y), f"Número de Cuotas: {prestamo.numero_cuotas}", fill='#4b5563', font=font_label)
+        y += 70
+        draw.text((80, y), "Valor por Cuota:", fill='#4b5563', font=font_label)
+        draw.text((80, y+55), f"{prestamo.moneda} ${prestamo.valor_cuota:,.0f}", fill='#059669', font=font_big)
+        y += 140
+        draw.text((80, y), f"Fecha de Fin: {prestamo.fecha_fin_estimada.strftime('%d/%m/%Y')}", fill='#4b5563', font=font_label)
+        y += 120
         
         # Información adicional
-        pdf.setFont("Helvetica-Bold", 12)
-        pdf.drawString(50, y, "Cobrador Asignado:")
-        pdf.setFont("Helvetica", 11)
-        pdf.drawString(200, y, cobrador.nombre)
-        y -= 20
-        
-        pdf.drawString(50, y, "Estado del Crédito:")
-        pdf.setFillColorRGB(0, 0.5, 0)
-        pdf.setFont("Helvetica-Bold", 11)
-        pdf.drawString(200, y, "ACTIVO")
+        draw.text((80, y), f"Cobrador: {cobrador.nombre}", fill='#6b7280', font=font_small)
+        y += 60
+        draw.text((80, y), f"Estado: ACTIVO", fill='#059669', font=font_value)
+        y += 100
         
         # Pie de página
-        pdf.setFillColorRGB(0, 0, 0)
-        pdf.line(50, 100, width - 50, 100)
-        pdf.setFont("Helvetica", 9)
-        pdf.drawString(50, 80, f"Generado el: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
-        pdf.drawString(50, 65, f"Registrado por: {session.get('nombre')}")
-        pdf.drawCentredString(width / 2, 45, "¡Gracias por confiar en DIAMANTE PRO!")
+        draw.line([50, y, width-50, y], fill='#d1d5db', width=2)
+        y += 30
+        draw.text((width//2, y), f"Generado: {datetime.now().strftime('%d/%m/%Y %H:%M')}", fill='#9ca3af', font=font_small, anchor='mm')
+        y += 50
+        draw.text((width//2, y), "¡Gracias por confiar en DIAMANTE PRO!", fill='#1e3c72', font=font_label, anchor='mm')
         
-        pdf.save()
+        # Guardar en buffer
+        buffer = BytesIO()
+        img.save(buffer, format='PNG', quality=95)
         buffer.seek(0)
         
         return send_file(
             buffer,
-            mimetype='application/pdf',
+            mimetype='image/png',
             as_attachment=True,
-            download_name=f'Comprobante_Credito_{prestamo.id}_{cliente.nombre.replace(" ", "_")}.pdf'
+            download_name=f'Comprobante_Credito_{prestamo.id}_{cliente.nombre.replace(" ", "_")}.png'
         )
 
     # ==================== COBRO ====================
@@ -682,8 +665,8 @@ Gracias por su pago!"""
                              nombre=session.get('nombre'),
                              rol=session.get('rol'))
     
-    @app.route('/cobro/recibo-pdf/<int:pago_id>')
-    def cobro_recibo_pdf(pago_id):
+    @app.route('/cobro/recibo-imagen/<int:pago_id>')
+    def cobro_recibo_imagen(pago_id):
         if 'usuario_id' not in session:
             return redirect(url_for('home'))
         
@@ -691,120 +674,101 @@ Gracias por su pago!"""
         prestamo = pago.prestamo
         cliente = prestamo.cliente
         
-        # Crear PDF en memoria
-        buffer = BytesIO()
-        pdf = canvas.Canvas(buffer, pagesize=letter)
-        width, height = letter
+        # Crear imagen en memoria (1080x1680 - Formato para recibo)
+        width, height = 1080, 1680
+        img = Image.new('RGB', (width, height), color='white')
+        draw = ImageDraw.Draw(img)
         
-        # Encabezado
-        pdf.setFont("Helvetica-Bold", 20)
-        pdf.drawString(50, height - 50, "DIAMANTE PRO")
-        pdf.setFont("Helvetica", 10)
-        pdf.drawString(50, height - 70, "Sistema de Gestión de Préstamos")
+        # Usar fuentes del sistema
+        try:
+            font_title = ImageFont.truetype("arial.ttf", 70)
+            font_subtitle = ImageFont.truetype("arial.ttf", 38)
+            font_header = ImageFont.truetype("arialbd.ttf", 48)
+            font_label = ImageFont.truetype("arial.ttf", 36)
+            font_value = ImageFont.truetype("arialbd.ttf", 40)
+            font_big = ImageFont.truetype("arialbd.ttf", 60)
+            font_small = ImageFont.truetype("arial.ttf", 30)
+        except:
+            font_title = ImageFont.load_default()
+            font_subtitle = ImageFont.load_default()
+            font_header = ImageFont.load_default()
+            font_label = ImageFont.load_default()
+            font_value = ImageFont.load_default()
+            font_big = ImageFont.load_default()
+            font_small = ImageFont.load_default()
         
-        # Título
-        pdf.setFont("Helvetica-Bold", 16)
-        pdf.drawString(200, height - 120, "RECIBO DE PAGO")
+        # Encabezado verde (pago exitoso)
+        draw.rectangle([0, 0, width, 220], fill='#059669')
+        draw.text((width//2, 70), "💎 DIAMANTE PRO", fill='white', font=font_title, anchor='mm')
+        draw.text((width//2, 140), "RECIBO DE PAGO", fill='white', font=font_subtitle, anchor='mm')
+        draw.text((width//2, 190), f"Recibo #{pago.id} - {pago.fecha_pago.strftime('%d/%m/%Y %H:%M')}", fill='#d1fae5', font=font_subtitle, anchor='mm')
         
-        pdf.setFont("Helvetica", 11)
-        pdf.drawString(450, height - 120, f"#{pago.id}")
-        
-        # Línea divisoria
-        pdf.line(50, height - 130, width - 50, height - 130)
+        y = 280
         
         # Información del cliente
-        y = height - 170
-        pdf.setFont("Helvetica-Bold", 12)
-        pdf.drawString(50, y, "INFORMACIÓN DEL CLIENTE")
-        y -= 25
+        draw.text((80, y), "CLIENTE", fill='#059669', font=font_header)
+        y += 70
+        draw.rectangle([50, y, width-50, y+180], outline='#10b981', width=3)
+        y += 25
+        draw.text((80, y), cliente.nombre.upper(), fill='#111827', font=font_value)
+        y += 60
+        draw.text((80, y), f"Doc: {cliente.documento}  |  Tel: {cliente.telefono}", fill='#6b7280', font=font_label)
+        y += 120
         
-        pdf.setFont("Helvetica", 11)
-        pdf.drawString(50, y, f"Nombre:")
-        pdf.drawString(200, y, cliente.nombre)
-        y -= 20
+        # Información del crédito
+        draw.text((80, y), f"Crédito #{prestamo.id}", fill='#6b7280', font=font_label)
+        y += 100
         
-        pdf.drawString(50, y, f"Documento:")
-        pdf.drawString(200, y, cliente.documento)
-        y -= 20
+        # Monto recibido (destacado)
+        draw.rectangle([0, y, width, y+200], fill='#d1fae5')
+        y += 50
+        draw.text((width//2, y), "MONTO RECIBIDO", fill='#059669', font=font_header, anchor='mm')
+        y += 80
+        draw.text((width//2, y), f"{prestamo.moneda} ${pago.monto:,.0f}", fill='#047857', font=font_big, anchor='mm')
+        y += 150
         
-        pdf.drawString(50, y, f"Teléfono:")
-        pdf.drawString(200, y, cliente.telefono)
-        y -= 35
+        # Saldos
+        draw.text((80, y), "Saldo Anterior:", fill='#6b7280', font=font_label)
+        draw.text((width-80, y), f"{prestamo.moneda} ${pago.saldo_anterior:,.0f}", fill='#6b7280', font=font_value, anchor='rm')
+        y += 70
         
-        # Información del préstamo
-        pdf.setFont("Helvetica-Bold", 12)
-        pdf.drawString(50, y, "INFORMACIÓN DEL CRÉDITO")
-        y -= 25
-        
-        pdf.setFont("Helvetica", 11)
-        pdf.drawString(50, y, f"Crédito #:")
-        pdf.drawString(200, y, str(prestamo.id))
-        y -= 20
-        
-        pdf.drawString(50, y, f"Fecha de Pago:")
-        pdf.drawString(200, y, pago.fecha_pago.strftime('%d/%m/%Y %H:%M'))
-        y -= 35
-        
-        # Detalles del pago (con fondo)
-        pdf.setFillColorRGB(0.95, 0.95, 0.95)
-        pdf.rect(40, y - 10, width - 80, 90, fill=True, stroke=False)
-        
-        pdf.setFillColorRGB(0, 0, 0)
-        pdf.setFont("Helvetica-Bold", 12)
-        pdf.drawString(50, y, "DETALLES DEL PAGO")
-        y -= 25
-        
-        pdf.setFont("Helvetica-Bold", 11)
-        pdf.drawString(50, y, f"Monto Recibido:")
-        pdf.setFillColorRGB(0, 0.5, 0)
-        pdf.setFont("Helvetica-Bold", 14)
-        pdf.drawString(200, y, f"{prestamo.moneda} {pago.monto:,.0f}")
-        y -= 25
-        
-        pdf.setFillColorRGB(0, 0, 0)
-        pdf.setFont("Helvetica", 11)
-        pdf.drawString(50, y, f"Saldo Anterior:")
-        pdf.drawString(200, y, f"{prestamo.moneda} {pago.saldo_anterior:,.0f}")
-        y -= 20
-        
-        pdf.setFont("Helvetica-Bold", 11)
-        pdf.drawString(50, y, f"Saldo Nuevo:")
-        pdf.setFillColorRGB(0, 0, 0.8)
-        pdf.setFont("Helvetica-Bold", 14)
-        pdf.drawString(200, y, f"{prestamo.moneda} {pago.saldo_nuevo:,.0f}")
-        y -= 35
+        draw.text((80, y), "Saldo Nuevo:", fill='#1e40af', font=font_value)
+        draw.text((width-80, y), f"{prestamo.moneda} ${pago.saldo_nuevo:,.0f}", fill='#1e40af', font=font_big, anchor='rm')
+        y += 100
         
         # Cuotas
-        pdf.setFillColorRGB(0, 0, 0)
-        pdf.setFont("Helvetica", 11)
-        pdf.drawString(50, y, f"Cuotas Pagadas:")
-        pdf.drawString(200, y, f"{prestamo.cuotas_pagadas} / {prestamo.numero_cuotas}")
-        y -= 30
+        draw.line([50, y, width-50, y], fill='#d1d5db', width=2)
+        y += 40
+        draw.text((80, y), f"Cuotas Pagadas: {prestamo.cuotas_pagadas} / {prestamo.numero_cuotas}", fill='#4b5563', font=font_label)
+        y += 80
         
         # Observaciones si existen
         if pago.observaciones:
-            pdf.setFont("Helvetica-Bold", 11)
-            pdf.drawString(50, y, "Observaciones:")
-            y -= 20
-            pdf.setFont("Helvetica-Oblique", 10)
-            pdf.drawString(50, y, pago.observaciones[:80])
-            y -= 30
+            draw.text((80, y), "Observaciones:", fill='#6b7280', font=font_label)
+            y += 50
+            # Limitar texto de observaciones
+            obs_text = pago.observaciones[:100] + "..." if len(pago.observaciones) > 100 else pago.observaciones
+            draw.text((80, y), obs_text, fill='#6b7280', font=font_small)
+            y += 80
         
         # Pie de página
-        pdf.line(50, 100, width - 50, 100)
-        pdf.setFont("Helvetica", 9)
-        pdf.drawString(50, 80, f"Generado el: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
-        pdf.drawString(50, 65, f"Cobrador: {session.get('nombre')}")
-        pdf.drawString(width - 200, 65, "¡Gracias por su pago!")
+        y = height - 150
+        draw.line([50, y, width-50, y], fill='#d1d5db', width=2)
+        y += 40
+        draw.text((width//2, y), f"Cobrador: {session.get('nombre')}", fill='#9ca3af', font=font_small, anchor='mm')
+        y += 50
+        draw.text((width//2, y), "¡Gracias por su pago!", fill='#059669', font=font_value, anchor='mm')
         
-        pdf.save()
+        # Guardar en buffer
+        buffer = BytesIO()
+        img.save(buffer, format='PNG', quality=95)
         buffer.seek(0)
         
         return send_file(
             buffer,
-            mimetype='application/pdf',
+            mimetype='image/png',
             as_attachment=True,
-            download_name=f'Recibo_Pago_{pago.id}_{cliente.nombre.replace(" ", "_")}.pdf'
+            download_name=f'Recibo_Pago_{pago.id}_{cliente.nombre.replace(" ", "_")}.png'
         )
 
     # ==================== REPORTES ====================
@@ -1230,13 +1194,30 @@ Gracias por su pago!"""
             return redirect(url_for('usuarios_lista'))
 
     # ==================== REPORTES PDF ====================
+    @app.route('/reporte/seleccionar-cobrador')
+    def reporte_seleccionar_cobrador():
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        # Solo secretaria, gerente, supervisor y dueño pueden acceder
+        if session.get('rol') not in ['secretaria', 'gerente', 'supervisor', 'dueno']:
+            return redirect(url_for('dashboard'))
+        
+        # Obtener lista de cobradores
+        cobradores = Usuario.query.filter(Usuario.rol.in_(['cobrador', 'supervisor'])).all()
+        
+        return render_template('reporte_seleccionar_cobrador.html',
+                             cobradores=cobradores,
+                             nombre=session.get('nombre'),
+                             rol=session.get('rol'))
+    
     @app.route('/reporte/cuadre-pdf')
     def reporte_cuadre_pdf():
         if 'usuario_id' not in session:
             return redirect(url_for('home'))
         
-        # Solo secretaria, gerente y dueño pueden descargar
-        if session.get('rol') not in ['secretaria', 'gerente', 'dueno']:
+        # Solo secretaria, gerente, supervisor y dueño pueden descargar
+        if session.get('rol') not in ['secretaria', 'gerente', 'supervisor', 'dueno']:
             return redirect(url_for('dashboard'))
         
         # Obtener fecha (hoy por defecto)
@@ -1247,22 +1228,30 @@ Gracias por su pago!"""
         fecha_inicio = fecha.replace(hour=0, minute=0, second=0)
         fecha_fin = fecha.replace(hour=23, minute=59, second=59)
         
-        # Usuario actual
-        usuario = Usuario.query.get(session.get('usuario_id'))
+        # Determinar el cobrador a consultar
+        # Si se especifica cobrador_id en la URL, usar ese; sino usar el usuario actual
+        cobrador_id = request.args.get('cobrador_id', type=int)
+        if cobrador_id:
+            usuario = Usuario.query.get(cobrador_id)
+            if not usuario:
+                return "Cobrador no encontrado", 404
+        else:
+            usuario = Usuario.query.get(session.get('usuario_id'))
         
-        # ABONOS (pagos recibidos hoy)
+        # ABONOS (pagos recibidos hoy del cobrador seleccionado)
         pagos_hoy = Pago.query.filter(
             Pago.fecha_pago >= fecha_inicio,
             Pago.fecha_pago <= fecha_fin,
-            Pago.cobrador_id == session.get('usuario_id')
+            Pago.cobrador_id == usuario.id
         ).all()
         
         total_abonos = sum(p.monto for p in pagos_hoy)
         
-        # DESEMBOLSOS (préstamos creados hoy)
+        # DESEMBOLSOS (préstamos creados hoy por el cobrador seleccionado)
         prestamos_hoy = Prestamo.query.filter(
             Prestamo.fecha_inicio >= fecha_inicio,
-            Prestamo.fecha_inicio <= fecha_fin
+            Prestamo.fecha_inicio <= fecha_fin,
+            Prestamo.cobrador_id == usuario.id
         ).all()
         
         total_desembolsos = sum(p.monto_prestado for p in prestamos_hoy)
@@ -1270,16 +1259,29 @@ Gracias por su pago!"""
         # TOTAL CAJA
         total_caja = total_abonos - total_desembolsos
         
-        # GASTOS Y MOVIMIENTOS (ejemplo - puedes agregar una tabla de gastos)
-        gastos = []
+        # GASTOS del día del cobrador
+        gastos = Transaccion.query.filter(
+            Transaccion.fecha >= fecha_inicio,
+            Transaccion.fecha <= fecha_fin,
+            Transaccion.naturaleza == 'EGRESO',
+            Transaccion.usuario_origen_id == usuario.id
+        ).all()
         
-        # CLIENTES SIN PAGO (préstamos activos que debían pagar hoy y no pagaron)
-        prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO').all()
+        # CLIENTES SIN PAGO (préstamos activos del cobrador que no pagaron hoy)
+        # Obtener los IDs de préstamos que SÍ pagaron hoy
+        prestamos_que_pagaron_hoy = [p.prestamo_id for p in pagos_hoy]
+        
+        # Préstamos activos del cobrador que NO pagaron hoy y tienen frecuencia DIARIO o BISEMANAL
+        prestamos_activos = Prestamo.query.filter(
+            Prestamo.estado == 'ACTIVO',
+            Prestamo.cobrador_id == usuario.id,
+            Prestamo.frecuencia.in_(['DIARIO', 'BISEMANAL'])
+        ).all()
+        
         clientes_sin_pago = []
-        
         for prestamo in prestamos_activos:
-            # Si tiene cuotas atrasadas
-            if prestamo.cuotas_atrasadas and prestamo.cuotas_atrasadas > 0:
+            # Si NO pagó hoy
+            if prestamo.id not in prestamos_que_pagaron_hoy:
                 clientes_sin_pago.append({
                     'numero': prestamo.id,
                     'cliente': prestamo.cliente.nombre,
@@ -1326,10 +1328,14 @@ Gracias por su pago!"""
         # GASTOS Y MOVIMIENTOS
         elements.append(Paragraph("<b>GASTOS Y MOVIMIENTOS</b>", styles['Heading2']))
         if gastos:
-            gastos_data = [['OBSERVACIÓN', 'VALOR ($)']]
+            gastos_data = [['CONCEPTO', 'DESCRIPCIÓN', 'VALOR ($)']]
             for gasto in gastos:
-                gastos_data.append([gasto['observacion'], f"${gasto['valor']:,.2f}"])
-            gastos_table = Table(gastos_data, colWidths=[4*inch, 2*inch])
+                gastos_data.append([
+                    gasto.concepto or 'Sin concepto',
+                    gasto.descripcion[:40] + '...' if gasto.descripcion and len(gasto.descripcion) > 40 else (gasto.descripcion or ''),
+                    f"${gasto.monto:,.2f}"
+                ])
+            gastos_table = Table(gastos_data, colWidths=[1.5*inch, 2.5*inch, 1.5*inch])
             gastos_table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
@@ -1575,6 +1581,112 @@ Gracias por su pago!"""
                              efectivo_esperado=efectivo_esperado,
                              fecha=fecha.strftime('%Y-%m-%d'),
                              fecha_display=fecha.strftime('%d/%m/%Y'),
+                             nombre=session.get('nombre'),
+                             rol=session.get('rol'))
+    
+    # ==================== TRASLADOS ENTRE RUTAS ====================
+    @app.route('/traslados')
+    def traslados_lista():
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        # Solo dueño, gerente, supervisor y secretaria pueden ver traslados
+        if session.get('rol') not in ['dueno', 'gerente', 'supervisor', 'secretaria']:
+            return redirect(url_for('dashboard'))
+        
+        # Obtener traslados (transacciones de tipo TRASLADO)
+        traslados = Transaccion.query.filter(
+            Transaccion.concepto.like('TRASLADO%')
+        ).order_by(Transaccion.fecha.desc()).limit(50).all()
+        
+        return render_template('traslados_lista.html',
+                             traslados=traslados,
+                             nombre=session.get('nombre'),
+                             rol=session.get('rol'))
+    
+    @app.route('/traslados/nuevo')
+    def traslados_nuevo():
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        # Solo dueño, gerente y supervisor pueden hacer traslados
+        if session.get('rol') not in ['dueno', 'gerente', 'supervisor']:
+            return redirect(url_for('dashboard'))
+        
+        # Obtener lista de cobradores
+        cobradores = Usuario.query.filter(Usuario.rol.in_(['cobrador', 'supervisor'])).all()
+        
+        return render_template('traslados_nuevo.html',
+                             cobradores=cobradores,
+                             fecha_hoy=datetime.now().strftime('%Y-%m-%d'),
+                             nombre=session.get('nombre'),
+                             rol=session.get('rol'))
+    
+    @app.route('/traslados/guardar', methods=['POST'])
+    def traslados_guardar():
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        if session.get('rol') not in ['dueno', 'gerente', 'supervisor']:
+            return redirect(url_for('dashboard'))
+        
+        try:
+            tipo_traslado = request.form.get('tipo_traslado')
+            cobrador_id = int(request.form.get('cobrador_id'))
+            monto = float(request.form.get('monto'))
+            descripcion = request.form.get('descripcion', '')
+            fecha = datetime.strptime(request.form.get('fecha'), '%Y-%m-%d')
+            
+            usuario_id = session.get('usuario_id')
+            
+            # Crear transacción según el tipo
+            if tipo_traslado == 'general_a_ruta':
+                # Salida de caja general (naturaleza EGRESO para caja general)
+                transaccion = Transaccion(
+                    naturaleza='TRASLADO',
+                    concepto='TRASLADO A RUTA',
+                    descripcion=f'Traslado a ruta de cobrador. {descripcion}',
+                    monto=monto,
+                    fecha=fecha,
+                    usuario_origen_id=usuario_id,  # Quien hace el traslado (admin/supervisor)
+                    usuario_destino_id=cobrador_id  # Cobrador que recibe
+                )
+            else:  # ruta_a_general
+                # Entrada a caja general (naturaleza INGRESO para caja general)
+                transaccion = Transaccion(
+                    naturaleza='TRASLADO',
+                    concepto='TRASLADO DE RUTA',
+                    descripcion=f'Devolución de ruta de cobrador. {descripcion}',
+                    monto=monto,
+                    fecha=fecha,
+                    usuario_origen_id=cobrador_id,  # Cobrador que entrega
+                    usuario_destino_id=usuario_id  # Quien recibe (admin/supervisor)
+                )
+            
+            db.session.add(transaccion)
+            db.session.commit()
+            
+            return redirect(url_for('traslados_exito', traslado_id=transaccion.id))
+        
+        except Exception as e:
+            db.session.rollback()
+            cobradores = Usuario.query.filter(Usuario.rol.in_(['cobrador', 'supervisor'])).all()
+            return render_template('traslados_nuevo.html',
+                                 cobradores=cobradores,
+                                 fecha_hoy=datetime.now().strftime('%Y-%m-%d'),
+                                 error=f'Error al registrar traslado: {str(e)}',
+                                 nombre=session.get('nombre'),
+                                 rol=session.get('rol'))
+    
+    @app.route('/traslados/exito/<int:traslado_id>')
+    def traslados_exito(traslado_id):
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        traslado = Transaccion.query.get_or_404(traslado_id)
+        
+        return render_template('traslados_exito.html',
+                             traslado=traslado,
                              nombre=session.get('nombre'),
                              rol=session.get('rol'))
 
