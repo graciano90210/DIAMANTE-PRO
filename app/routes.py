@@ -1403,6 +1403,181 @@ Gracias por su pago!"""
         
         return response
 
+    # ==================== MÓDULO DE CAJA/FINANZAS ====================
+    @app.route('/caja')
+    def caja_inicio():
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        usuario_id = session.get('usuario_id')
+        rol = session.get('rol')
+        
+        # Obtener fecha actual
+        hoy = datetime.now().date()
+        
+        # Calcular ingresos del día (pagos recibidos)
+        if rol == 'cobrador':
+            pagos_hoy = Pago.query.join(Prestamo).filter(
+                func.date(Pago.fecha_pago) == hoy,
+                Prestamo.cobrador_id == usuario_id
+            ).all()
+        else:
+            pagos_hoy = Pago.query.filter(func.date(Pago.fecha_pago) == hoy).all()
+        
+        total_cobrado_hoy = sum(p.monto for p in pagos_hoy)
+        
+        # Calcular gastos del día
+        if rol == 'cobrador':
+            gastos_hoy = Transaccion.query.filter(
+                func.date(Transaccion.fecha) == hoy,
+                Transaccion.usuario_origen_id == usuario_id
+            ).all()
+        else:
+            gastos_hoy = Transaccion.query.filter(func.date(Transaccion.fecha) == hoy).all()
+        
+        total_gastos_hoy = sum(g.monto for g in gastos_hoy)
+        
+        # Balance del día
+        balance_dia = total_cobrado_hoy - total_gastos_hoy
+        
+        # Estadísticas del mes
+        inicio_mes = datetime(hoy.year, hoy.month, 1)
+        
+        if rol == 'cobrador':
+            pagos_mes = Pago.query.join(Prestamo).filter(
+                Pago.fecha_pago >= inicio_mes,
+                Prestamo.cobrador_id == usuario_id
+            ).all()
+            gastos_mes = Transaccion.query.filter(
+                Transaccion.fecha >= inicio_mes,
+                Transaccion.usuario_origen_id == usuario_id
+            ).all()
+        else:
+            pagos_mes = Pago.query.filter(Pago.fecha_pago >= inicio_mes).all()
+            gastos_mes = Transaccion.query.filter(Transaccion.fecha >= inicio_mes).all()
+        
+        total_cobrado_mes = sum(p.monto for p in pagos_mes)
+        total_gastos_mes = sum(g.monto for g in gastos_mes)
+        balance_mes = total_cobrado_mes - total_gastos_mes
+        
+        return render_template('caja_inicio.html',
+                             total_cobrado_hoy=total_cobrado_hoy,
+                             total_gastos_hoy=total_gastos_hoy,
+                             balance_dia=balance_dia,
+                             num_pagos_hoy=len(pagos_hoy),
+                             num_gastos_hoy=len(gastos_hoy),
+                             total_cobrado_mes=total_cobrado_mes,
+                             total_gastos_mes=total_gastos_mes,
+                             balance_mes=balance_mes,
+                             fecha_hoy=hoy.strftime('%d/%m/%Y'),
+                             nombre=session.get('nombre'),
+                             rol=session.get('rol'))
+    
+    @app.route('/caja/gastos')
+    def caja_gastos():
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        usuario_id = session.get('usuario_id')
+        rol = session.get('rol')
+        
+        # Filtrar gastos según el rol
+        if rol == 'cobrador':
+            gastos = Transaccion.query.filter_by(usuario_origen_id=usuario_id).order_by(Transaccion.fecha.desc()).all()
+        else:
+            gastos = Transaccion.query.order_by(Transaccion.fecha.desc()).all()
+        
+        return render_template('caja_gastos.html',
+                             gastos=gastos,
+                             nombre=session.get('nombre'),
+                             rol=session.get('rol'))
+    
+    @app.route('/caja/gastos/nuevo')
+    def caja_gastos_nuevo():
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        return render_template('caja_gastos_nuevo.html',
+                             fecha_hoy=datetime.now().strftime('%Y-%m-%d'),
+                             nombre=session.get('nombre'),
+                             rol=session.get('rol'))
+    
+    @app.route('/caja/gastos/guardar', methods=['POST'])
+    def caja_gastos_guardar():
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        try:
+            nueva_transaccion = Transaccion(
+                naturaleza='EGRESO',
+                concepto=request.form.get('concepto'),
+                descripcion=request.form.get('descripcion'),
+                monto=float(request.form.get('monto')),
+                fecha=datetime.strptime(request.form.get('fecha'), '%Y-%m-%d'),
+                usuario_origen_id=session.get('usuario_id')
+            )
+            
+            db.session.add(nueva_transaccion)
+            db.session.commit()
+            
+            return redirect(url_for('caja_gastos', mensaje='Gasto registrado exitosamente'))
+        
+        except Exception as e:
+            db.session.rollback()
+            return render_template('caja_gastos_nuevo.html',
+                                 fecha_hoy=datetime.now().strftime('%Y-%m-%d'),
+                                 error=f'Error al guardar: {str(e)}',
+                                 nombre=session.get('nombre'),
+                                 rol=session.get('rol'))
+    
+    @app.route('/caja/cuadre')
+    def caja_cuadre():
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        usuario_id = session.get('usuario_id')
+        rol = session.get('rol')
+        
+        # Obtener fecha del filtro o usar hoy
+        fecha_str = request.args.get('fecha', datetime.now().strftime('%Y-%m-%d'))
+        fecha = datetime.strptime(fecha_str, '%Y-%m-%d').date()
+        
+        # Obtener pagos del día
+        if rol == 'cobrador':
+            pagos = Pago.query.join(Prestamo).join(Cliente).filter(
+                func.date(Pago.fecha_pago) == fecha,
+                Prestamo.cobrador_id == usuario_id
+            ).all()
+        else:
+            pagos = Pago.query.join(Prestamo).join(Cliente).filter(
+                func.date(Pago.fecha_pago) == fecha
+            ).all()
+        
+        # Obtener gastos del día
+        if rol == 'cobrador':
+            gastos = Transaccion.query.filter(
+                func.date(Transaccion.fecha) == fecha,
+                Transaccion.usuario_origen_id == usuario_id
+            ).all()
+        else:
+            gastos = Transaccion.query.filter(func.date(Transaccion.fecha) == fecha).all()
+        
+        # Calcular totales
+        total_ingresos = sum(p.monto for p in pagos)
+        total_gastos = sum(g.monto for g in gastos)
+        efectivo_esperado = total_ingresos - total_gastos
+        
+        return render_template('caja_cuadre.html',
+                             pagos=pagos,
+                             gastos=gastos,
+                             total_ingresos=total_ingresos,
+                             total_gastos=total_gastos,
+                             efectivo_esperado=efectivo_esperado,
+                             fecha=fecha.strftime('%Y-%m-%d'),
+                             fecha_display=fecha.strftime('%d/%m/%Y'),
+                             nombre=session.get('nombre'),
+                             rol=session.get('rol'))
+
     @app.route('/estado')
     def estado():
         return {"estado": "OK", "version": "1.0"}

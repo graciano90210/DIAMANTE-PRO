@@ -106,3 +106,7 @@ class Transaccion(db.Model):
     usuario_destino_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True)
     prestamo_id = db.Column(db.Integer, db.ForeignKey('prestamos.id'), nullable=True)
     foto_evidencia = db.Column(db.String(300))
+    
+    # Relaciones
+    usuario_origen = db.relationship('Usuario', foreign_keys=[usuario_origen_id], backref='transacciones_origen')
+    usuario_destino = db.relationship('Usuario', foreign_keys=[usuario_destino_id], backref='transacciones_destino')

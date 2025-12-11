@@ -274,6 +274,23 @@
             </div>
         </div>
 
+        <!-- Módulo de Caja -->
+        <div class="row g-4 mt-2">
+            <div class="col-12">
+                <h4 class="mb-3 fw-bold">💰 Control de Caja</h4>
+            </div>
+            <div class="col-md-4">
+                <div class="card menu-card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="menu-icon mb-3"><i class="bi bi-calculator"></i></div>
+                        <h5 class="fw-bold" style="color: #1f2937;">Módulo de Caja</h5>
+                        <p class="text-muted small">Control de ingresos y gastos</p>
+                        <a href="/caja" class="btn btn-danger px-4">Ver Caja</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Administración (solo para dueños y gerentes) -->
         {% if rol in ['dueno', 'gerente'] %}
         <div class="row g-4 mt-2">
