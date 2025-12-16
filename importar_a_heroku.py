@@ -29,6 +29,7 @@ with app.app_context():
     
     # 1. Usuarios (actualizar existentes o crear nuevos)
     print("\n👤 Importando usuarios...")
+    id_mapping_usuarios = {}
     for u_data in datos['usuarios']:
         usuario = Usuario.query.filter_by(usuario=u_data['usuario']).first()
         if not usuario:
@@ -40,6 +41,8 @@ with app.app_context():
                 activo=u_data.get('activo', True)
             )
             db.session.add(usuario)
+            db.session.flush()
+        id_mapping_usuarios[u_data['id']] = usuario.id
     db.session.commit()
     print(f"  ✅ {len(datos['usuarios'])} usuarios")
     
@@ -61,9 +64,10 @@ with app.app_context():
     print("\n🚗 Importando rutas...")
     id_mapping_rutas = {}
     for r_data in datos['rutas']:
+        cobrador_id_nuevo = id_mapping_usuarios.get(r_data.get('cobrador_id'))
         ruta = Ruta(
             nombre=r_data['nombre'],
-            cobrador_id=r_data.get('cobrador_id'),
+            cobrador_id=cobrador_id_nuevo,
             sociedad_id=r_data.get('sociedad_id')
         )
         db.session.add(ruta)
@@ -111,7 +115,7 @@ with app.app_context():
         prestamo = Prestamo(
             cliente_id=cliente_id_nuevo,
             ruta_id=ruta_id_nuevo,
-            cobrador_id=p_data.get('cobrador_id'),
+            cobrador_id=id_mapping_usuarios.get(p_data.get('cobrador_id')),
             monto_prestado=p_data.get('monto_prestado', 0),
             tasa_interes=p_data.get('tasa_interes', 0),
             monto_a_pagar=p_data.get('monto_a_pagar', 0),
@@ -144,7 +148,7 @@ with app.app_context():
                 prestamo_id=prestamo_id_nuevo,
                 fecha_pago=parse_date(pg_data.get('fecha_pago')),
                 monto=pg_data.get('monto', 0),
-                cobrador_id=pg_data.get('cobrador_id'),
+                cobrador_id=id_mapping_usuarios.get(pg_data.get('cobrador_id')),
                 metodo_pago=pg_data.get('metodo_pago', 'efectivo'),
                 numero_recibo=pg_data.get('numero_recibo')
             )
