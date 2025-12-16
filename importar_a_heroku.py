@@ -95,10 +95,18 @@ with app.app_context():
     # 5. Préstamos
     print("\n💰 Importando préstamos...")
     id_mapping_prestamos = {}
+    # Obtener la primera ruta como default para préstamos sin ruta
+    ruta_default = Ruta.query.first()
+    ruta_default_id = ruta_default.id if ruta_default else None
+    
     for p_data in datos['prestamos']:
         # Mapear cliente_id
         cliente_id_nuevo = id_mapping_clientes.get(p_data.get('cliente_id'))
         ruta_id_nuevo = id_mapping_rutas.get(p_data.get('ruta_id'))
+        
+        # Si no tiene ruta, usar la ruta default
+        if not ruta_id_nuevo:
+            ruta_id_nuevo = ruta_default_id
         
         prestamo = Prestamo(
             cliente_id=cliente_id_nuevo,
