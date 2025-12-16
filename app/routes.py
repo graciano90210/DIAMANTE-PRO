@@ -1194,7 +1194,6 @@ Gracias por su pago!"""
             usuario = request.form.get('usuario')
             password = request.form.get('password')
             rol = request.form.get('rol')
-            grupo_operativo = request.form.get('grupo_operativo', 'PROPIO')
             
             # Validar que no exista el usuario
             usuario_existente = Usuario.query.filter_by(usuario=usuario).first()
@@ -1209,7 +1208,6 @@ Gracias por su pago!"""
                 usuario=usuario,
                 password=password,
                 rol=rol,
-                grupo_operativo=grupo_operativo,
                 activo=True
             )
             
@@ -1253,7 +1251,6 @@ Gracias por su pago!"""
             
             usuario.nombre = request.form.get('nombre')
             usuario.rol = request.form.get('rol')
-            usuario.grupo_operativo = request.form.get('grupo_operativo', 'PROPIO')
             
             # Solo actualizar contraseña si se proporciona una nueva
             nueva_password = request.form.get('password')
