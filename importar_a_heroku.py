@@ -142,17 +142,26 @@ with app.app_context():
     for pg_data in datos['pagos']:
         # Mapear prestamo_id
         prestamo_id_nuevo = id_mapping_prestamos.get(pg_data.get('prestamo_id'))
+        cobrador_id_nuevo = id_mapping_usuarios.get(pg_data.get('cobrador_id'))
         
-        if prestamo_id_nuevo:
-            pago = Pago(
-                prestamo_id=prestamo_id_nuevo,
-                fecha_pago=parse_date(pg_data.get('fecha_pago')),
-                monto=pg_data.get('monto', 0),
-                cobrador_id=id_mapping_usuarios.get(pg_data.get('cobrador_id')),
-                metodo_pago=pg_data.get('metodo_pago', 'efectivo'),
-                numero_recibo=pg_data.get('numero_recibo')
-            )
-            db.session.add(pago)
+        if prestamo_id_nuevo and cobrador_id_nuevo:
+            # Obtener el préstamo para calcular saldo
+            prestamo = Prestamo.query.get(prestamo_id_nuevo)
+            if prestamo:
+                saldo_anterior = prestamo.saldo_actual
+                saldo_nuevo = saldo_anterior - pg_data.get('monto', 0)
+                
+                pago = Pago(
+                    prestamo_id=prestamo_id_nuevo,
+                    cobrador_id=cobrador_id_nuevo,
+                    monto=pg_data.get('monto', 0),
+                    saldo_anterior=saldo_anterior,
+                    saldo_nuevo=max(0, saldo_nuevo),
+                    fecha_pago=parse_date(pg_data.get('fecha_pago')),
+                    numero_cuotas_pagadas=1,
+                    tipo_pago='NORMAL'
+                )
+                db.session.add(pago)
     db.session.commit()
     print(f"  ✅ {len(datos['pagos'])} pagos")
     
