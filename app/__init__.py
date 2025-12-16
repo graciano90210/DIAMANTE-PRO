@@ -41,8 +41,11 @@ def create_app():
         }
     })
     
-    with app.app_context():
-        db.create_all()
+    # Solo crear tablas en desarrollo (SQLite)
+    # En producción (PostgreSQL), usar init_db_heroku.py
+    if not os.environ.get('DATABASE_URL'):
+        with app.app_context():
+            db.create_all()
     
     # Conectar rutas web
     from . import routes
