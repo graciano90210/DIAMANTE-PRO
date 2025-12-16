@@ -743,11 +743,12 @@ def init_routes(app):
         cliente = prestamo.cliente
         
         # Generar mensaje de WhatsApp simplificado
+        fecha_formato = pago.fecha_pago.strftime('%d/%m/%Y %H:%M')
         mensaje = f"""RECIBO DE PAGO - DIAMANTE PRO
 
 Credito: #{prestamo.id}
 Cliente: {cliente.nombre}
-Fecha: {pago.fecha_pago.strftime('%d/%m/%Y %H:%M')}
+Fecha: {fecha_formato}
 
 Monto Recibido: {prestamo.moneda} {pago.monto:,.0f}
 Saldo Anterior: {prestamo.moneda} {pago.saldo_anterior:,.0f}
@@ -758,7 +759,8 @@ Cuotas Pagadas: {prestamo.cuotas_pagadas}/{prestamo.numero_cuotas}
 Gracias por su pago!"""
         
         # Usar el número de WhatsApp completo (con código de país)
-        whatsapp_url = f"https://wa.me/{cliente.whatsapp_completo}?text={mensaje.replace(' ', '%20').replace('\n', '%0A')}"
+        mensaje_encoded = mensaje.replace(' ', '%20').replace('\n', '%0A')
+        whatsapp_url = f"https://wa.me/{cliente.whatsapp_completo}?text={mensaje_encoded}"
         
         return render_template('cobro_exito.html',
                              pago=pago,
