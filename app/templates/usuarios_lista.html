@@ -118,6 +118,20 @@
                             </div>
                         </div>
 
+                        {% if stat.usuario.rol == 'cobrador' %}
+                        <div class="mb-2">
+                            {% if stat.usuario.grupo_operativo == 'SOCIEDAD' %}
+                            <span class="badge bg-info text-dark">
+                                <i class="bi bi-people-fill"></i> SOCIEDAD
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary">
+                                <i class="bi bi-building"></i> PROPIO
+                            </span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
                         <div class="row text-center mb-3">
                             <div class="col-6">
                                 <h4 class="mb-0 text-primary">{{ stat.num_cobros }}</h4>

@@ -77,13 +77,22 @@
 
                         <div class="mb-3">
                             <label class="form-label fw-bold">Rol *</label>
-                            <select name="rol" class="form-select" required>
+                            <select name="rol" class="form-select" required id="rolSelect">
                                 {% if rol == 'dueno' %}
                                 <option value="dueno" {% if usuario.rol == 'dueno' %}selected{% endif %}>Dueño</option>
                                 {% endif %}
                                 <option value="gerente" {% if usuario.rol == 'gerente' %}selected{% endif %}>Gerente</option>
                                 <option value="cobrador" {% if usuario.rol == 'cobrador' %}selected{% endif %}>Cobrador</option>
                             </select>
+                        </div>
+
+                        <div class="mb-3" id="grupoOperativoDiv" {% if usuario.rol != 'cobrador' %}style="display: none;"{% endif %}>
+                            <label class="form-label fw-bold">Grupo Operativo *</label>
+                            <select name="grupo_operativo" class="form-select" id="grupoOperativoSelect">
+                                <option value="PROPIO" {% if usuario.grupo_operativo == 'PROPIO' %}selected{% endif %}>PROPIO - Rutas propias del dueño</option>
+                                <option value="SOCIEDAD" {% if usuario.grupo_operativo == 'SOCIEDAD' %}selected{% endif %}>SOCIEDAD - Rutas con socio/sociedad</option>
+                            </select>
+                            <small class="text-muted">Determina si esta ruta es operación propia o en sociedad</small>
                         </div>
 
                         <div class="mb-4">
@@ -112,5 +121,20 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    // Mostrar grupo operativo solo para cobradores
+    document.getElementById('rolSelect').addEventListener('change', function() {
+        const grupoDiv = document.getElementById('grupoOperativoDiv');
+        const grupoSelect = document.getElementById('grupoOperativoSelect');
+        
+        if (this.value === 'cobrador') {
+            grupoDiv.style.display = 'block';
+            grupoSelect.required = true;
+        } else {
+            grupoDiv.style.display = 'none';
+            grupoSelect.required = false;
+        }
+    });
+    </script>
 </body>
 </html>

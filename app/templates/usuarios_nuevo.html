@@ -76,9 +76,9 @@
                             <small class="text-muted">Mínimo 3 caracteres</small>
                         </div>
 
-                        <div class="mb-4">
+                        <div class="mb-3">
                             <label class="form-label fw-bold">Rol *</label>
-                            <select name="rol" class="form-select" required>
+                            <select name="rol" class="form-select" required id="rolSelect">
                                 <option value="">Seleccionar rol...</option>
                                 {% if rol == 'dueno' %}
                                 <option value="dueno">Dueño - Acceso total</option>
@@ -86,6 +86,15 @@
                                 <option value="gerente">Gerente - Gestión completa</option>
                                 <option value="cobrador">Cobrador - Solo cobros</option>
                             </select>
+                        </div>
+
+                        <div class="mb-4" id="grupoOperativoDiv" style="display: none;">
+                            <label class="form-label fw-bold">Grupo Operativo *</label>
+                            <select name="grupo_operativo" class="form-select" id="grupoOperativoSelect">
+                                <option value="PROPIO">PROPIO - Rutas propias del dueño</option>
+                                <option value="SOCIEDAD">SOCIEDAD - Rutas con socio/sociedad</option>
+                            </select>
+                            <small class="text-muted">Determina si esta ruta es operación propia o en sociedad</small>
                         </div>
 
                         <div class="alert alert-info mb-4">
@@ -112,5 +121,20 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    // Mostrar grupo operativo solo para cobradores
+    document.getElementById('rolSelect').addEventListener('change', function() {
+        const grupoDiv = document.getElementById('grupoOperativoDiv');
+        const grupoSelect = document.getElementById('grupoOperativoSelect');
+        
+        if (this.value === 'cobrador') {
+            grupoDiv.style.display = 'block';
+            grupoSelect.required = true;
+        } else {
+            grupoDiv.style.display = 'none';
+            grupoSelect.required = false;
+        }
+    });
+    </script>
 </body>
 </html>

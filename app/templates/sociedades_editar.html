@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Sociedad - Diamante Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/dashboard">
+                <i class="bi bi-gem"></i> DIAMANTE PRO
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="text-white me-3">
+                    <i class="bi bi-person-circle"></i> {{ nombre }}
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0"><i class="bi bi-pencil"></i> Editar Sociedad</h4>
+                    </div>
+                    <div class="card-body">
+                        {% if error %}
+                        <div class="alert alert-danger">{{ error }}</div>
+                        {% endif %}
+
+                        <form method="POST" action="/sociedades/actualizar/{{ sociedad.id }}">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Nombre de la Sociedad *</label>
+                                <input type="text" name="nombre" class="form-control" required 
+                                       value="{{ sociedad.nombre }}">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Nombre del Socio *</label>
+                                <input type="text" name="nombre_socio" class="form-control" required 
+                                       value="{{ sociedad.nombre_socio }}">
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Teléfono del Socio</label>
+                                    <input type="text" name="telefono_socio" class="form-control" 
+                                           value="{{ sociedad.telefono_socio or '' }}">
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Porcentaje del Socio (%) *</label>
+                                    <input type="number" name="porcentaje_socio" class="form-control" 
+                                           value="{{ sociedad.porcentaje_socio }}" min="0" max="100" step="0.1" required>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Notas / Observaciones</label>
+                                <textarea name="notas" class="form-control" rows="3">{{ sociedad.notas or '' }}</textarea>
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="activo" 
+                                           id="activo" {% if sociedad.activo %}checked{% endif %}>
+                                    <label class="form-check-label fw-bold" for="activo">
+                                        Sociedad Activa
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-check-circle"></i> Guardar Cambios
+                                </button>
+                                <a href="/sociedades" class="btn btn-outline-secondary">
+                                    Cancelar
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

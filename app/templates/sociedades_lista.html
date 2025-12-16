@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sociedades - Diamante Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+        }
+        .sociedad-card {
+            transition: transform 0.2s;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .sociedad-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 12px rgba(0,0,0,0.15);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/dashboard">
+                <i class="bi bi-gem"></i> DIAMANTE PRO
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="text-white me-3">
+                    <i class="bi bi-person-circle"></i> {{ nombre }}
+                    <span class="badge bg-light text-dark">{{ rol }}</span>
+                </span>
+                <a href="/dashboard" class="btn btn-light btn-sm">
+                    <i class="bi bi-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h2><i class="bi bi-people-fill"></i> Gestión de Sociedades</h2>
+                <p class="text-white">Administra tus sociedades con socios</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="/sociedades/nueva" class="btn btn-success">
+                    <i class="bi bi-plus-circle"></i> Nueva Sociedad
+                </a>
+            </div>
+        </div>
+
+        {% if stats_sociedades|length == 0 %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> No hay sociedades registradas. Crea una para empezar.
+        </div>
+        {% endif %}
+
+        <div class="row">
+            {% for stat in stats_sociedades %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card sociedad-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h5 class="mb-1">
+                                    {% if stat.sociedad.activo %}
+                                    <span class="text-success">●</span>
+                                    {% else %}
+                                    <span class="text-secondary">●</span>
+                                    {% endif %}
+                                    {{ stat.sociedad.nombre }}
+                                </h5>
+                                <p class="text-muted mb-0 small">
+                                    <i class="bi bi-person"></i> Socio: {{ stat.sociedad.nombre_socio }}
+                                </p>
+                            </div>
+                            <span class="badge bg-info">{{ stat.sociedad.porcentaje_socio }}%</span>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between">
+                                <small class="text-muted">Rutas asociadas:</small>
+                                <strong class="text-primary">{{ stat.num_rutas }}</strong>
+                            </div>
+                        </div>
+
+                        {% if stat.sociedad.telefono_socio %}
+                        <p class="text-muted small mb-2">
+                            <i class="bi bi-telephone"></i> {{ stat.sociedad.telefono_socio }}
+                        </p>
+                        {% endif %}
+
+                        <div class="d-flex gap-2 mt-3">
+                            <a href="/sociedades/editar/{{ stat.sociedad.id }}" class="btn btn-sm btn-outline-primary flex-fill">
+                                <i class="bi bi-pencil"></i> Editar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -67,7 +67,7 @@
                         <!-- Paso 1: Seleccionar Tipo de Traslado -->
                         <h5 class="mb-3">1. Selecciona el Tipo de Traslado</h5>
                         <div class="row mb-4">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="card tipo-traslado-card" onclick="seleccionarTipo('general_a_ruta')">
                                     <div class="card-body text-center">
                                         <i class="bi bi-arrow-down-circle text-success" style="font-size: 3rem;"></i>
@@ -76,12 +76,21 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="card tipo-traslado-card" onclick="seleccionarTipo('ruta_a_general')">
                                     <div class="card-body text-center">
                                         <i class="bi bi-arrow-up-circle text-danger" style="font-size: 3rem;"></i>
                                         <h5 class="mt-3">Ruta → Caja General</h5>
                                         <p class="text-muted">Recibir dinero de un cobrador al final del día</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card tipo-traslado-card" onclick="seleccionarTipo('ruta_a_ruta')">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-arrow-left-right text-info" style="font-size: 3rem;"></i>
+                                        <h5 class="mt-3">Ruta → Ruta</h5>
+                                        <p class="text-muted">Transferir dinero entre cobradores</p>
                                     </div>
                                 </div>
                             </div>
@@ -187,6 +196,67 @@
                                 </div>
                             </form>
                         </div>
+
+                        <div id="formulario-ruta-ruta" class="formulario-traslado">
+                            <h5 class="mb-3">2. Datos del Traslado (Ruta → Ruta)</h5>
+                            <form method="POST" action="/traslados/guardar">
+                                <input type="hidden" name="tipo_traslado" value="ruta_a_ruta">
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Fecha del Traslado *</label>
+                                        <input type="date" name="fecha" class="form-control" required value="{{ fecha_hoy }}">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Monto a Trasladar *</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" name="monto" class="form-control" required min="1" step="0.01">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Cobrador Origen (Entrega el Dinero) *</label>
+                                        <select name="cobrador_origen_id" class="form-select" required>
+                                            <option value="">-- Seleccione un cobrador --</option>
+                                            {% for cobrador in cobradores %}
+                                            <option value="{{ cobrador.id }}">{{ cobrador.nombre }} - {{ cobrador.rol|capitalize }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Cobrador Destino (Recibe el Dinero) *</label>
+                                        <select name="cobrador_destino_id" class="form-select" required>
+                                            <option value="">-- Seleccione un cobrador --</option>
+                                            {% for cobrador in cobradores %}
+                                            <option value="{{ cobrador.id }}">{{ cobrador.nombre }} - {{ cobrador.rol|capitalize }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Descripción / Observaciones</label>
+                                    <textarea name="descripcion" class="form-control" rows="3" placeholder="Ej: Traslado de dinero entre rutas"></textarea>
+                                </div>
+
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle"></i>
+                                    <strong>Nota:</strong> Este traslado registrará una salida de la ruta del cobrador origen y una entrada en la ruta del cobrador destino.
+                                </div>
+
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-info btn-lg">
+                                        <i class="bi bi-check-circle"></i> Registrar Traslado
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" onclick="cancelarSeleccion()">
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -212,8 +282,10 @@
             // Mostrar el formulario correspondiente
             if (tipo === 'general_a_ruta') {
                 document.getElementById('formulario-general-ruta').classList.add('active');
-            } else {
+            } else if (tipo === 'ruta_a_general') {
                 document.getElementById('formulario-ruta-general').classList.add('active');
+            } else if (tipo === 'ruta_a_ruta') {
+                document.getElementById('formulario-ruta-ruta').classList.add('active');
             }
             
             // Scroll al formulario

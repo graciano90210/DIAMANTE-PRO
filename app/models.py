@@ -14,6 +14,33 @@ class Usuario(db.Model):
     activo = db.Column(db.Boolean, default=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
 
+# 1.1 SOCIEDADES (Asociaciones con socios)
+class Sociedad(db.Model):
+    __tablename__ = 'sociedades'
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False)  # Ej: "Sociedad con Juan Pérez"
+    nombre_socio = db.Column(db.String(100), nullable=False)
+    telefono_socio = db.Column(db.String(20))
+    porcentaje_socio = db.Column(db.Float, default=50.0)  # Porcentaje del socio (ej: 50%)
+    activo = db.Column(db.Boolean, default=True)
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+    notas = db.Column(db.String(500))
+
+# 1.2 RUTAS (Con nombre propio, independientes del cobrador)
+class Ruta(db.Model):
+    __tablename__ = 'rutas'
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False)  # Ej: "Ruta Centro", "Ruta Norte"
+    cobrador_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True)  # Puede cambiar
+    sociedad_id = db.Column(db.Integer, db.ForeignKey('sociedades.id'), nullable=True)  # NULL = PROPIO
+    activo = db.Column(db.Boolean, default=True)
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+    descripcion = db.Column(db.String(200))
+    
+    # Relaciones
+    cobrador = db.relationship('Usuario', backref='rutas_asignadas')
+    sociedad = db.relationship('Sociedad', backref='rutas')
+
 # 2. LOS CLIENTES (Comerciantes)
 class Cliente(db.Model):
     __tablename__ = 'clientes'
@@ -42,7 +69,8 @@ class Prestamo(db.Model):
     __tablename__ = 'prestamos'
     id = db.Column(db.Integer, primary_key=True)
     cliente_id = db.Column(db.Integer, db.ForeignKey('clientes.id'), nullable=False)
-    cobrador_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
+    ruta_id = db.Column(db.Integer, db.ForeignKey('rutas.id'), nullable=False)  # Ahora se asocia a la ruta
+    cobrador_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True)  # Mantener por compatibilidad temporal
     
     # Montos
     monto_prestado = db.Column(db.Float, nullable=False)
@@ -70,7 +98,8 @@ class Prestamo(db.Model):
     
     # Relaciones
     cliente = db.relationship('Cliente', backref='prestamos')
-    cobrador = db.relationship('Usuario', backref='prestamos_asignados')
+    ruta = db.relationship('Ruta', backref='prestamos')
+    cobrador = db.relationship('Usuario', backref='prestamos_asignados')  # Mantener por compatibilidad
 
 # 4. LOS PAGOS
 class Pago(db.Model):

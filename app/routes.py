@@ -1,5 +1,5 @@
 from flask import render_template, request, redirect, url_for, session, flash, make_response, send_file
-from .models import Usuario, Cliente, Prestamo, Pago, Transaccion, db
+from .models import Usuario, Cliente, Prestamo, Pago, Transaccion, Sociedad, Ruta, db
 from datetime import datetime, timedelta
 from sqlalchemy import func
 from reportlab.lib.pagesizes import letter
@@ -44,6 +44,16 @@ def init_routes(app):
         usuario_id = session.get('usuario_id')
         rol = session.get('rol')
         
+        # Obtener ruta seleccionada (para dueño y gerente)
+        ruta_seleccionada_id = session.get('ruta_seleccionada_id')
+        ruta_seleccionada = None
+        todas_las_rutas = []
+        
+        if rol in ['dueno', 'gerente']:
+            todas_las_rutas = Ruta.query.filter_by(activo=True).order_by(Ruta.nombre).all()
+            if ruta_seleccionada_id:
+                ruta_seleccionada = Ruta.query.get(ruta_seleccionada_id)
+        
         # Estadísticas generales (todos ven total de clientes)
         total_clientes = Cliente.query.count()
         clientes_vip = Cliente.query.filter_by(es_vip=True).count()
@@ -79,17 +89,42 @@ def init_routes(app):
             total_cobrado_hoy = sum(float(p.monto) for p in pagos_hoy) if pagos_hoy else 0
             num_pagos_hoy = len(pagos_hoy)
         else:
-            # Dueño, gerente, secretaria ven todas las estadísticas
-            prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO').all()
-            total_prestamos_activos = len(prestamos_activos)
-            
-            # Cartera total
-            total_cartera = db.session.query(func.sum(Prestamo.saldo_actual)).filter_by(estado='ACTIVO').scalar()
-            total_cartera = float(total_cartera) if total_cartera else 0
-            
-            # Capital prestado
-            capital_prestado = db.session.query(func.sum(Prestamo.monto_prestado)).filter_by(estado='ACTIVO').scalar()
-            capital_prestado = float(capital_prestado) if capital_prestado else 0
+            # Dueño, gerente, secretaria ven todas las estadísticas (o filtradas por ruta)
+            if ruta_seleccionada_id:
+                # Filtrar por ruta seleccionada
+                prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO', ruta_id=ruta_seleccionada_id).all()
+                total_prestamos_activos = len(prestamos_activos)
+                
+                # Cartera total de la ruta
+                total_cartera = db.session.query(func.sum(Prestamo.saldo_actual)).filter_by(estado='ACTIVO', ruta_id=ruta_seleccionada_id).scalar()
+                total_cartera = float(total_cartera) if total_cartera else 0
+                
+                # Capital prestado de la ruta
+                capital_prestado = db.session.query(func.sum(Prestamo.monto_prestado)).filter_by(estado='ACTIVO', ruta_id=ruta_seleccionada_id).scalar()
+                capital_prestado = float(capital_prestado) if capital_prestado else 0
+                
+                # Pagos de la ruta hoy
+                hoy = datetime.now().date()
+                pagos_hoy = Pago.query.join(Prestamo).filter(
+                    func.date(Pago.fecha_pago) == hoy,
+                    Prestamo.ruta_id == ruta_seleccionada_id
+                ).all()
+            else:
+                # Ver todas las rutas
+                prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO').all()
+                total_prestamos_activos = len(prestamos_activos)
+                
+                # Cartera total
+                total_cartera = db.session.query(func.sum(Prestamo.saldo_actual)).filter_by(estado='ACTIVO').scalar()
+                total_cartera = float(total_cartera) if total_cartera else 0
+                
+                # Capital prestado
+                capital_prestado = db.session.query(func.sum(Prestamo.monto_prestado)).filter_by(estado='ACTIVO').scalar()
+                capital_prestado = float(capital_prestado) if capital_prestado else 0
+                
+                # Total pagos realizados hoy
+                hoy = datetime.now().date()
+                pagos_hoy = Pago.query.filter(func.date(Pago.fecha_pago) == hoy).all()
             
             # Por cobrar hoy
             por_cobrar_hoy = sum(float(p.valor_cuota) for p in prestamos_activos if p.frecuencia in ['DIARIO', 'BISEMANAL']) if prestamos_activos else 0
@@ -99,9 +134,6 @@ def init_routes(app):
             prestamos_atrasados = sum(1 for p in prestamos_activos if p.cuotas_atrasadas > 0) if prestamos_activos else 0
             prestamos_mora = sum(1 for p in prestamos_activos if p.cuotas_atrasadas > 3) if prestamos_activos else 0
             
-            # Total pagos realizados hoy
-            hoy = datetime.now().date()
-            pagos_hoy = Pago.query.filter(func.date(Pago.fecha_pago) == hoy).all()
             total_cobrado_hoy = sum(float(p.monto) for p in pagos_hoy) if pagos_hoy else 0
             num_pagos_hoy = len(pagos_hoy)
         
@@ -118,7 +150,30 @@ def init_routes(app):
                              prestamos_atrasados=prestamos_atrasados,
                              prestamos_mora=prestamos_mora,
                              total_cobrado_hoy=total_cobrado_hoy,
-                             num_pagos_hoy=num_pagos_hoy)
+                             num_pagos_hoy=num_pagos_hoy,
+                             todas_las_rutas=todas_las_rutas,
+                             ruta_seleccionada=ruta_seleccionada)
+    
+    @app.route('/seleccionar-ruta/<int:ruta_id>')
+    def seleccionar_ruta(ruta_id):
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        if session.get('rol') not in ['dueno', 'gerente']:
+            return redirect(url_for('dashboard'))
+        
+        # Guardar la ruta seleccionada en la sesión
+        session['ruta_seleccionada_id'] = ruta_id
+        return redirect(url_for('dashboard'))
+    
+    @app.route('/ver-todas-rutas')
+    def ver_todas_rutas():
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        # Limpiar la ruta seleccionada para ver todas
+        session.pop('ruta_seleccionada_id', None)
+        return redirect(url_for('dashboard'))
     
     @app.route('/logout')
     def logout():
@@ -141,8 +196,17 @@ def init_routes(app):
             clientes_ids = [c[0] for c in clientes_ids]
             clientes = Cliente.query.filter(Cliente.id.in_(clientes_ids)).order_by(Cliente.fecha_registro.desc()).all()
         else:
-            # Dueño, gerente y secretaria ven todos los clientes
-            clientes = Cliente.query.order_by(Cliente.fecha_registro.desc()).all()
+            # Dueño, gerente y secretaria ven todos los clientes (o filtrados por ruta)
+            ruta_seleccionada_id = session.get('ruta_seleccionada_id')
+            
+            if ruta_seleccionada_id:
+                # Obtener clientes de la ruta seleccionada
+                clientes_ids = db.session.query(Prestamo.cliente_id).filter_by(ruta_id=ruta_seleccionada_id).distinct().all()
+                clientes_ids = [c[0] for c in clientes_ids]
+                clientes = Cliente.query.filter(Cliente.id.in_(clientes_ids)).order_by(Cliente.fecha_registro.desc()).all()
+            else:
+                # Ver todos los clientes
+                clientes = Cliente.query.order_by(Cliente.fecha_registro.desc()).all()
         
         return render_template('clientes_lista.html', 
                              clientes=clientes,
@@ -228,21 +292,44 @@ def init_routes(app):
                 func.sum(Prestamo.monto_a_pagar - Prestamo.monto_prestado)
             ).filter(Prestamo.estado == 'ACTIVO', Prestamo.cobrador_id == usuario_id).scalar() or 0
         else:
-            # Dueño, gerente y secretaria ven todos los préstamos
-            prestamos = Prestamo.query.order_by(Prestamo.fecha_inicio.desc()).all()
+            # Dueño, gerente y secretaria ven todos los préstamos (o filtrados por ruta)
+            ruta_seleccionada_id = session.get('ruta_seleccionada_id')
             
-            # Estadísticas generales
-            total_prestado = db.session.query(func.sum(Prestamo.monto_prestado)).filter(
-                Prestamo.estado == 'ACTIVO'
-            ).scalar() or 0
-            
-            total_cartera = db.session.query(func.sum(Prestamo.saldo_actual)).filter(
-                Prestamo.estado == 'ACTIVO'
-            ).scalar() or 0
-            
-            prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO').count()
-            
-            ganancia_esperada = db.session.query(
+            if ruta_seleccionada_id:
+                # Filtrar por ruta seleccionada
+                prestamos = Prestamo.query.filter_by(ruta_id=ruta_seleccionada_id).order_by(Prestamo.fecha_inicio.desc()).all()
+                
+                total_prestado = db.session.query(func.sum(Prestamo.monto_prestado)).filter(
+                    Prestamo.estado == 'ACTIVO',
+                    Prestamo.ruta_id == ruta_seleccionada_id
+                ).scalar() or 0
+                
+                total_cartera = db.session.query(func.sum(Prestamo.saldo_actual)).filter(
+                    Prestamo.estado == 'ACTIVO',
+                    Prestamo.ruta_id == ruta_seleccionada_id
+                ).scalar() or 0
+                
+                prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO', ruta_id=ruta_seleccionada_id).count()
+                
+                ganancia_esperada = db.session.query(
+                    func.sum(Prestamo.monto_a_pagar - Prestamo.monto_prestado)
+                ).filter(Prestamo.estado == 'ACTIVO', Prestamo.ruta_id == ruta_seleccionada_id).scalar() or 0
+            else:
+                # Ver todos los préstamos
+                prestamos = Prestamo.query.order_by(Prestamo.fecha_inicio.desc()).all()
+                
+                # Estadísticas generales
+                total_prestado = db.session.query(func.sum(Prestamo.monto_prestado)).filter(
+                    Prestamo.estado == 'ACTIVO'
+                ).scalar() or 0
+                
+                total_cartera = db.session.query(func.sum(Prestamo.saldo_actual)).filter(
+                    Prestamo.estado == 'ACTIVO'
+                ).scalar() or 0
+                
+                prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO').count()
+                
+                ganancia_esperada = db.session.query(
                 func.sum(Prestamo.monto_a_pagar - Prestamo.monto_prestado)
             ).filter(Prestamo.estado == 'ACTIVO').scalar() or 0
         
@@ -500,16 +587,32 @@ def init_routes(app):
         usuario_id = session.get('usuario_id')
         rol = session.get('rol')
         
+        # Obtener fecha de hoy
+        hoy = datetime.now().date()
+        
         # Si es cobrador, solo ver sus préstamos asignados
         if rol == 'cobrador':
-            prestamos = Prestamo.query.filter_by(estado='ACTIVO', cobrador_id=usuario_id).order_by(
+            prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO', cobrador_id=usuario_id).order_by(
                 Prestamo.cuotas_atrasadas.desc()
             ).all()
         else:
             # Lista de préstamos activos (todos)
-            prestamos = Prestamo.query.filter_by(estado='ACTIVO').order_by(
+            prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO').order_by(
                 Prestamo.cuotas_atrasadas.desc()
             ).all()
+        
+        # Filtrar préstamos que NO han pagado hoy
+        prestamos = []
+        for prestamo in prestamos_activos:
+            # Verificar si hay un pago registrado hoy para este préstamo
+            pago_hoy = Pago.query.filter(
+                Pago.prestamo_id == prestamo.id,
+                func.date(Pago.fecha_pago) == hoy
+            ).first()
+            
+            # Si NO pagó hoy, agregarlo a la lista
+            if not pago_hoy:
+                prestamos.append(prestamo)
         
         # Estadísticas
         total_a_cobrar = sum(p.valor_cuota for p in prestamos)
@@ -1089,6 +1192,7 @@ Gracias por su pago!"""
             usuario = request.form.get('usuario')
             password = request.form.get('password')
             rol = request.form.get('rol')
+            grupo_operativo = request.form.get('grupo_operativo', 'PROPIO')
             
             # Validar que no exista el usuario
             usuario_existente = Usuario.query.filter_by(usuario=usuario).first()
@@ -1103,6 +1207,7 @@ Gracias por su pago!"""
                 usuario=usuario,
                 password=password,
                 rol=rol,
+                grupo_operativo=grupo_operativo,
                 activo=True
             )
             
@@ -1146,6 +1251,7 @@ Gracias por su pago!"""
             
             usuario.nombre = request.form.get('nombre')
             usuario.rol = request.form.get('rol')
+            usuario.grupo_operativo = request.form.get('grupo_operativo', 'PROPIO')
             
             # Solo actualizar contraseña si se proporciona una nueva
             nueva_password = request.form.get('password')
@@ -1192,6 +1298,262 @@ Gracias por su pago!"""
         except Exception as e:
             db.session.rollback()
             return redirect(url_for('usuarios_lista'))
+
+    # ==================== SOCIEDADES ====================
+    @app.route('/sociedades')
+    def sociedades_lista():
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        if session.get('rol') not in ['dueno', 'gerente']:
+            return redirect(url_for('dashboard'))
+        
+        sociedades = Sociedad.query.order_by(Sociedad.fecha_creacion.desc()).all()
+        
+        # Calcular estadísticas por sociedad
+        stats_sociedades = []
+        for sociedad in sociedades:
+            num_rutas = Ruta.query.filter_by(sociedad_id=sociedad.id, activo=True).count()
+            stats_sociedades.append({
+                'sociedad': sociedad,
+                'num_rutas': num_rutas
+            })
+        
+        return render_template('sociedades_lista.html',
+                             stats_sociedades=stats_sociedades,
+                             nombre=session.get('nombre'),
+                             rol=session.get('rol'))
+
+    @app.route('/sociedades/nueva')
+    def sociedades_nueva():
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        if session.get('rol') not in ['dueno', 'gerente']:
+            return redirect(url_for('dashboard'))
+        
+        return render_template('sociedades_nueva.html',
+                             nombre=session.get('nombre'),
+                             rol=session.get('rol'))
+
+    @app.route('/sociedades/guardar', methods=['POST'])
+    def sociedades_guardar():
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        if session.get('rol') not in ['dueno', 'gerente']:
+            return redirect(url_for('dashboard'))
+        
+        try:
+            nueva_sociedad = Sociedad(
+                nombre=request.form.get('nombre'),
+                nombre_socio=request.form.get('nombre_socio'),
+                telefono_socio=request.form.get('telefono_socio'),
+                porcentaje_socio=float(request.form.get('porcentaje_socio', 50)),
+                notas=request.form.get('notas'),
+                activo=True
+            )
+            
+            db.session.add(nueva_sociedad)
+            db.session.commit()
+            
+            return redirect(url_for('sociedades_lista'))
+        
+        except Exception as e:
+            db.session.rollback()
+            return render_template('sociedades_nueva.html',
+                                 error=f'Error al crear sociedad: {str(e)}',
+                                 nombre=session.get('nombre'),
+                                 rol=session.get('rol'))
+
+    @app.route('/sociedades/editar/<int:sociedad_id>')
+    def sociedades_editar(sociedad_id):
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        if session.get('rol') not in ['dueno', 'gerente']:
+            return redirect(url_for('dashboard'))
+        
+        sociedad = Sociedad.query.get_or_404(sociedad_id)
+        
+        return render_template('sociedades_editar.html',
+                             sociedad=sociedad,
+                             nombre=session.get('nombre'),
+                             rol=session.get('rol'))
+
+    @app.route('/sociedades/actualizar/<int:sociedad_id>', methods=['POST'])
+    def sociedades_actualizar(sociedad_id):
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        if session.get('rol') not in ['dueno', 'gerente']:
+            return redirect(url_for('dashboard'))
+        
+        try:
+            sociedad = Sociedad.query.get_or_404(sociedad_id)
+            
+            sociedad.nombre = request.form.get('nombre')
+            sociedad.nombre_socio = request.form.get('nombre_socio')
+            sociedad.telefono_socio = request.form.get('telefono_socio')
+            sociedad.porcentaje_socio = float(request.form.get('porcentaje_socio', 50))
+            sociedad.notas = request.form.get('notas')
+            
+            activo = request.form.get('activo')
+            sociedad.activo = (activo == 'on')
+            
+            db.session.commit()
+            
+            return redirect(url_for('sociedades_lista'))
+        
+        except Exception as e:
+            db.session.rollback()
+            return render_template('sociedades_editar.html',
+                                 sociedad=sociedad,
+                                 error=f'Error al actualizar sociedad: {str(e)}',
+                                 nombre=session.get('nombre'),
+                                 rol=session.get('rol'))
+
+    # ==================== RUTAS ====================
+    @app.route('/rutas')
+    def rutas_lista():
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        if session.get('rol') not in ['dueno', 'gerente']:
+            return redirect(url_for('dashboard'))
+        
+        rutas = Ruta.query.order_by(Ruta.nombre).all()
+        
+        # Calcular estadísticas por ruta
+        stats_rutas = []
+        for ruta in rutas:
+            num_prestamos = Prestamo.query.filter_by(ruta_id=ruta.id, estado='ACTIVO').count()
+            total_cartera = db.session.query(func.sum(Prestamo.saldo_actual)).filter(
+                Prestamo.ruta_id == ruta.id,
+                Prestamo.estado == 'ACTIVO'
+            ).scalar() or 0
+            
+            stats_rutas.append({
+                'ruta': ruta,
+                'num_prestamos': num_prestamos,
+                'total_cartera': total_cartera
+            })
+        
+        return render_template('rutas_lista.html',
+                             stats_rutas=stats_rutas,
+                             nombre=session.get('nombre'),
+                             rol=session.get('rol'))
+
+    @app.route('/rutas/nueva')
+    def rutas_nueva():
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        if session.get('rol') not in ['dueno', 'gerente']:
+            return redirect(url_for('dashboard'))
+        
+        cobradores = Usuario.query.filter_by(rol='cobrador', activo=True).all()
+        sociedades = Sociedad.query.filter_by(activo=True).all()
+        
+        return render_template('rutas_nueva.html',
+                             cobradores=cobradores,
+                             sociedades=sociedades,
+                             nombre=session.get('nombre'),
+                             rol=session.get('rol'))
+
+    @app.route('/rutas/guardar', methods=['POST'])
+    def rutas_guardar():
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        if session.get('rol') not in ['dueno', 'gerente']:
+            return redirect(url_for('dashboard'))
+        
+        try:
+            cobrador_id = request.form.get('cobrador_id')
+            sociedad_id = request.form.get('sociedad_id')
+            
+            nueva_ruta = Ruta(
+                nombre=request.form.get('nombre'),
+                cobrador_id=int(cobrador_id) if cobrador_id else None,
+                sociedad_id=int(sociedad_id) if sociedad_id and sociedad_id != '' else None,
+                descripcion=request.form.get('descripcion'),
+                activo=True
+            )
+            
+            db.session.add(nueva_ruta)
+            db.session.commit()
+            
+            return redirect(url_for('rutas_lista'))
+        
+        except Exception as e:
+            db.session.rollback()
+            cobradores = Usuario.query.filter_by(rol='cobrador', activo=True).all()
+            sociedades = Sociedad.query.filter_by(activo=True).all()
+            return render_template('rutas_nueva.html',
+                                 cobradores=cobradores,
+                                 sociedades=sociedades,
+                                 error=f'Error al crear ruta: {str(e)}',
+                                 nombre=session.get('nombre'),
+                                 rol=session.get('rol'))
+
+    @app.route('/rutas/editar/<int:ruta_id>')
+    def rutas_editar(ruta_id):
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        if session.get('rol') not in ['dueno', 'gerente']:
+            return redirect(url_for('dashboard'))
+        
+        ruta = Ruta.query.get_or_404(ruta_id)
+        cobradores = Usuario.query.filter_by(rol='cobrador', activo=True).all()
+        sociedades = Sociedad.query.filter_by(activo=True).all()
+        
+        return render_template('rutas_editar.html',
+                             ruta=ruta,
+                             cobradores=cobradores,
+                             sociedades=sociedades,
+                             nombre=session.get('nombre'),
+                             rol=session.get('rol'))
+
+    @app.route('/rutas/actualizar/<int:ruta_id>', methods=['POST'])
+    def rutas_actualizar(ruta_id):
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        if session.get('rol') not in ['dueno', 'gerente']:
+            return redirect(url_for('dashboard'))
+        
+        try:
+            ruta = Ruta.query.get_or_404(ruta_id)
+            
+            ruta.nombre = request.form.get('nombre')
+            cobrador_id = request.form.get('cobrador_id')
+            ruta.cobrador_id = int(cobrador_id) if cobrador_id else None
+            
+            sociedad_id = request.form.get('sociedad_id')
+            ruta.sociedad_id = int(sociedad_id) if sociedad_id and sociedad_id != '' else None
+            
+            ruta.descripcion = request.form.get('descripcion')
+            
+            activo = request.form.get('activo')
+            ruta.activo = (activo == 'on')
+            
+            db.session.commit()
+            
+            return redirect(url_for('rutas_lista'))
+        
+        except Exception as e:
+            db.session.rollback()
+            cobradores = Usuario.query.filter_by(rol='cobrador', activo=True).all()
+            sociedades = Sociedad.query.filter_by(activo=True).all()
+            return render_template('rutas_editar.html',
+                                 ruta=ruta,
+                                 cobradores=cobradores,
+                                 sociedades=sociedades,
+                                 error=f'Error al actualizar ruta: {str(e)}',
+                                 nombre=session.get('nombre'),
+                                 rol=session.get('rol'))
 
     # ==================== REPORTES PDF ====================
     @app.route('/reporte/seleccionar-cobrador')
@@ -1632,7 +1994,6 @@ Gracias por su pago!"""
         
         try:
             tipo_traslado = request.form.get('tipo_traslado')
-            cobrador_id = int(request.form.get('cobrador_id'))
             monto = float(request.form.get('monto'))
             descripcion = request.form.get('descripcion', '')
             fecha = datetime.strptime(request.form.get('fecha'), '%Y-%m-%d')
@@ -1641,6 +2002,7 @@ Gracias por su pago!"""
             
             # Crear transacción según el tipo
             if tipo_traslado == 'general_a_ruta':
+                cobrador_id = int(request.form.get('cobrador_id'))
                 # Salida de caja general (naturaleza EGRESO para caja general)
                 transaccion = Transaccion(
                     naturaleza='TRASLADO',
@@ -1651,7 +2013,8 @@ Gracias por su pago!"""
                     usuario_origen_id=usuario_id,  # Quien hace el traslado (admin/supervisor)
                     usuario_destino_id=cobrador_id  # Cobrador que recibe
                 )
-            else:  # ruta_a_general
+            elif tipo_traslado == 'ruta_a_general':
+                cobrador_id = int(request.form.get('cobrador_id'))
                 # Entrada a caja general (naturaleza INGRESO para caja general)
                 transaccion = Transaccion(
                     naturaleza='TRASLADO',
@@ -1661,6 +2024,24 @@ Gracias por su pago!"""
                     fecha=fecha,
                     usuario_origen_id=cobrador_id,  # Cobrador que entrega
                     usuario_destino_id=usuario_id  # Quien recibe (admin/supervisor)
+                )
+            else:  # ruta_a_ruta
+                cobrador_origen_id = int(request.form.get('cobrador_origen_id'))
+                cobrador_destino_id = int(request.form.get('cobrador_destino_id'))
+                
+                # Validar que no sean el mismo cobrador
+                if cobrador_origen_id == cobrador_destino_id:
+                    raise ValueError('El cobrador origen y destino no pueden ser el mismo')
+                
+                # Traslado entre rutas
+                transaccion = Transaccion(
+                    naturaleza='TRASLADO',
+                    concepto='TRASLADO ENTRE RUTAS',
+                    descripcion=f'Traslado entre cobradores. {descripcion}',
+                    monto=monto,
+                    fecha=fecha,
+                    usuario_origen_id=cobrador_origen_id,  # Cobrador que entrega
+                    usuario_destino_id=cobrador_destino_id  # Cobrador que recibe
                 )
             
             db.session.add(transaccion)
