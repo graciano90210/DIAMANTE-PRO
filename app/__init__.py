@@ -2,14 +2,25 @@ from flask import Flask
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from .models import db
+import os
 
 def create_app():
     app = Flask(__name__)
     
-    # Configuración
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///diamante.db'
+    # Configuración - Detectar entorno
+    if os.environ.get('DATABASE_URL'):
+        # Producción (Heroku) - PostgreSQL
+        database_url = os.environ.get('DATABASE_URL')
+        # Heroku usa postgres://, SQLAlchemy necesita postgresql://
+        if database_url.startswith('postgres://'):
+            database_url = database_url.replace('postgres://', 'postgresql://', 1)
+        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    else:
+        # Desarrollo local - SQLite
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///diamante.db'
+    
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['SECRET_KEY'] = 'diamante-pro-secret-2025'
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'diamante-pro-secret-2025')
     
     # Configuración JWT para API móvil
     app.config['JWT_SECRET_KEY'] = 'diamante-jwt-secret-2025-mobile'
