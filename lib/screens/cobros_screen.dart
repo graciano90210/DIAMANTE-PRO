@@ -146,7 +146,7 @@ class _CobrosScreenState extends State<CobrosScreen> {
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<Prestamo>(
-                    value: _selectedPrestamo,
+                    initialValue: _selectedPrestamo,
                     decoration: InputDecoration(
                       labelText: 'Préstamo',
                       border: OutlineInputBorder(

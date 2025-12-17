@@ -35,7 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
           });
           return;
         }
-        throw e;
+        rethrow;
       }
       
       setState(() {
