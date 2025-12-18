@@ -4,6 +4,7 @@
     <title>Dashboard - Diamante Pro</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         body {
             background: #f5f7fa;
@@ -27,14 +28,15 @@
             fill: #60a5fa;
         }
         .stat-card {
-            border-radius: 12px;
+            border-radius: 15px;
             border: none;
             transition: all 0.3s ease;
             overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
         }
         .stat-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
         }
         .stat-card.primary {
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
@@ -47,6 +49,12 @@
         }
         .stat-card.info {
             background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+        }
+        .stat-card.danger {
+            background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+        }
+        .stat-card.purple {
+            background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%);
         }
         .menu-card {
             border-radius: 12px;
@@ -95,6 +103,47 @@
         .btn-outline-success:hover {
             background: #00ab41;
             border-color: #00ab41;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+        }
+        .table-widget {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .kpi-badge {
+            font-size: 0.85rem;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .progress-ring {
+            width: 120px;
+            height: 120px;
+        }
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.95;
+            font-weight: 500;
+        }
+        .stat-sublabel {
+            font-size: 0.8rem;
+            opacity: 0.85;
         }
     </style>
 </head>
@@ -256,30 +305,166 @@
 
         <!-- Additional Stats -->
         <div class="row g-4 mb-4">
-            <div class="col-md-4">
-                <div class="card menu-card border-0 shadow-sm">
+            <div class="col-md-3">
+                <div class="card stat-card danger text-white">
                     <div class="card-body">
-                        <h6 class="card-title text-primary fw-bold"><i class="bi bi-piggy-bank"></i> Capital Prestado</h6>
-                        <h3 class="mb-0 fw-bold">${{ "{:,.0f}".format(capital_prestado) }}</h3>
-                        <small class="text-muted">Suma de préstamos activos</small>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="stat-label">En Mora</h6>
+                                <h2 class="stat-number mb-0">{{ prestamos_mora }}</h2>
+                                <small class="stat-sublabel">Más de 3 cuotas</small>
+                            </div>
+                            <i class="bi bi-exclamation-triangle-fill fs-1"></i>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card menu-card border-0 shadow-sm">
+            <div class="col-md-3">
+                <div class="card stat-card purple text-white">
                     <div class="card-body">
-                        <h6 class="card-title text-success fw-bold"><i class="bi bi-cash-coin"></i> Cobrado Hoy</h6>
-                        <h3 class="mb-0 fw-bold">${{ "{:,.0f}".format(total_cobrado_hoy) }}</h3>
-                        <small class="text-muted">{{ num_pagos_hoy }} pagos recibidos</small>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="stat-label">Capital Prestado</h6>
+                                <h2 class="stat-number mb-0">${{ "{:,.0f}".format(capital_prestado/1000) }}K</h2>
+                                <small class="stat-sublabel">Dinero en la calle</small>
+                            </div>
+                            <i class="bi bi-piggy-bank-fill fs-1"></i>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="card menu-card border-0 shadow-sm">
                     <div class="card-body">
-                        <h6 class="card-title text-danger fw-bold"><i class="bi bi-exclamation-triangle"></i> En Mora</h6>
-                        <h3 class="mb-0 fw-bold">{{ prestamos_mora }}</h3>
-                        <small class="text-muted">Más de 3 cuotas atrasadas</small>
+                        <h6 class="card-title fw-bold mb-3"><i class="bi bi-graph-up text-success"></i> Ganancia Esperada</h6>
+                        <h3 class="mb-1 fw-bold text-success">${{ "{:,.0f}".format(ganancia_esperada) }}</h3>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="kpi-badge bg-success text-white">+{{ "{:.1f}".format(porcentaje_ganancia) }}%</span>
+                            <small class="text-muted">ROI estimado</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card menu-card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="card-title fw-bold mb-3"><i class="bi bi-speedometer2 text-primary"></i> Tasa de Cobro</h6>
+                        <h3 class="mb-1 fw-bold text-primary">{{ "{:.1f}".format(tasa_cobro_diaria) }}%</h3>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: {{ tasa_cobro_diaria }}%"></div>
+                        </div>
+                        <small class="text-muted mt-1 d-block">${{ "{:,.0f}".format(total_cobrado_hoy) }} de ${{ "{:,.0f}".format(por_cobrar_hoy) }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráficos y Widgets -->
+        <div class="row g-4 mb-4">
+            <!-- Gráfico de Cobros Últimos 7 Días -->
+            <div class="col-md-8">
+                <div class="chart-container">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-graph-up text-primary"></i> Cobros Últimos 7 Días</h5>
+                    <canvas id="cobrosChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Gráfico de Estado de Préstamos -->
+            <div class="col-md-4">
+                <div class="chart-container">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-pie-chart text-success"></i> Estado Préstamos</h5>
+                    <canvas id="estadoChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tablas de Últimas Transacciones -->
+        <div class="row g-4 mb-4">
+            <!-- Últimos Pagos -->
+            <div class="col-md-6">
+                <div class="table-widget">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-clock-history text-success"></i> Últimos Pagos Recibidos</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>Monto</th>
+                                    <th>Fecha</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if ultimos_pagos %}
+                                    {% for pago in ultimos_pagos %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ pago.prestamo.cliente.nombre }}</strong>
+                                            <br><small class="text-muted">Préstamo #{{ pago.prestamo.id }}</small>
+                                        </td>
+                                        <td><span class="badge bg-success">${{ "{:,.0f}".format(pago.monto) }}</span></td>
+                                        <td><small>{{ pago.fecha_pago.strftime('%d/%m %H:%M') }}</small></td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted">No hay pagos registrados</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Préstamos Recientes -->
+            <div class="col-md-6">
+                <div class="table-widget">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-cash-stack text-primary"></i> Préstamos Recientes</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>Monto</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if prestamos_recientes %}
+                                    {% for prestamo in prestamos_recientes %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ prestamo.cliente.nombre }}</strong>
+                                            <br><small class="text-muted">{{ prestamo.fecha_inicio.strftime('%d/%m/%Y') }}</small>
+                                        </td>
+                                        <td>
+                                            <strong>${{ "{:,.0f}".format(prestamo.monto_prestado) }}</strong>
+                                            <br><small class="text-muted">Saldo: ${{ "{:,.0f}".format(prestamo.saldo_actual) }}</small>
+                                        </td>
+                                        <td>
+                                            {% if prestamo.estado == 'ACTIVO' %}
+                                                {% if prestamo.cuotas_atrasadas == 0 %}
+                                                    <span class="badge bg-success">Al día</span>
+                                                {% elif prestamo.cuotas_atrasadas <= 3 %}
+                                                    <span class="badge bg-warning">{{ prestamo.cuotas_atrasadas }} atraso(s)</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">Mora</span>
+                                                {% endif %}
+                                            {% elif prestamo.estado == 'PAGADO' %}
+                                                <span class="badge bg-success">Pagado</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ prestamo.estado }}</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted">No hay préstamos registrados</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -376,7 +561,7 @@
             <div class="col-12">
                 <h4 class="mb-3 fw-bold">Administración</h4>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-3 col-sm-6">
                 <div class="card menu-card h-100 border-0 shadow-sm">
                     <div class="card-body text-center">
                         <div class="menu-icon mb-3"><i class="bi bi-people-fill"></i></div>
@@ -386,7 +571,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-3 col-sm-6">
                 <div class="card menu-card h-100 border-0 shadow-sm">
                     <div class="card-body text-center">
                         <div class="menu-icon mb-3"><i class="bi bi-map"></i></div>
@@ -396,7 +581,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-3 col-sm-6">
                 <div class="card menu-card h-100 border-0 shadow-sm">
                     <div class="card-body text-center">
                         <div class="menu-icon mb-3"><i class="bi bi-handshake"></i></div>
@@ -406,26 +591,146 @@
                     </div>
                 </div>
             </div>
-            {% if rol in ['secretaria', 'gerente', 'supervisor', 'dueno'] %}
-            <div class="col-md-3">
+            <div class="col-md-3 col-sm-6">
                 <div class="card menu-card h-100 border-0 shadow-sm">
                     <div class="card-body text-center">
                         <div class="menu-icon mb-3"><i class="bi bi-file-pdf"></i></div>
                         <h5 class="fw-bold" style="color: #1f2937;">Cuadre PDF</h5>
                         <p class="text-muted small">Descargar informe</p>
-                        {% if rol in ['dueno', 'gerente', 'supervisor', 'secretaria'] %}
                         <a href="/reporte/seleccionar-cobrador" class="btn px-4" style="background: #dc2626; border: none; color: white;">Seleccionar Ruta</a>
-                        {% else %}
-                        <a href="/reporte/cuadre-pdf" class="btn px-4" style="background: #dc2626; border: none; color: white;" target="_blank">Descargar</a>
-                        {% endif %}
                     </div>
                 </div>
             </div>
-            {% endif %}
         </div>
         {% endif %}
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Gráfico de Cobros Últimos 7 Días
+        const cobrosCtx = document.getElementById('cobrosChart');
+        if (cobrosCtx) {
+            new Chart(cobrosCtx, {
+                type: 'line',
+                data: {
+                    labels: {{ labels_7_dias | tojson }},
+                    datasets: [{
+                        label: 'Cobros Diarios',
+                        data: {{ cobros_ultimos_7_dias | tojson }},
+                        backgroundColor: 'rgba(30, 60, 114, 0.1)',
+                        borderColor: 'rgba(30, 60, 114, 1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: 'rgba(30, 60, 114, 1)',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return '$' + context.parsed.y.toLocaleString('es-CO');
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + (value/1000).toFixed(0) + 'K';
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Gráfico de Estado de Préstamos
+        const estadoCtx = document.getElementById('estadoChart');
+        if (estadoCtx) {
+            new Chart(estadoCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Activos', 'Pagados', 'Cancelados'],
+                    datasets: [{
+                        data: [{{ total_prestamos_activos }}, {{ prestamos_pagados }}, {{ prestamos_cancelados }}],
+                        backgroundColor: [
+                            'rgba(30, 60, 114, 0.8)',
+                            'rgba(0, 171, 65, 0.8)',
+                            'rgba(220, 38, 38, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(30, 60, 114, 1)',
+                            'rgba(0, 171, 65, 1)',
+                            'rgba(220, 38, 38, 1)'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                font: {
+                                    size: 12,
+                                    weight: '500'
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    let value = context.parsed || 0;
+                                    let total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    let percentage = ((value / total) * 100).toFixed(1);
+                                    return label + ': ' + value + ' (' + percentage + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Animación de números al cargar
+        document.addEventListener('DOMContentLoaded', function() {
+            const statNumbers = document.querySelectorAll('.stat-number');
+            statNumbers.forEach(stat => {
+                const finalValue = stat.textContent;
+                stat.style.opacity = '0';
+                setTimeout(() => {
+                    stat.style.transition = 'opacity 0.5s ease';
+                    stat.style.opacity = '1';
+                }, 100);
+            });
+        });
+    </script>
 </body>
 </html>

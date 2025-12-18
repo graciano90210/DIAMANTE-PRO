@@ -1,5 +1,5 @@
 from flask import render_template, request, redirect, url_for, session, flash, make_response, send_file
-from .models import Usuario, Cliente, Prestamo, Pago, Transaccion, Sociedad, Ruta, db
+from .models import Usuario, Cliente, Prestamo, Pago, Transaccion, Sociedad, Ruta, AporteCapital, Activo, db
 from datetime import datetime, timedelta
 from sqlalchemy import func
 from reportlab.lib.pagesizes import letter
@@ -88,6 +88,16 @@ def init_routes(app):
             ).all()
             total_cobrado_hoy = sum(float(p.monto) for p in pagos_hoy) if pagos_hoy else 0
             num_pagos_hoy = len(pagos_hoy)
+            
+            # Últimos pagos del cobrador
+            ultimos_pagos = Pago.query.join(Prestamo).filter(
+                Prestamo.cobrador_id == usuario_id
+            ).order_by(Pago.fecha_pago.desc()).limit(10).all()
+            
+            # Préstamos recientes del cobrador
+            prestamos_recientes = Prestamo.query.filter_by(
+                cobrador_id=usuario_id
+            ).order_by(Prestamo.fecha_inicio.desc()).limit(5).all()
         else:
             # Dueño, gerente, secretaria ven todas las estadísticas (o filtradas por ruta)
             if ruta_seleccionada_id:
@@ -109,6 +119,16 @@ def init_routes(app):
                     func.date(Pago.fecha_pago) == hoy,
                     Prestamo.ruta_id == ruta_seleccionada_id
                 ).all()
+                
+                # Últimos pagos de la ruta
+                ultimos_pagos = Pago.query.join(Prestamo).filter(
+                    Prestamo.ruta_id == ruta_seleccionada_id
+                ).order_by(Pago.fecha_pago.desc()).limit(10).all()
+                
+                # Préstamos recientes de la ruta
+                prestamos_recientes = Prestamo.query.filter_by(
+                    ruta_id=ruta_seleccionada_id
+                ).order_by(Prestamo.fecha_inicio.desc()).limit(5).all()
             else:
                 # Ver todas las rutas
                 prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO').all()
@@ -125,6 +145,12 @@ def init_routes(app):
                 # Total pagos realizados hoy
                 hoy = datetime.now().date()
                 pagos_hoy = Pago.query.filter(func.date(Pago.fecha_pago) == hoy).all()
+                
+                # Últimos pagos generales
+                ultimos_pagos = Pago.query.order_by(Pago.fecha_pago.desc()).limit(10).all()
+                
+                # Préstamos recientes generales
+                prestamos_recientes = Prestamo.query.order_by(Prestamo.fecha_inicio.desc()).limit(5).all()
             
             # Por cobrar hoy
             por_cobrar_hoy = sum(float(p.valor_cuota) for p in prestamos_activos if p.frecuencia in ['DIARIO', 'BISEMANAL']) if prestamos_activos else 0
@@ -136,6 +162,46 @@ def init_routes(app):
             
             total_cobrado_hoy = sum(float(p.monto) for p in pagos_hoy) if pagos_hoy else 0
             num_pagos_hoy = len(pagos_hoy)
+        
+        # Calcular estadísticas avanzadas
+        ganancia_esperada = total_cartera - capital_prestado if capital_prestado > 0 else 0
+        porcentaje_ganancia = ((ganancia_esperada / capital_prestado) * 100) if capital_prestado > 0 else 0
+        tasa_cobro_diaria = (total_cobrado_hoy / por_cobrar_hoy * 100) if por_cobrar_hoy > 0 else 0
+        
+        # Estadísticas de los últimos 7 días para gráficos
+        fecha_inicio = datetime.now().date() - timedelta(days=6)
+        cobros_ultimos_7_dias = []
+        labels_7_dias = []
+        
+        for i in range(7):
+            fecha = fecha_inicio + timedelta(days=i)
+            if rol == 'cobrador':
+                pagos_dia = Pago.query.join(Prestamo).filter(
+                    func.date(Pago.fecha_pago) == fecha,
+                    Prestamo.cobrador_id == usuario_id
+                ).all()
+            elif ruta_seleccionada_id:
+                pagos_dia = Pago.query.join(Prestamo).filter(
+                    func.date(Pago.fecha_pago) == fecha,
+                    Prestamo.ruta_id == ruta_seleccionada_id
+                ).all()
+            else:
+                pagos_dia = Pago.query.filter(func.date(Pago.fecha_pago) == fecha).all()
+            
+            total_dia = sum(float(p.monto) for p in pagos_dia) if pagos_dia else 0
+            cobros_ultimos_7_dias.append(total_dia)
+            labels_7_dias.append(fecha.strftime('%d/%m'))
+        
+        # Distribución de préstamos por estado
+        if rol == 'cobrador':
+            prestamos_pagados = Prestamo.query.filter_by(estado='PAGADO', cobrador_id=usuario_id).count()
+            prestamos_cancelados = Prestamo.query.filter_by(estado='CANCELADO', cobrador_id=usuario_id).count()
+        elif ruta_seleccionada_id:
+            prestamos_pagados = Prestamo.query.filter_by(estado='PAGADO', ruta_id=ruta_seleccionada_id).count()
+            prestamos_cancelados = Prestamo.query.filter_by(estado='CANCELADO', ruta_id=ruta_seleccionada_id).count()
+        else:
+            prestamos_pagados = Prestamo.query.filter_by(estado='PAGADO').count()
+            prestamos_cancelados = Prestamo.query.filter_by(estado='CANCELADO').count()
         
         return render_template('dashboard.html', 
                              nombre=session.get('nombre'), 
@@ -152,7 +218,16 @@ def init_routes(app):
                              total_cobrado_hoy=total_cobrado_hoy,
                              num_pagos_hoy=num_pagos_hoy,
                              todas_las_rutas=todas_las_rutas,
-                             ruta_seleccionada=ruta_seleccionada)
+                             ruta_seleccionada=ruta_seleccionada,
+                             ganancia_esperada=ganancia_esperada,
+                             porcentaje_ganancia=porcentaje_ganancia,
+                             tasa_cobro_diaria=tasa_cobro_diaria,
+                             ultimos_pagos=ultimos_pagos,
+                             prestamos_recientes=prestamos_recientes,
+                             cobros_ultimos_7_dias=cobros_ultimos_7_dias,
+                             labels_7_dias=labels_7_dias,
+                             prestamos_pagados=prestamos_pagados,
+                             prestamos_cancelados=prestamos_cancelados)
     
     @app.route('/seleccionar-ruta/<int:ruta_id>')
     def seleccionar_ruta(ruta_id):
@@ -260,6 +335,60 @@ def init_routes(app):
             return render_template('clientes_nuevo.html', 
                                  error=f'Error al guardar: {str(e)}',
                                  nombre=session.get('nombre'), 
+                                 rol=session.get('rol'))
+    
+    @app.route('/clientes/editar/<int:cliente_id>')
+    def clientes_editar(cliente_id):
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        cliente = Cliente.query.get_or_404(cliente_id)
+        
+        return render_template('clientes_editar.html',
+                             cliente=cliente,
+                             nombre=session.get('nombre'),
+                             rol=session.get('rol'))
+    
+    @app.route('/clientes/actualizar/<int:cliente_id>', methods=['POST'])
+    def clientes_actualizar(cliente_id):
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        try:
+            cliente = Cliente.query.get_or_404(cliente_id)
+            
+            # Verificar si el documento cambió y ya existe en otro cliente
+            nuevo_documento = request.form.get('documento')
+            if nuevo_documento != cliente.documento:
+                if Cliente.query.filter_by(documento=nuevo_documento).first():
+                    return render_template('clientes_editar.html',
+                                         cliente=cliente,
+                                         error='Ya existe otro cliente con ese documento',
+                                         nombre=session.get('nombre'),
+                                         rol=session.get('rol'))
+            
+            # Actualizar datos
+            cliente.nombre = request.form.get('nombre')
+            cliente.documento = nuevo_documento
+            cliente.documento_negocio = request.form.get('documento_negocio')
+            cliente.telefono = request.form.get('telefono')
+            cliente.whatsapp_codigo_pais = request.form.get('whatsapp_codigo_pais', '57')
+            cliente.whatsapp_numero = request.form.get('whatsapp_numero')
+            cliente.direccion_negocio = request.form.get('direccion_negocio')
+            cliente.gps_latitud = request.form.get('gps_latitud') or None
+            cliente.gps_longitud = request.form.get('gps_longitud') or None
+            cliente.es_vip = bool(request.form.get('es_vip'))
+            
+            db.session.commit()
+            
+            return redirect(url_for('clientes_lista', mensaje='Cliente actualizado exitosamente'))
+        
+        except Exception as e:
+            db.session.rollback()
+            return render_template('clientes_editar.html',
+                                 cliente=cliente,
+                                 error=f'Error al actualizar: {str(e)}',
+                                 nombre=session.get('nombre'),
                                  rol=session.get('rol'))
 
     # ==================== PRÉSTAMOS ====================
@@ -371,6 +500,23 @@ def init_routes(app):
         
         try:
             cliente_id = int(request.form.get('cliente_id'))
+            
+            # VALIDACIÓN: Verificar si el cliente ya tiene un préstamo activo
+            prestamo_activo = Prestamo.query.filter_by(
+                cliente_id=cliente_id,
+                estado='ACTIVO'
+            ).first()
+            
+            if prestamo_activo:
+                clientes = Cliente.query.all()
+                cobradores = Usuario.query.filter_by(rol='cobrador', activo=True).all()
+                return render_template('prestamos_nuevo.html',
+                                     error=f'❌ Este cliente ya tiene un préstamo activo (#ID: {prestamo_activo.id}). No puede tener dos préstamos simultáneos.',
+                                     clientes=clientes,
+                                     cobradores=cobradores,
+                                     nombre=session.get('nombre'),
+                                     rol=session.get('rol'))
+            
             monto_prestado = float(request.form.get('monto_prestado'))
             tasa_interes = float(request.form.get('tasa_interes'))
             numero_cuotas = int(request.form.get('numero_cuotas'))
@@ -1344,11 +1490,30 @@ Gracias por su pago!"""
             return redirect(url_for('dashboard'))
         
         try:
+            # Validar que la suma de porcentajes no supere 100%
+            p1 = float(request.form.get('porcentaje_socio', 50))
+            p2 = float(request.form.get('porcentaje_socio_2', 0))
+            p3 = float(request.form.get('porcentaje_socio_3', 0))
+            
+            if (p1 + p2 + p3) > 100:
+                return render_template('sociedades_nueva.html',
+                                     error='La suma de los porcentajes no puede superar el 100%',
+                                     nombre=session.get('nombre'),
+                                     rol=session.get('rol'))
+            
             nueva_sociedad = Sociedad(
                 nombre=request.form.get('nombre'),
                 nombre_socio=request.form.get('nombre_socio'),
                 telefono_socio=request.form.get('telefono_socio'),
-                porcentaje_socio=float(request.form.get('porcentaje_socio', 50)),
+                porcentaje_socio=p1,
+                # Socio 2 (opcional)
+                nombre_socio_2=request.form.get('nombre_socio_2') or None,
+                telefono_socio_2=request.form.get('telefono_socio_2') or None,
+                porcentaje_socio_2=p2,
+                # Socio 3 (opcional)
+                nombre_socio_3=request.form.get('nombre_socio_3') or None,
+                telefono_socio_3=request.form.get('telefono_socio_3') or None,
+                porcentaje_socio_3=p3,
                 notas=request.form.get('notas'),
                 activo=True
             )
@@ -1391,10 +1556,33 @@ Gracias por su pago!"""
         try:
             sociedad = Sociedad.query.get_or_404(sociedad_id)
             
+            # Validar porcentajes
+            p1 = float(request.form.get('porcentaje_socio', 50))
+            p2 = float(request.form.get('porcentaje_socio_2', 0))
+            p3 = float(request.form.get('porcentaje_socio_3', 0))
+            
+            if (p1 + p2 + p3) > 100:
+                return render_template('sociedades_editar.html',
+                                     sociedad=sociedad,
+                                     error='La suma de los porcentajes no puede superar el 100%',
+                                     nombre=session.get('nombre'),
+                                     rol=session.get('rol'))
+            
             sociedad.nombre = request.form.get('nombre')
             sociedad.nombre_socio = request.form.get('nombre_socio')
             sociedad.telefono_socio = request.form.get('telefono_socio')
-            sociedad.porcentaje_socio = float(request.form.get('porcentaje_socio', 50))
+            sociedad.porcentaje_socio = p1
+            
+            # Socio 2
+            sociedad.nombre_socio_2 = request.form.get('nombre_socio_2') or None
+            sociedad.telefono_socio_2 = request.form.get('telefono_socio_2') or None
+            sociedad.porcentaje_socio_2 = p2
+            
+            # Socio 3
+            sociedad.nombre_socio_3 = request.form.get('nombre_socio_3') or None
+            sociedad.telefono_socio_3 = request.form.get('telefono_socio_3') or None
+            sociedad.porcentaje_socio_3 = p3
+            
             sociedad.notas = request.form.get('notas')
             
             activo = request.form.get('activo')
@@ -1788,12 +1976,20 @@ Gracias por su pago!"""
                 func.date(Pago.fecha_pago) == hoy,
                 Prestamo.cobrador_id == usuario_id
             ).all()
+            # Traslados recibidos (ingresos)
+            traslados_recibidos_hoy = Transaccion.query.filter(
+                func.date(Transaccion.fecha) == hoy,
+                Transaccion.usuario_destino_id == usuario_id,
+                Transaccion.naturaleza == 'TRASLADO'
+            ).all()
         else:
             pagos_hoy = Pago.query.filter(func.date(Pago.fecha_pago) == hoy).all()
+            traslados_recibidos_hoy = []
         
         total_cobrado_hoy = sum(p.monto for p in pagos_hoy)
+        total_traslados_recibidos = sum(t.monto for t in traslados_recibidos_hoy)
         
-        # Calcular gastos del día
+        # Calcular gastos del día (incluyendo traslados enviados)
         if rol == 'cobrador':
             gastos_hoy = Transaccion.query.filter(
                 func.date(Transaccion.fecha) == hoy,
@@ -1804,8 +2000,8 @@ Gracias por su pago!"""
         
         total_gastos_hoy = sum(g.monto for g in gastos_hoy)
         
-        # Balance del día
-        balance_dia = total_cobrado_hoy - total_gastos_hoy
+        # Balance del día (cobros + traslados recibidos - gastos - traslados enviados)
+        balance_dia = total_cobrado_hoy + total_traslados_recibidos - total_gastos_hoy
         
         # Estadísticas del mes
         inicio_mes = datetime(hoy.year, hoy.month, 1)
@@ -1815,17 +2011,25 @@ Gracias por su pago!"""
                 Pago.fecha_pago >= inicio_mes,
                 Prestamo.cobrador_id == usuario_id
             ).all()
+            # Traslados recibidos del mes
+            traslados_recibidos_mes = Transaccion.query.filter(
+                Transaccion.fecha >= inicio_mes,
+                Transaccion.usuario_destino_id == usuario_id,
+                Transaccion.naturaleza == 'TRASLADO'
+            ).all()
             gastos_mes = Transaccion.query.filter(
                 Transaccion.fecha >= inicio_mes,
                 Transaccion.usuario_origen_id == usuario_id
             ).all()
         else:
             pagos_mes = Pago.query.filter(Pago.fecha_pago >= inicio_mes).all()
+            traslados_recibidos_mes = []
             gastos_mes = Transaccion.query.filter(Transaccion.fecha >= inicio_mes).all()
         
         total_cobrado_mes = sum(p.monto for p in pagos_mes)
+        total_traslados_mes = sum(t.monto for t in traslados_recibidos_mes)
         total_gastos_mes = sum(g.monto for g in gastos_mes)
-        balance_mes = total_cobrado_mes - total_gastos_mes
+        balance_mes = total_cobrado_mes + total_traslados_mes - total_gastos_mes
         
         return render_template('caja_inicio.html',
                              total_cobrado_hoy=total_cobrado_hoy,

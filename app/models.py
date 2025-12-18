@@ -19,12 +19,42 @@ class Sociedad(db.Model):
     __tablename__ = 'sociedades'
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)  # Ej: "Sociedad con Juan Pérez"
-    nombre_socio = db.Column(db.String(100), nullable=False)
+    nombre_socio = db.Column(db.String(100), nullable=False)  # Mantener por compatibilidad
     telefono_socio = db.Column(db.String(20))
-    porcentaje_socio = db.Column(db.Float, default=50.0)  # Porcentaje del socio (ej: 50%)
+    porcentaje_socio = db.Column(db.Float, default=50.0)  # Porcentaje del socio principal
     activo = db.Column(db.Boolean, default=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
     notas = db.Column(db.String(500))
+    
+    # Campos adicionales para socios múltiples
+    nombre_socio_2 = db.Column(db.String(100))
+    telefono_socio_2 = db.Column(db.String(20))
+    porcentaje_socio_2 = db.Column(db.Float, default=0.0)
+    
+    nombre_socio_3 = db.Column(db.String(100))
+    telefono_socio_3 = db.Column(db.String(20))
+    porcentaje_socio_3 = db.Column(db.Float, default=0.0)
+    
+    @property
+    def porcentaje_dueno(self):
+        """Calcula el porcentaje del dueño restando los porcentajes de los socios"""
+        total_socios = (self.porcentaje_socio or 0) + (self.porcentaje_socio_2 or 0) + (self.porcentaje_socio_3 or 0)
+        return 100.0 - total_socios
+    
+    @property
+    def tiene_multiples_socios(self):
+        """Verifica si tiene más de un socio"""
+        return bool(self.nombre_socio_2) or bool(self.nombre_socio_3)
+    
+    @property
+    def numero_socios(self):
+        """Cuenta cuántos socios tiene (sin contar al dueño)"""
+        count = 1 if self.nombre_socio else 0
+        if self.nombre_socio_2:
+            count += 1
+        if self.nombre_socio_3:
+            count += 1
+        return count
 
 # 1.2 RUTAS (Con nombre propio, independientes del cobrador)
 class Ruta(db.Model):
@@ -139,3 +169,53 @@ class Transaccion(db.Model):
     # Relaciones
     usuario_origen = db.relationship('Usuario', foreign_keys=[usuario_origen_id], backref='transacciones_origen')
     usuario_destino = db.relationship('Usuario', foreign_keys=[usuario_destino_id], backref='transacciones_destino')
+
+# 6. APORTES DE CAPITAL
+class AporteCapital(db.Model):
+    __tablename__ = 'aportes_capital'
+    id = db.Column(db.Integer, primary_key=True)
+    sociedad_id = db.Column(db.Integer, db.ForeignKey('sociedades.id'), nullable=False)
+    nombre_aportante = db.Column(db.String(100), nullable=False)  # Nombre del socio que aporta
+    monto = db.Column(db.Float, nullable=False)
+    moneda = db.Column(db.String(3), default='COP')  # COP, USD, BRL, PEN, ARS
+    tipo_aporte = db.Column(db.String(20), default='EFECTIVO')  # EFECTIVO, TRANSFERENCIA, CHEQUE
+    fecha_aporte = db.Column(db.DateTime, default=datetime.utcnow)
+    descripcion = db.Column(db.String(200))
+    comprobante = db.Column(db.String(300))  # Ruta de imagen del comprobante
+    registrado_por_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
+    
+    # Relaciones
+    sociedad = db.relationship('Sociedad', backref='aportes')
+    registrado_por = db.relationship('Usuario', backref='aportes_registrados')
+
+# 7. ACTIVOS FIJOS
+class Activo(db.Model):
+    __tablename__ = 'activos'
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False)  # Ej: "Moto Honda Wave"
+    categoria = db.Column(db.String(50), nullable=False)  # VEHICULO, EQUIPO, INMUEBLE, OTRO
+    descripcion = db.Column(db.String(200))
+    valor_compra = db.Column(db.Float, nullable=False)
+    moneda = db.Column(db.String(3), default='COP')
+    fecha_compra = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Asociación (puede ser propio o de una sociedad)
+    sociedad_id = db.Column(db.Integer, db.ForeignKey('sociedades.id'), nullable=True)  # NULL = PROPIO
+    ruta_id = db.Column(db.Integer, db.ForeignKey('rutas.id'), nullable=True)  # Asignado a qué ruta
+    usuario_responsable_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True)  # Usuario que lo usa
+    
+    # Información adicional
+    marca = db.Column(db.String(50))
+    modelo = db.Column(db.String(50))
+    placa_serial = db.Column(db.String(50))  # Placa de vehículo o serial de equipo
+    estado = db.Column(db.String(20), default='ACTIVO')  # ACTIVO, EN_MANTENIMIENTO, VENDIDO, INACTIVO
+    foto = db.Column(db.String(300))
+    notas = db.Column(db.String(500))
+    
+    registrado_por_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
+    
+    # Relaciones
+    sociedad = db.relationship('Sociedad', backref='activos')
+    ruta = db.relationship('Ruta', backref='activos_asignados')
+    usuario_responsable = db.relationship('Usuario', foreign_keys=[usuario_responsable_id], backref='activos_a_cargo')
+    registrado_por = db.relationship('Usuario', foreign_keys=[registrado_por_id], backref='activos_registrados')
