@@ -148,11 +148,18 @@ with app.app_context():
     # 8. APORTES CAPITAL
     print("💵 Importando aportes de capital...")
     for a in datos['aportes_capital']:
+        # Convertir moneda a código de 3 letras
+        moneda_value = a.get('moneda', 'PESOS')
+        if moneda_value == 'REALES':
+            moneda_value = 'BRL'
+        elif moneda_value == 'PESOS':
+            moneda_value = 'COP'
+        
         nuevo = AporteCapital(
             sociedad_id=a.get('sociedad_id'),
             nombre_aportante=a['nombre_aportante'],
             monto=a['monto'],
-            moneda=a.get('moneda', 'PESOS'),
+            moneda=moneda_value,
             tipo_aporte=a.get('tipo_aporte', 'CAPITAL'),
             fecha_aporte=parse_date(a['fecha_aporte']),
             descripcion=a.get('descripcion'),
