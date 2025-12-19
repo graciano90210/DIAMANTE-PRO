@@ -220,7 +220,7 @@
     {
       "id": 1,
       "cliente_id": 1,
-      "ruta_id": null,
+      "ruta_id": 1,
       "cobrador_id": 1,
       "monto_prestado": 500000.0,
       "tasa_interes": 0.2,
