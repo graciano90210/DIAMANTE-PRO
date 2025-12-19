@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Activos Fijos - Diamante Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/dashboard" style="display: inline-flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: 0.5px;">
+                <svg style="width: 28px; height: 28px; fill: #60a5fa;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L3 7v10l9 5 9-5V7l-9-5zm0 2.18L18.18 7 12 10.82 5.82 7 12 4.18zM5 8.82l6 3.5v7.86l-6-3.33V8.82zm8 11.36v-7.86l6-3.5v8.03l-6 3.33z"/>
+                </svg>
+                <span>DIAMANTE PRO</span>
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="text-white me-3">
+                    <i class="bi bi-person-circle"></i> {{ nombre }} 
+                    <span class="badge bg-light text-primary">{{ rol }}</span>
+                </span>
+                <a href="/logout" class="btn btn-light btn-sm">
+                    <i class="bi bi-box-arrow-right"></i> Salir
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-box-seam text-warning"></i> Activos Fijos</h2>
+            <a href="/activos/nuevo" class="btn btn-warning">
+                <i class="bi bi-plus-circle"></i> Nuevo Activo
+            </a>
+        </div>
+
+        <!-- Resumen de Valor Total -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card border-warning">
+                    <div class="card-body">
+                        <h5 class="card-title text-warning">
+                            <i class="bi bi-calculator"></i> Valor Total de Activos
+                        </h5>
+                        <h3 class="text-warning">$ {{ "{:,.0f}".format(total_valor) }}</h3>
+                        <small class="text-muted">Suma del valor de compra de todos los activos</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de Activos -->
+        <div class="card">
+            <div class="card-body">
+                {% if activos %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Categoría</th>
+                                <th>Valor</th>
+                                <th>Estado</th>
+                                <th>Responsable</th>
+                                <th>Sociedad/Ruta</th>
+                                <th>Fecha Compra</th>
+                                <th>Detalles</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for activo in activos %}
+                            <tr>
+                                <td><strong>{{ activo.nombre }}</strong></td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ activo.categoria }}</span>
+                                </td>
+                                <td class="text-end">
+                                    <strong>$ {{ "{:,.0f}".format(activo.valor_compra) }}</strong>
+                                </td>
+                                <td>
+                                    {% if activo.estado == 'ACTIVO' %}
+                                        <span class="badge bg-success">Activo</span>
+                                    {% elif activo.estado == 'MANTENIMIENTO' %}
+                                        <span class="badge bg-warning">Mantenimiento</span>
+                                    {% elif activo.estado == 'INACTIVO' %}
+                                        <span class="badge bg-secondary">Inactivo</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Dado de Baja</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if activo.usuario_responsable %}
+                                        <i class="bi bi-person-fill"></i> {{ activo.usuario_responsable.nombre }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if activo.sociedad %}
+                                        <span class="badge bg-primary">{{ activo.sociedad.nombre }}</span>
+                                    {% endif %}
+                                    {% if activo.ruta %}
+                                        <span class="badge bg-info">{{ activo.ruta.nombre }}</span>
+                                    {% endif %}
+                                    {% if not activo.sociedad and not activo.ruta %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ activo.fecha_compra.strftime('%d/%m/%Y') }}</td>
+                                <td>
+                                    <small class="text-muted">
+                                        {% if activo.marca %}{{ activo.marca }}{% endif %}
+                                        {% if activo.modelo %}{{ activo.modelo }}{% endif %}
+                                        {% if activo.placa_serial %}<br>{{ activo.placa_serial }}{% endif %}
+                                    </small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No hay activos fijos registrados.
+                    <a href="/activos/nuevo" class="alert-link">Registrar el primero</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <a href="/dashboard" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver al Dashboard
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

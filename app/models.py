@@ -67,6 +67,11 @@ class Ruta(db.Model):
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
     descripcion = db.Column(db.String(200))
     
+    # País y moneda
+    pais = db.Column(db.String(50), default='Colombia')  # Colombia, Brasil, Perú, Argentina, USA
+    moneda = db.Column(db.String(3), default='COP')  # COP, BRL, PEN, ARS, USD
+    simbolo_moneda = db.Column(db.String(5), default='$')  # $, R$, S/, $, USD
+    
     # Relaciones
     cobrador = db.relationship('Usuario', backref='rutas_asignadas')
     sociedad = db.relationship('Sociedad', backref='rutas')

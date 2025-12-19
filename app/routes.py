@@ -168,6 +168,23 @@ def init_routes(app):
         porcentaje_ganancia = ((ganancia_esperada / capital_prestado) * 100) if capital_prestado > 0 else 0
         tasa_cobro_diaria = (total_cobrado_hoy / por_cobrar_hoy * 100) if por_cobrar_hoy > 0 else 0
         
+        # NUEVO: Calcular Capital Disponible (solo para dueño y gerente)
+        capital_total_aportado = 0
+        capital_invertido_activos = 0
+        capital_disponible = 0
+        
+        if rol in ['dueno', 'gerente']:
+            # Total de aportes de capital
+            capital_total_aportado = db.session.query(func.sum(AporteCapital.monto)).scalar() or 0
+            capital_total_aportado = float(capital_total_aportado)
+            
+            # Total invertido en activos
+            capital_invertido_activos = db.session.query(func.sum(Activo.valor_compra)).scalar() or 0
+            capital_invertido_activos = float(capital_invertido_activos)
+            
+            # Capital disponible = Aportes - Activos
+            capital_disponible = capital_total_aportado - capital_invertido_activos
+        
         # Estadísticas de los últimos 7 días para gráficos
         fecha_inicio = datetime.now().date() - timedelta(days=6)
         cobros_ultimos_7_dias = []
@@ -227,7 +244,10 @@ def init_routes(app):
                              cobros_ultimos_7_dias=cobros_ultimos_7_dias,
                              labels_7_dias=labels_7_dias,
                              prestamos_pagados=prestamos_pagados,
-                             prestamos_cancelados=prestamos_cancelados)
+                             prestamos_cancelados=prestamos_cancelados,
+                             capital_total_aportado=capital_total_aportado,
+                             capital_invertido_activos=capital_invertido_activos,
+                             capital_disponible=capital_disponible)
     
     @app.route('/seleccionar-ruta/<int:ruta_id>')
     def seleccionar_ruta(ruta_id):
@@ -1600,6 +1620,186 @@ Gracias por su pago!"""
                                  nombre=session.get('nombre'),
                                  rol=session.get('rol'))
 
+    # ==================== APORTES DE CAPITAL ====================
+    @app.route('/capital/aportes')
+    def capital_lista():
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        if session.get('rol') not in ['dueno', 'gerente']:
+            return redirect(url_for('dashboard'))
+        
+        aportes = AporteCapital.query.order_by(AporteCapital.fecha_aporte.desc()).all()
+        
+        # Calcular totales por moneda
+        total_pesos = db.session.query(func.sum(AporteCapital.monto)).filter(AporteCapital.moneda == 'PESOS').scalar() or 0
+        total_reales = db.session.query(func.sum(AporteCapital.monto)).filter(AporteCapital.moneda == 'REALES').scalar() or 0
+        
+        return render_template('capital_lista.html',
+                             aportes=aportes,
+                             total_pesos=total_pesos,
+                             total_reales=total_reales,
+                             nombre=session.get('nombre'),
+                             rol=session.get('rol'))
+
+    @app.route('/capital/nuevo')
+    def capital_nuevo():
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        if session.get('rol') not in ['dueno', 'gerente']:
+            return redirect(url_for('dashboard'))
+        
+        sociedades = Sociedad.query.order_by(Sociedad.nombre).all()
+        
+        return render_template('capital_nuevo.html',
+                             sociedades=sociedades,
+                             nombre=session.get('nombre'),
+                             rol=session.get('rol'))
+
+    @app.route('/capital/guardar', methods=['POST'])
+    def capital_guardar():
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        if session.get('rol') not in ['dueno', 'gerente']:
+            return redirect(url_for('dashboard'))
+        
+        try:
+            sociedad_id = request.form['sociedad_id']
+            nombre_aportante = request.form['nombre_aportante']
+            monto = float(request.form['monto'])
+            moneda = request.form['moneda']
+            fecha_aporte_str = request.form['fecha_aporte']
+            descripcion = request.form.get('observaciones', '')
+            
+            # Convertir fecha
+            fecha_aporte = datetime.strptime(fecha_aporte_str, '%Y-%m-%d')
+            
+            # Crear nuevo aporte
+            nuevo_aporte = AporteCapital(
+                sociedad_id=sociedad_id,
+                nombre_aportante=nombre_aportante,
+                monto=monto,
+                moneda=moneda,
+                fecha_aporte=fecha_aporte,
+                descripcion=descripcion,
+                registrado_por_id=session.get('usuario_id')
+            )
+            
+            db.session.add(nuevo_aporte)
+            db.session.commit()
+            
+            return redirect(url_for('capital_lista'))
+            
+        except Exception as e:
+            db.session.rollback()
+            sociedades = Sociedad.query.order_by(Sociedad.nombre).all()
+            return render_template('capital_nuevo.html',
+                                 sociedades=sociedades,
+                                 error=f'Error al guardar aporte: {str(e)}',
+                                 nombre=session.get('nombre'),
+                                 rol=session.get('rol'))
+
+    # ==================== ACTIVOS FIJOS ====================
+    @app.route('/activos')
+    def activos_lista():
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        if session.get('rol') not in ['dueno', 'gerente']:
+            return redirect(url_for('dashboard'))
+        
+        activos = Activo.query.order_by(Activo.fecha_compra.desc()).all()
+        
+        # Calcular total por categoría
+        total_valor = db.session.query(func.sum(Activo.valor_compra)).scalar() or 0
+        
+        return render_template('activos_lista.html',
+                             activos=activos,
+                             total_valor=total_valor,
+                             nombre=session.get('nombre'),
+                             rol=session.get('rol'))
+
+    @app.route('/activos/nuevo')
+    def activos_nuevo():
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        if session.get('rol') not in ['dueno', 'gerente']:
+            return redirect(url_for('dashboard'))
+        
+        sociedades = Sociedad.query.order_by(Sociedad.nombre).all()
+        rutas = Ruta.query.order_by(Ruta.nombre).all()
+        usuarios = Usuario.query.order_by(Usuario.nombre).all()
+        
+        return render_template('activos_nuevo.html',
+                             sociedades=sociedades,
+                             rutas=rutas,
+                             usuarios=usuarios,
+                             nombre=session.get('nombre'),
+                             rol=session.get('rol'))
+
+    @app.route('/activos/guardar', methods=['POST'])
+    def activos_guardar():
+        if 'usuario_id' not in session:
+            return redirect(url_for('home'))
+        
+        if session.get('rol') not in ['dueno', 'gerente']:
+            return redirect(url_for('dashboard'))
+        
+        try:
+            nombre = request.form['nombre']
+            categoria = request.form['categoria']
+            valor_compra = float(request.form['valor_compra'])
+            fecha_compra_str = request.form['fecha_compra']
+            sociedad_id = request.form.get('sociedad_id')
+            ruta_id = request.form.get('ruta_id')
+            usuario_responsable_id = request.form.get('usuario_responsable_id')
+            marca = request.form.get('marca', '')
+            modelo = request.form.get('modelo', '')
+            placa_serial = request.form.get('placa_serial', '')
+            estado = request.form['estado']
+            notas = request.form.get('observaciones', '')
+            
+            # Convertir fecha
+            fecha_compra = datetime.strptime(fecha_compra_str, '%Y-%m-%d')
+            
+            # Crear nuevo activo
+            nuevo_activo = Activo(
+                nombre=nombre,
+                categoria=categoria,
+                valor_compra=valor_compra,
+                fecha_compra=fecha_compra,
+                sociedad_id=sociedad_id if sociedad_id else None,
+                ruta_id=ruta_id if ruta_id else None,
+                usuario_responsable_id=usuario_responsable_id if usuario_responsable_id else None,
+                marca=marca,
+                modelo=modelo,
+                placa_serial=placa_serial,
+                estado=estado,
+                notas=notas,
+                registrado_por_id=session.get('usuario_id')
+            )
+            
+            db.session.add(nuevo_activo)
+            db.session.commit()
+            
+            return redirect(url_for('activos_lista'))
+            
+        except Exception as e:
+            db.session.rollback()
+            sociedades = Sociedad.query.order_by(Sociedad.nombre).all()
+            rutas = Ruta.query.order_by(Ruta.nombre).all()
+            usuarios = Usuario.query.order_by(Usuario.nombre).all()
+            return render_template('activos_nuevo.html',
+                                 sociedades=sociedades,
+                                 rutas=rutas,
+                                 usuarios=usuarios,
+                                 error=f'Error al guardar activo: {str(e)}',
+                                 nombre=session.get('nombre'),
+                                 rol=session.get('rol'))
+
     # ==================== RUTAS ====================
     @app.route('/rutas')
     def rutas_lista():
@@ -1659,12 +1859,22 @@ Gracias por su pago!"""
         try:
             cobrador_id = request.form.get('cobrador_id')
             sociedad_id = request.form.get('sociedad_id')
+            pais_data = request.form.get('pais', 'Colombia|COP|$')
+            
+            # Parsear país, moneda y símbolo
+            pais_parts = pais_data.split('|')
+            pais = pais_parts[0] if len(pais_parts) > 0 else 'Colombia'
+            moneda = pais_parts[1] if len(pais_parts) > 1 else 'COP'
+            simbolo = pais_parts[2] if len(pais_parts) > 2 else '$'
             
             nueva_ruta = Ruta(
                 nombre=request.form.get('nombre'),
                 cobrador_id=int(cobrador_id) if cobrador_id else None,
                 sociedad_id=int(sociedad_id) if sociedad_id and sociedad_id != '' else None,
                 descripcion=request.form.get('descripcion'),
+                pais=pais,
+                moneda=moneda,
+                simbolo_moneda=simbolo,
                 activo=True
             )
             

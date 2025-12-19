@@ -70,6 +70,19 @@
                             </div>
 
                             <div class="mb-3">
+                                <label class="form-label fw-bold">País / Moneda *</label>
+                                <select name="pais" class="form-select" id="selectPais" required>
+                                    <option value="">-- Seleccione un país --</option>
+                                    <option value="Colombia|COP|$">🇨🇴 Colombia (COP - $)</option>
+                                    <option value="Brasil|BRL|R$">🇧🇷 Brasil (BRL - R$)</option>
+                                    <option value="Perú|PEN|S/">🇵🇪 Perú (PEN - S/)</option>
+                                    <option value="Argentina|ARS|$">🇦🇷 Argentina (ARS - $)</option>
+                                    <option value="USA|USD|USD">🇺🇸 USA (USD - $)</option>
+                                </select>
+                                <small class="text-muted">Todos los préstamos y cobros se harán en esta moneda</small>
+                            </div>
+
+                            <div class="mb-3">
                                 <label class="form-label fw-bold">Descripción</label>
                                 <textarea name="descripcion" class="form-control" rows="3" 
                                           placeholder="Zona geográfica, detalles, etc."></textarea>

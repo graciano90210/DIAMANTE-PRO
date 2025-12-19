@@ -359,6 +359,56 @@
             </div>
         </div>
 
+        <!-- NUEVO: Capital Disponible (solo para dueño y gerente) -->
+        {% if rol in ['dueno', 'gerente'] and capital_total_aportado > 0 %}
+        <div class="row g-4 mb-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="card-body text-white">
+                        <div class="row align-items-center">
+                            <div class="col-md-4 text-center border-end border-light">
+                                <i class="bi bi-cash-stack fs-1 mb-2"></i>
+                                <h6 class="opacity-75">Capital Total Aportado</h6>
+                                <h2 class="fw-bold mb-0">${{ "{:,.0f}".format(capital_total_aportado) }}</h2>
+                                <small class="opacity-75">Inversión de socios</small>
+                            </div>
+                            <div class="col-md-4 text-center border-end border-light">
+                                <i class="bi bi-box-seam fs-1 mb-2"></i>
+                                <h6 class="opacity-75">Capital Invertido en Activos</h6>
+                                <h2 class="fw-bold mb-0">${{ "{:,.0f}".format(capital_invertido_activos) }}</h2>
+                                <small class="opacity-75">Motos, equipos, etc.</small>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <i class="bi bi-wallet2 fs-1 mb-2"></i>
+                                <h6 class="opacity-75">💰 Capital Disponible</h6>
+                                <h2 class="fw-bold mb-0" style="font-size: 2.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
+                                    ${{ "{:,.0f}".format(capital_disponible) }}
+                                </h2>
+                                <small class="opacity-75">
+                                    {% if capital_disponible > 0 %}
+                                        ✓ Disponible para prestar
+                                    {% elif capital_disponible == 0 %}
+                                        ⚠️ Todo el capital está invertido
+                                    {% else %}
+                                        ⚠️ Déficit: revisar inversiones
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="mt-3 text-center">
+                            <a href="/capital/aportes" class="btn btn-light btn-sm me-2">
+                                <i class="bi bi-cash-stack"></i> Ver Aportes
+                            </a>
+                            <a href="/activos" class="btn btn-light btn-sm">
+                                <i class="bi bi-box-seam"></i> Ver Activos
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Gráficos y Widgets -->
         <div class="row g-4 mb-4">
             <!-- Gráfico de Cobros Últimos 7 Días -->
@@ -598,6 +648,33 @@
                         <h5 class="fw-bold" style="color: #1f2937;">Cuadre PDF</h5>
                         <p class="text-muted small">Descargar informe</p>
                         <a href="/reporte/seleccionar-cobrador" class="btn px-4" style="background: #dc2626; border: none; color: white;">Seleccionar Ruta</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Finanzas (solo para dueños y gerentes) -->
+        <div class="row g-4 mt-2">
+            <div class="col-12">
+                <h4 class="mb-3 fw-bold">Finanzas</h4>
+            </div>
+            <div class="col-md-6">
+                <div class="card menu-card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="menu-icon mb-3"><i class="bi bi-cash-stack text-success"></i></div>
+                        <h5 class="fw-bold" style="color: #1f2937;">Aportes de Capital</h5>
+                        <p class="text-muted small">Registro de inversiones y capital</p>
+                        <a href="/capital/aportes" class="btn px-4" style="background: #10b981; border: none; color: white;">Ver Aportes</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card menu-card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="menu-icon mb-3"><i class="bi bi-box-seam text-warning"></i></div>
+                        <h5 class="fw-bold" style="color: #1f2937;">Activos Fijos</h5>
+                        <p class="text-muted small">Inventario de equipos y vehículos</p>
+                        <a href="/activos" class="btn px-4" style="background: #f59e0b; border: none; color: white;">Ver Activos</a>
                     </div>
                 </div>
             </div>
