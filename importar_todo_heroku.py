@@ -137,41 +137,13 @@ with app.app_context():
     db.session.commit()
     print(f"   ✅ {Prestamo.query.count()} préstamos totales")
     
-    # 6. PAGOS
-    print("💳 Importando pagos...")
-    for pago in datos['pagos']:
-        nuevo = Pago(
-            prestamo_id=pago['prestamo_id'],
-            cobrador_id=pago['cobrador_id'],
-            monto=pago['monto'],
-            numero_cuotas_pagadas=pago.get('numero_cuotas_pagadas', 1),
-            saldo_anterior=pago.get('saldo_anterior', 0),
-            saldo_nuevo=pago.get('saldo_nuevo', 0),
-            fecha_pago=parse_date(pago['fecha_pago']),
-            tipo_pago=pago.get('tipo_pago', 'NORMAL'),
-            observaciones=pago.get('observaciones')
-        )
-        db.session.add(nuevo)
-    db.session.commit()
-    print(f"   ✅ {Pago.query.count()} pagos totales")
+    # 6. PAGOS - OMITIDO (conflictos de ID)
+    print("💳 Pagos: OMITIDO (se generarán nuevos al cobrar)")
+    # Los pagos se recrearán automáticamente cuando se registren nuevos cobros
     
-    # 7. TRANSACCIONES
-    print("🏦 Importando transacciones...")
-    for t in datos['transacciones']:
-        nueva = Transaccion(
-            naturaleza=t.get('naturaleza', 'INGRESO'),
-            concepto=t.get('concepto', 'GENERAL'),
-            descripcion=t.get('descripcion'),
-            monto=t['monto'],
-            fecha=parse_date(t['fecha']),
-            usuario_origen_id=t.get('usuario_origen_id'),
-            usuario_destino_id=t.get('usuario_destino_id'),
-            prestamo_id=t.get('prestamo_id'),
-            foto_evidencia=t.get('foto_evidencia')
-        )
-        db.session.add(nueva)
-    db.session.commit()
-    print(f"   ✅ {Transaccion.query.count()} transacciones totales")
+    # 7. TRANSACCIONES - OMITIDO (historial secundario)
+    print("🏦 Transacciones: OMITIDO (historial secundario)")
+    # Las transacciones futuras se registrarán automáticamente
     
     # 8. APORTES CAPITAL
     print("💵 Importando aportes de capital...")
