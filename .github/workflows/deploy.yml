@@ -22,6 +22,7 @@ jobs:
         env:
           PORT: 5000
         run: |
+          python recrear_bd.py  # <--- AGREGA ESTA LÍNEA AQUÍ
           python run.py &
           sleep 10
           pytest
