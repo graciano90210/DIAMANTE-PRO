@@ -217,7 +217,7 @@ class Activo(db.Model):
     foto = db.Column(db.String(300))
     notas = db.Column(db.String(500))
     
-    registrado_por_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
+    registrado_por_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True)
     
     # Relaciones
     sociedad = db.relationship('Sociedad', backref='activos')
