@@ -19,6 +19,8 @@ heroku login
 heroku create diamante-pro
 ```
 
+<!-- Prueba de deploy GitHub Actions 2025-12-22 -->
+
 ### Paso 3: Configurar Base de Datos PostgreSQL
 
 ```bash
