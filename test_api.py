@@ -1,159 +1,112 @@
-"""
-Script para probar la API REST de la app móvil
-Simula las peticiones que haría la aplicación móvil
-"""
+import pytest
 import requests
 import json
 
 BASE_URL = "http://localhost:5000/api/v1"
 
-def test_login():
-    """Probar login y obtener token"""
-    print("\n========== TEST LOGIN ==========")
-    
-    response = requests.post(f"{BASE_URL}/login", json={
-        "usuario": "cristian",  # Cambiar por un usuario existente
+# --- 1. FIXTURE PARA OBTENER TOKEN AUTOMÁTICAMENTE ---
+@pytest.fixture
+def token():
+    """Esta función obtiene el token automáticamente para los tests que lo necesiten"""
+    url = f"{BASE_URL}/login"
+    payload = {
+        "usuario": "cristian", 
         "password": "1234"
-    })
-    
-    print(f"Status: {response.status_code}")
-    print(f"Response: {json.dumps(response.json(), indent=2, ensure_ascii=False)}")
+    }
+    # Intentamos loguearnos
+    response = requests.post(url, json=payload)
     
     if response.status_code == 200:
         return response.json()['access_token']
-    return None
+    else:
+        # Si falla (por ejemplo, si el usuario no existe en la BD limpia de GitHub)
+        # Esto nos avisará claramente en el log
+        print(f"\n⚠️ IMPORTANTE: No se pudo loguear. Status: {response.status_code}")
+        print("¿Has creado el usuario 'cristian' en la base de datos de prueba?")
+        pytest.fail(f"Login fallido. Status: {response.status_code}")
+
+# --- 2. PRUEBAS UNITARIAS (COMPATIBLES CON PYTEST) ---
+
+def test_login_explicit():
+    """Prueba explícita del login para verificar status 200"""
+    print("\n========== TEST LOGIN ==========")
+    response = requests.post(f"{BASE_URL}/login", json={
+        "usuario": "cristian",
+        "password": "1234"
+    })
+    assert response.status_code == 200
+    assert "access_token" in response.json()
 
 def test_obtener_rutas(token):
-    """Probar obtener rutas del cobrador"""
+    """Probar obtener rutas del cobrador usando el token"""
     print("\n========== TEST OBTENER RUTAS ==========")
-    
     headers = {"Authorization": f"Bearer {token}"}
     response = requests.get(f"{BASE_URL}/cobrador/rutas", headers=headers)
     
-    print(f"Status: {response.status_code}")
-    print(f"Response: {json.dumps(response.json(), indent=2, ensure_ascii=False)}")
-    
+    # Validaciones
+    assert response.status_code == 200
+    print(f"Rutas encontradas: {len(response.json())}")
     return response.json()
 
-def test_obtener_clientes(token, ruta_id=None):
-    """Probar obtener clientes"""
+def test_obtener_clientes(token):
+    """Probar obtener clientes (sin filtrar por ruta específica para el test general)"""
     print("\n========== TEST OBTENER CLIENTES ==========")
-    
     headers = {"Authorization": f"Bearer {token}"}
-    url = f"{BASE_URL}/cobrador/clientes"
-    if ruta_id:
-        url += f"?ruta_id={ruta_id}"
+    response = requests.get(f"{BASE_URL}/cobrador/clientes", headers=headers)
     
-    response = requests.get(url, headers=headers)
-    
-    print(f"Status: {response.status_code}")
-    print(f"Response: {json.dumps(response.json(), indent=2, ensure_ascii=False)}")
-    
+    assert response.status_code == 200
     return response.json()
 
-def test_obtener_prestamos(token, ruta_id=None):
+def test_obtener_prestamos(token):
     """Probar obtener préstamos"""
     print("\n========== TEST OBTENER PRÉSTAMOS ==========")
-    
     headers = {"Authorization": f"Bearer {token}"}
-    url = f"{BASE_URL}/cobrador/prestamos"
-    if ruta_id:
-        url += f"?ruta_id={ruta_id}"
+    response = requests.get(f"{BASE_URL}/cobrador/prestamos", headers=headers)
     
-    response = requests.get(url, headers=headers)
-    
-    print(f"Status: {response.status_code}")
-    print(f"Response: {json.dumps(response.json(), indent=2, ensure_ascii=False)}")
-    
+    assert response.status_code == 200
     return response.json()
 
-def test_ruta_cobro(token, ruta_id=None):
+def test_ruta_cobro(token):
     """Probar obtener ruta de cobro del día"""
     print("\n========== TEST RUTA DE COBRO ==========")
-    
     headers = {"Authorization": f"Bearer {token}"}
-    url = f"{BASE_URL}/cobrador/ruta-cobro"
-    if ruta_id:
-        url += f"?ruta_id={ruta_id}"
+    response = requests.get(f"{BASE_URL}/cobrador/ruta-cobro", headers=headers)
     
-    response = requests.get(url, headers=headers)
-    
-    print(f"Status: {response.status_code}")
-    print(f"Response: {json.dumps(response.json(), indent=2, ensure_ascii=False)}")
-    
+    assert response.status_code == 200
     return response.json()
 
-def test_estadisticas(token, ruta_id=None):
+def test_estadisticas(token):
     """Probar obtener estadísticas"""
     print("\n========== TEST ESTADÍSTICAS ==========")
-    
     headers = {"Authorization": f"Bearer {token}"}
-    url = f"{BASE_URL}/cobrador/estadisticas"
-    if ruta_id:
-        url += f"?ruta_id={ruta_id}"
+    response = requests.get(f"{BASE_URL}/cobrador/estadisticas", headers=headers)
     
-    response = requests.get(url, headers=headers)
-    
-    print(f"Status: {response.status_code}")
-    print(f"Response: {json.dumps(response.json(), indent=2, ensure_ascii=False)}")
-    
+    assert response.status_code == 200
     return response.json()
 
-def test_registrar_pago(token, prestamo_id, monto, observaciones=""):
-    """Probar registrar un pago"""
-    print("\n========== TEST REGISTRAR PAGO ==========")
-    
-    headers = {"Authorization": f"Bearer {token}"}
-    response = requests.post(f"{BASE_URL}/cobrador/registrar-pago", 
-        headers=headers,
-        json={
-            "prestamo_id": prestamo_id,
-            "monto": monto,
-            "observaciones": observaciones
-        }
-    )
-    
-    print(f"Status: {response.status_code}")
-    print(f"Response: {json.dumps(response.json(), indent=2, ensure_ascii=False)}")
-    
-    return response.json()
+# --- 3. BLOQUE PARA EJECUCIÓN MANUAL (OPCIONAL) ---
+# Esto solo se ejecuta si corres "python test_api.py" manualmente, 
+# Pytest ignorará esta parte.
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("PRUEBAS DE API REST - DIAMANTE PRO")
+    print("PRUEBAS DE API REST - MODO MANUAL")
     print("=" * 60)
     
-    # 1. Login
-    token = test_login()
-    
-    if not token:
-        print("\n❌ Error en login. Verifica usuario y contraseña.")
-        exit(1)
-    
-    print(f"\n✅ Token obtenido: {token[:50]}...")
-    
-    # 2. Obtener rutas
-    rutas = test_obtener_rutas(token)
-    ruta_id = rutas[0]['id'] if rutas else None
-    
-    # 3. Obtener clientes
-    clientes = test_obtener_clientes(token, ruta_id)
-    
-    # 4. Obtener préstamos
-    prestamos = test_obtener_prestamos(token, ruta_id)
-    
-    # 5. Ruta de cobro del día
-    ruta_cobro = test_ruta_cobro(token, ruta_id)
-    
-    # 6. Estadísticas
-    estadisticas = test_estadisticas(token, ruta_id)
-    
-    # 7. Registrar pago (comentado para no modificar datos)
-    # if prestamos:
-    #     prestamo_id = prestamos[0]['id']
-    #     valor_cuota = prestamos[0]['valor_cuota']
-    #     test_registrar_pago(token, prestamo_id, valor_cuota, "Pago de prueba API")
-    
-    print("\n" + "=" * 60)
-    print("✅ TODAS LAS PRUEBAS COMPLETADAS")
-    print("=" * 60)
+    # Simulamos el login manual
+    try:
+        resp = requests.post(f"{BASE_URL}/login", json={"usuario": "cristian", "password": "1234"})
+        if resp.status_code == 200:
+            mi_token = resp.json()['access_token']
+            print("✅ Login manual exitoso")
+            
+            # Ejecutamos pruebas pasando el token manualmente
+            test_obtener_rutas(mi_token)
+            test_obtener_clientes(mi_token)
+            test_obtener_prestamos(mi_token)
+            test_ruta_cobro(mi_token)
+            test_estadisticas(mi_token)
+        else:
+            print("❌ Error en login manual.")
+    except Exception as e:
+        print(f"❌ Error conectando con el servidor: {e}")
