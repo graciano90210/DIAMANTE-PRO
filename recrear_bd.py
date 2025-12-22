@@ -6,6 +6,7 @@ import shutil
 from app import create_app
 from app.models import db, Usuario
 from datetime import datetime
+from werkzeug.security import generate_password_hash # <--- IMPORTANTE: Importamos la seguridad
 
 app = create_app()
 
@@ -21,34 +22,35 @@ with app.app_context():
             print(f"💾 Base de datos anterior renombrada: {backup_path}")
         except Exception as e:
             print(f"⚠️ No se pudo renombrar, creando nueva base de datos de todos modos...")
-            # En GitHub Actions esto no importa mucho porque empieza limpio, 
-            # pero es bueno mantenerlo para tu uso local.
     
     # Crear todas las tablas desde cero
     db.create_all()
     print("✅ Base de datos recreada con todas las columnas!")
     
-   # --- 1. Crear SOLO el usuario ADMIN (Dueño) ---
-    # Buscamos si ya existe para no duplicarlo
+    # --- 1. Crear usuario ADMIN (Dueño) con contraseña SEGURA ---
+    # Primero buscamos si ya existe
     admin = Usuario.query.filter_by(usuario='admin').first()
     
-    if not admin:
-        admin = Usuario(
-            usuario='admin',    # Tu usuario para entrar
-            password='123',     # Tu contraseña
-            nombre='Juan Gerente', # El nombre que aparecerá
-            rol='dueno',        # Rol principal con todos los permisos
-            activo=True
-        )
-        db.session.add(admin)
-        print("✅ Usuario dueño creado exitosamente: admin / 123")
-    else:
-        print("ℹ️ El usuario admin ya existe en la base de datos.")
+    # Si existe, lo borramos para crearlo bien (por si tiene la contraseña vieja sin encriptar)
+    if admin:
+        db.session.delete(admin)
+        db.session.commit()
+        print("🗑️ Usuario admin anterior eliminado para actualizar credenciales.")
 
+    # Ahora lo creamos desde cero con la contraseña encriptada
+    nuevo_admin = Usuario(
+        usuario='admin',                 # Tu usuario
+        password=generate_password_hash('123'),  # <--- AQUÍ LA CLAVE: Se guarda encriptada
+        nombre='Juan Gerente',           # Tu nombre
+        rol='dueno',                     # Rol máximo
+        activo=True
+    )
+    
+    db.session.add(nuevo_admin)
     db.session.commit()
+    print("✅ Usuario dueño creado exitosamente: admin / 123 (Encriptada)")
+
     print("\n🚀 ¡Base de datos lista y usuario admin verificado!")
-
-
     
     print("\n✅ ¡Base de datos lista para usar!")
     print("📊 Tablas creadas:")
