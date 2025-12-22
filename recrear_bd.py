@@ -22,12 +22,13 @@ with app.app_context():
             print(f"💾 Base de datos anterior renombrada: {backup_path}")
         except Exception as e:
             print(f"⚠️ No se pudo renombrar, ELIMINANDO para crear una limpia...")
-            # ESTA ES LA LÍNEA MÁGICA QUE NOS FALTABA:
+            # --- AQUÍ ESTÁ LA FUERZA BRUTA ---
             try:
-                os.remove(db_path) 
+                if os.path.exists(db_path):
+                    os.remove(db_path)
                 print("🗑️ Base de datos vieja eliminada forzosamente.")
-            except:
-                print("❌ No se pudo eliminar la base de datos vieja. Puede haber errores.")
+            except Exception as e2:
+                print(f"❌ ERROR CRÍTICO: No se pudo eliminar la BD vieja: {e2}")
     
     # Crear todas las tablas desde cero
     db.create_all()
