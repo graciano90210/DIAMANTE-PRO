@@ -1,55 +1,54 @@
-"""
-Script para recrear la base de datos con todas las columnas correctas
-"""
 import os
-import shutil
+import stat  # <--- 🆕 IMPORTANTE: Necesario para cambiar permisos
 from app import create_app
 from app.models import db, Usuario
 from datetime import datetime
-from werkzeug.security import generate_password_hash # <--- IMPORTANTE: Importamos la seguridad
+from werkzeug.security import generate_password_hash
 
 app = create_app()
 
 with app.app_context():
     print("🔄 Recreando base de datos...")
     
-    # Hacer backup de la base de datos actual (si existe)
+    # Asegurar que la carpeta instance existe con permisos totales
+    if not os.path.exists('instance'):
+        os.makedirs('instance')
+        os.chmod('instance', 0o777)
+
     db_path = 'instance/diamante.db'
+    
+    # 1. Eliminar cualquier conexión vieja que pueda bloquear el archivo
+    db.engine.dispose() # <--- 🆕 TRUCO DE MAGIA: Libera el archivo antes de tocarlo
+
+    # 2. Hacer backup o borrar lo viejo
     if os.path.exists(db_path):
         backup_path = f'instance/diamante_old_{datetime.now().strftime("%Y%m%d_%H%M%S")}.db'
         try:
             os.rename(db_path, backup_path)
             print(f"💾 Base de datos anterior renombrada: {backup_path}")
-        except Exception as e:
-            print(f"⚠️ No se pudo renombrar, ELIMINANDO para crear una limpia...")
-            # --- AQUÍ ESTÁ LA FUERZA BRUTA ---
-            try:
-                if os.path.exists(db_path):
-                    os.remove(db_path)
+        except:
+            if os.path.exists(db_path):
+                os.remove(db_path)
                 print("🗑️ Base de datos vieja eliminada forzosamente.")
-            except Exception as e2:
-                print(f"❌ ERROR CRÍTICO: No se pudo eliminar la BD vieja: {e2}")
-    
-    # Crear todas las tablas desde cero
+
+    # 3. Crear las tablas
     db.create_all()
+    
+    # 4. 🔥 LA SOLUCIÓN DEFINITIVA: Dar permisos 777 AL ARCHIVO CREADO 🔥
+    if os.path.exists(db_path):
+        os.chmod(db_path, 0o777) # <--- 🆕 ESTO ES LO QUE NOS FALTABA
+        print("🔓 Permisos de escritura otorgados al archivo de base de datos.")
+
     print("✅ Base de datos recreada con todas las columnas!")
     
-    # --- 1. Crear usuario ADMIN (Dueño) con contraseña SEGURA ---
-    # Primero buscamos si ya existe
-    admin = Usuario.query.filter_by(usuario='admin').first()
+    # --- Crear usuario ADMIN ---
+    # (Ya no hace falta buscar si existe porque la acabamos de crear desde cero)
     
-    # Si existe, lo borramos para crearlo bien (por si tiene la contraseña vieja sin encriptar)
-    if admin:
-        db.session.delete(admin)
-        db.session.commit()
-        print("🗑️ Usuario admin anterior eliminado para actualizar credenciales.")
-
-    # Ahora lo creamos desde cero con la contraseña encriptada
     nuevo_admin = Usuario(
-        usuario='admin',                 # Tu usuario
-        password=generate_password_hash('123'),  # <--- AQUÍ LA CLAVE: Se guarda encriptada
-        nombre='Juan Gerente',           # Tu nombre
-        rol='dueno',                     # Rol máximo
+        usuario='admin',
+        password=generate_password_hash('123'),
+        nombre='Juan Gerente',
+        rol='dueno',
         activo=True
     )
     
@@ -57,12 +56,4 @@ with app.app_context():
     db.session.commit()
     print("✅ Usuario dueño creado exitosamente: admin / 123 (Encriptada)")
 
-    print("\n🚀 ¡Base de datos lista y usuario admin verificado!")
-    
-    print("\n✅ ¡Base de datos lista para usar!")
-    print("📊 Tablas creadas:")
-    print("   - usuarios")
-    print("   - clientes")
-    print("   - prestamos (con todas las columnas)")
-    print("   - pagos")
-    print("   - transacciones")
+    print("\n🚀 ¡Base de datos lista y desbloqueada!")

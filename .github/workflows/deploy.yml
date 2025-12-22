@@ -22,8 +22,9 @@ jobs:
         env:
           PORT: 5000
         run: |
+          rm -rf instance          # <--- 🆕 BORRADO TOTAL (Empezamos de cero)
           mkdir -p instance
-          chmod -R 777 instance   # <--- Agrégale la -R mayúscula aquí
+          chmod -R 777 instance
           python recrear_bd.py
           python run.py &
           sleep 10
