@@ -22,7 +22,9 @@ jobs:
         env:
           PORT: 5000
         run: |
-          python recrear_bd.py  # <--- AGREGA ESTA LÍNEA AQUÍ
+          mkdir -p instance       # <--- Crea la carpeta si no existe
+          chmod 777 instance      # <--- ¡IMPORTANTE! Da permisos totales de escritura
+          python recrear_bd.py
           python run.py &
           sleep 10
           pytest
