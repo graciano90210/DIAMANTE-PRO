@@ -10,8 +10,8 @@ def token():
     """Esta función obtiene el token automáticamente para los tests que lo necesiten"""
     url = f"{BASE_URL}/login"
     payload = {
-        "usuario": "cristian", 
-        "password": "1234"
+        "usuario": "admin",
+        "password": "123"
     }
     # Intentamos loguearnos
     response = requests.post(url, json=payload)
@@ -31,8 +31,8 @@ def test_login_explicit():
     """Prueba explícita del login para verificar status 200"""
     print("\n========== TEST LOGIN ==========")
     response = requests.post(f"{BASE_URL}/login", json={
-        "usuario": "cristian",
-        "password": "1234"
+        "usuario": "admin",
+        "password": "123"
     })
     assert response.status_code == 200
     assert "access_token" in response.json()
