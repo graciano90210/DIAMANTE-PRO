@@ -46,7 +46,7 @@ with app.app_context():
     
     nuevo_admin = Usuario(
         usuario='admin',
-        password=generate_password_hash('123'),
+        password=generate_password_hash('123', method='pbkdf2:sha256'),
         nombre='Juan Gerente',
         rol='dueno',
         activo=True
