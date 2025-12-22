@@ -28,34 +28,27 @@ with app.app_context():
     db.create_all()
     print("✅ Base de datos recreada con todas las columnas!")
     
-    # --- 1. Crear usuario ADMIN ---
+   # --- 1. Crear SOLO el usuario ADMIN (Dueño) ---
+    # Buscamos si ya existe para no duplicarlo
     admin = Usuario.query.filter_by(usuario='admin').first()
+    
     if not admin:
         admin = Usuario(
-            usuario='admin',
-            password='123',
-            nombre='Juan Gerente',
-            rol='dueno',
+            usuario='admin',    # Tu usuario para entrar
+            password='123',     # Tu contraseña
+            nombre='Juan Gerente', # El nombre que aparecerá
+            rol='dueno',        # Rol principal con todos los permisos
             activo=True
         )
         db.session.add(admin)
-        db.session.commit()
-        print("👤 Usuario dueño creado (admin/123)")
+        print("✅ Usuario dueño creado exitosamente: admin / 123")
+    else:
+        print("ℹ️ El usuario admin ya existe en la base de datos.")
 
-    # --- 2. Crear usuario CRISTIAN (PARA LOS TESTS) ---
-    # Este es el bloque nuevo que necesitamos para que pase el check verde ✅
-    test_user = Usuario.query.filter_by(usuario='cristian').first()
-    if not test_user:
-        test_user = Usuario(
-            usuario='cristian',
-            password='1234',  # ¡IMPORTANTE! Coincide con lo que pide test_api.py
-            nombre='Cristian Pruebas',
-            rol='cobrador',   # Le ponemos rol cobrador para que tenga acceso a rutas
-            activo=True
-        )
-        db.session.add(test_user)
-        db.session.commit()
-        print("👤 Usuario de prueba creado (cristian/1234)")
+    db.session.commit()
+    print("\n🚀 ¡Base de datos lista y usuario admin verificado!")
+
+
     
     print("\n✅ ¡Base de datos lista para usar!")
     print("📊 Tablas creadas:")
