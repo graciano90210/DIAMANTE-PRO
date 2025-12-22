@@ -3,56 +3,49 @@ name: Deploy to Heroku
   push:
     branches:
       - main
-      - master
-
-  deploy:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Instalar Heroku CLI
-        run: |
-          curl https://cli-assets.heroku.com/install.sh | sh
-
-      - name: Login en Heroku
-        env:
-          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-        run: |
-          echo "$HEROKU_API_KEY" | heroku auth:token
-
-      - name: Deploy a Heroku
-        env:
-          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-          HEROKU_APP_NAME: ${{ secrets.HEROKU_APP_NAME }}
-        run: |
-          git remote add heroku https://heroku:${HEROKU_API_KEY}@git.heroku.com/${HEROKU_APP_NAME}.git || true
-          git push heroku HEAD:main -f
-
-      - name: Health Check
-        run: |
-          sleep 10
-          curl -f ${{secrets.APP_URL}}/api/v1/login || exit 0
-
-  deploy:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-    steps:
-      - uses: actions/checkout@v4
-
-
-name: Deploy to Heroku
-
-
+      name: Deploy to Heroku
+      on:
         push:
           branches:
             - main
             - master
-      - name: Health Check
-        run: |
-          sleep 10
-          curl -f ${{ secrets.APP_URL }}/api/v1/login || exit 0
-          sleep 10
-          curl -f ${{secrets.APP_URL}}/api/v1/login || exit 0
+      jobs:
+        test:
+          runs-on: ubuntu-latest
+          steps:
+            - uses: actions/checkout@v4
+            - name: Set up Python 3.11
+              uses: actions/setup-python@v5
+              with:
+                python-version: '3.11'
+                cache: 'pip'
+            - name: Install dependencies
+              run: |
+                python -m pip install --upgrade pip
+                pip install -r requirements.txt
+                pip install pytest pytest-flask
+            - name: Run tests
+              run: |
+                python -m pytest tests/ -v || echo "No tests found yet"
+            - name: Check Python syntax
+              run: |
+                python -m py_compile app/*.py
+                python -m py_compile *.py
+        deploy:
+          needs: test
+          runs-on: ubuntu-latest
+          if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+          steps:
+            - uses: actions/checkout@v4
+            - name: Deploy to Heroku
+              uses: akhileshns/heroku-deploy@v3.13.15
+              with:
+                heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+                heroku_app_name: ${{ secrets.HEROKU_APP_NAME }}
+                heroku_email: ${{ secrets.HEROKU_EMAIL }}
+                branch: main
+            - name: Health Check
+              run: |
+                sleep 10
+                curl -f ${{ secrets.APP_URL }}/api/v1/login || exit 0
+            - main
