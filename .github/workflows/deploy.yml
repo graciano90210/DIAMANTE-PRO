@@ -43,7 +43,7 @@ name: Deploy to Heroku
       - uses: actions/checkout@v4
 
 
-      name: Deploy to Heroku
+name: Deploy to Heroku
 
 
         push:
