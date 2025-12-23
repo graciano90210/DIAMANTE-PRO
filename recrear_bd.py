@@ -1,52 +1,51 @@
 import os
-import stat  # <--- 🆕 IMPORTANTE: Necesario para cambiar permisos
+import stat
 from app import create_app
 from app.models import db, Usuario
 from datetime import datetime
-from werkzeug.security import generate_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash # <--- 🆕 Importamos check
 
 app = create_app()
 
 with app.app_context():
     print("🔄 Recreando base de datos...")
     
-    # Asegurar que la carpeta instance existe con permisos totales
+    # Asegurar carpeta instance
     if not os.path.exists('instance'):
         os.makedirs('instance')
         os.chmod('instance', 0o777)
 
     db_path = 'instance/diamante.db'
     
-    # 1. Eliminar cualquier conexión vieja que pueda bloquear el archivo
-    db.engine.dispose() # <--- 🆕 TRUCO DE MAGIA: Libera el archivo antes de tocarlo
+    # 1. Liberar archivo
+    db.session.remove()
+    db.engine.dispose()
 
-    # 2. Hacer backup o borrar lo viejo
+    # 2. Borrado agresivo si existe
     if os.path.exists(db_path):
-        backup_path = f'instance/diamante_old_{datetime.now().strftime("%Y%m%d_%H%M%S")}.db'
         try:
-            os.rename(db_path, backup_path)
-            print(f"💾 Base de datos anterior renombrada: {backup_path}")
+            os.remove(db_path)
+            print("🗑️ Base de datos vieja eliminada.")
         except:
-            if os.path.exists(db_path):
-                os.remove(db_path)
-                print("🗑️ Base de datos vieja eliminada forzosamente.")
+            print("⚠️ No se pudo borrar, intentando sobreescribir...")
 
-    # 3. Crear las tablas
+    # 3. Crear tablas
     db.create_all()
     
-    # 4. 🔥 LA SOLUCIÓN DEFINITIVA: Dar permisos 777 AL ARCHIVO CREADO 🔥
+    # 4. Permisos
     if os.path.exists(db_path):
-        os.chmod(db_path, 0o777) # <--- 🆕 ESTO ES LO QUE NOS FALTABA
-        print("🔓 Permisos de escritura otorgados al archivo de base de datos.")
+        os.chmod(db_path, 0o777)
+        print("🔓 Permisos 777 aplicados.")
 
-    print("✅ Base de datos recreada con todas las columnas!")
+    # --- 5. CREAR USUARIO CON AUTO-VERIFICACIÓN ---
+    print("👤 Creando usuario admin...")
     
-    # --- Crear usuario ADMIN ---
-    # (Ya no hace falta buscar si existe porque la acabamos de crear desde cero)
+    # Usamos el método por defecto que es el más compatible
+    password_hash = generate_password_hash('123')
     
     nuevo_admin = Usuario(
         usuario='admin',
-        password=generate_password_hash('123', method='pbkdf2:sha256'),
+        password=password_hash,
         nombre='Juan Gerente',
         rol='dueno',
         activo=True
@@ -54,6 +53,22 @@ with app.app_context():
     
     db.session.add(nuevo_admin)
     db.session.commit()
-    print("✅ Usuario dueño creado exitosamente: admin / 123 (Encriptada)")
+    
+    # --- 🕵️‍♂️ PRUEBA DE FUEGO: VERIFICAR INMEDIATAMENTE ---
+    # Leemos de la base de datos para asegurar que se guardó bien
+    usuario_prueba = Usuario.query.filter_by(usuario='admin').first()
+    
+    if usuario_prueba:
+        print(f"✅ Usuario encontrado en BD: {usuario_prueba.usuario}")
+        # Probamos la contraseña
+        if check_password_hash(usuario_prueba.password, '123'):
+            print("🔑 ¡VERIFICACIÓN DE PASSWORD EXITOSA! La clave '123' funciona.")
+        else:
+            print("❌ ERROR CRÍTICO: La contraseña no coincide al verificar.")
+    else:
+        print("❌ ERROR CRÍTICO: El usuario no se guardó en la base de datos.")
 
-    print("\n🚀 ¡Base de datos lista y desbloqueada!")
+    # 6. Cierre final importante
+    db.session.close()
+    db.engine.dispose() # <--- Soltamos el archivo para que run.py lo pueda leer
+    print("\n🚀 ¡Base de datos lista y desconectada!")
