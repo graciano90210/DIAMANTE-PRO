@@ -16,7 +16,6 @@ def app():
     """Crear aplicación de prueba"""
     app = create_app()
     app.config['TESTING'] = True
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
     return app
 
 
