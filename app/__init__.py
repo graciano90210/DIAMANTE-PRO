@@ -76,4 +76,9 @@ def create_app():
     from .api import api
     app.register_blueprint(api)
 
+    # NUEVO: Conectar Rutas de Capital (Inversiones) 💎
+    # Esto permite guardar los aportes de dinero de los socios
+    from .rutas_capital import capital_bp
+    app.register_blueprint(capital_bp)
+
     return app

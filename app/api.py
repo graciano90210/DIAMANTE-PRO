@@ -80,23 +80,13 @@ def api_obtener_clientes():
     """
     Obtener clientes del cobrador (con préstamos activos)
     Headers: Authorization: Bearer TOKEN
-    Query params: ?ruta_id=1 (opcional)
     Returns: [{"id": 1, "nombre": "Cliente", ...}]
     """
     usuario_id = get_jwt_identity()
-    ruta_id = request.args.get('ruta_id', type=int)
     
-    # Obtener rutas del cobrador
-    if ruta_id:
-        rutas = [Ruta.query.get(ruta_id)] if Ruta.query.get(ruta_id) and Ruta.query.get(ruta_id).cobrador_id == usuario_id else []
-    else:
-        rutas = Ruta.query.filter_by(cobrador_id=usuario_id, activo=True).all()
-    
-    rutas_ids = [r.id for r in rutas]
-    
-    # Obtener clientes con préstamos activos en esas rutas
+    # Obtener clientes con préstamos activos del cobrador
     clientes_ids = db.session.query(Prestamo.cliente_id).filter(
-        Prestamo.ruta_id.in_(rutas_ids),
+        Prestamo.cobrador_id == usuario_id,
         Prestamo.estado == 'ACTIVO'
     ).distinct().all()
     
@@ -122,24 +112,15 @@ def api_obtener_prestamos():
     """
     Obtener préstamos activos del cobrador
     Headers: Authorization: Bearer TOKEN
-    Query params: ?ruta_id=1 (opcional), ?cliente_id=1 (opcional)
+    Query params: ?cliente_id=1 (opcional)
     Returns: [{"id": 1, "cliente": {...}, ...}]
     """
     usuario_id = get_jwt_identity()
-    ruta_id = request.args.get('ruta_id', type=int)
     cliente_id = request.args.get('cliente_id', type=int)
     
-    # Obtener rutas del cobrador
-    if ruta_id:
-        rutas = [Ruta.query.get(ruta_id)] if Ruta.query.get(ruta_id) and Ruta.query.get(ruta_id).cobrador_id == usuario_id else []
-    else:
-        rutas = Ruta.query.filter_by(cobrador_id=usuario_id, activo=True).all()
-    
-    rutas_ids = [r.id for r in rutas]
-    
-    # Query base
+    # Query base - préstamos del cobrador
     query = Prestamo.query.filter(
-        Prestamo.ruta_id.in_(rutas_ids),
+        Prestamo.cobrador_id == usuario_id,
         Prestamo.estado == 'ACTIVO'
     )
     
@@ -178,23 +159,13 @@ def api_ruta_cobro():
     """
     Obtener la lista de cobros del día (clientes que deben pagar hoy)
     Headers: Authorization: Bearer TOKEN
-    Query params: ?ruta_id=1 (opcional)
     Returns: [{"prestamo": {...}, "debe_pagar_hoy": true, ...}]
     """
     usuario_id = get_jwt_identity()
-    ruta_id = request.args.get('ruta_id', type=int)
     
-    # Obtener rutas del cobrador
-    if ruta_id:
-        rutas = [Ruta.query.get(ruta_id)] if Ruta.query.get(ruta_id) and Ruta.query.get(ruta_id).cobrador_id == usuario_id else []
-    else:
-        rutas = Ruta.query.filter_by(cobrador_id=usuario_id, activo=True).all()
-    
-    rutas_ids = [r.id for r in rutas]
-    
-    # Obtener préstamos activos
+    # Obtener préstamos activos del cobrador
     prestamos_activos = Prestamo.query.filter(
-        Prestamo.ruta_id.in_(rutas_ids),
+        Prestamo.cobrador_id == usuario_id,
         Prestamo.estado == 'ACTIVO'
     ).all()
     
@@ -320,44 +291,38 @@ def api_estadisticas_cobrador():
     """
     Obtener estadísticas del cobrador
     Headers: Authorization: Bearer TOKEN
-    Query params: ?ruta_id=1 (opcional)
     Returns: {"total_cartera": 50000, "cobrado_hoy": 1200, ...}
     """
     usuario_id = get_jwt_identity()
-    ruta_id = request.args.get('ruta_id', type=int)
     
-    # Obtener rutas del cobrador
-    if ruta_id:
-        rutas = [Ruta.query.get(ruta_id)] if Ruta.query.get(ruta_id) and Ruta.query.get(ruta_id).cobrador_id == usuario_id else []
-    else:
-        rutas = Ruta.query.filter_by(cobrador_id=usuario_id, activo=True).all()
-    
-    rutas_ids = [r.id for r in rutas]
-    
-    # Préstamos activos
-    prestamos_activos = Prestamo.query.filter(
-        Prestamo.ruta_id.in_(rutas_ids),
-        Prestamo.estado == 'ACTIVO'
+    # Préstamos activos del cobrador (usando cobrador_id directamente)
+    prestamos_activos = Prestamo.query.filter_by(
+        cobrador_id=usuario_id,
+        estado='ACTIVO'
     ).all()
     
     # Total cartera
-    total_cartera = sum(float(p.saldo_actual) for p in prestamos_activos)
+    total_cartera = sum(float(p.saldo_actual) for p in prestamos_activos) if prestamos_activos else 0
+    
+    # Capital prestado
+    capital_prestado = sum(float(p.monto_prestado) for p in prestamos_activos) if prestamos_activos else 0
     
     # Cobrado hoy
     hoy = datetime.now().date()
     pagos_hoy = Pago.query.join(Prestamo).filter(
-        Prestamo.ruta_id.in_(rutas_ids),
+        Prestamo.cobrador_id == usuario_id,
         func.date(Pago.fecha_pago) == hoy
     ).all()
     
-    cobrado_hoy = sum(float(p.monto) for p in pagos_hoy)
+    cobrado_hoy = sum(float(p.monto) for p in pagos_hoy) if pagos_hoy else 0
     
     # Por cobrar hoy
-    por_cobrar_hoy = sum(float(p.valor_cuota) for p in prestamos_activos if p.frecuencia in ['DIARIO', 'BISEMANAL'])
+    por_cobrar_hoy = sum(float(p.valor_cuota) for p in prestamos_activos if p.frecuencia in ['DIARIO', 'BISEMANAL']) if prestamos_activos else 0
     
     return jsonify({
         'total_prestamos': len(prestamos_activos),
         'total_cartera': total_cartera,
+        'capital_prestado': capital_prestado,
         'cobrado_hoy': cobrado_hoy,
         'numero_cobros_hoy': len(pagos_hoy),
         'por_cobrar_hoy': por_cobrar_hoy,
