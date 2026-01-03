@@ -34,7 +34,7 @@ def api_login():
     
     # Crear token JWT con duración de 30 días
     access_token = create_access_token(
-        identity=usuario.id,
+        identity=str(usuario.id),
         expires_delta=timedelta(days=30),
         additional_claims={
             'rol': usuario.rol,
@@ -61,7 +61,7 @@ def api_obtener_rutas_cobrador():
     Headers: Authorization: Bearer TOKEN
     Returns: [{"id": 1, "nombre": "Ruta Centro", ...}]
     """
-    usuario_id = get_jwt_identity()
+    usuario_id = int(get_jwt_identity())
     
     rutas = Ruta.query.filter_by(cobrador_id=usuario_id, activo=True).all()
     
@@ -82,7 +82,7 @@ def api_obtener_clientes():
     Headers: Authorization: Bearer TOKEN
     Returns: [{"id": 1, "nombre": "Cliente", ...}]
     """
-    usuario_id = get_jwt_identity()
+    usuario_id = int(get_jwt_identity())
     
     # Obtener clientes con préstamos activos del cobrador
     clientes_ids = db.session.query(Prestamo.cliente_id).filter(
@@ -115,7 +115,7 @@ def api_obtener_prestamos():
     Query params: ?cliente_id=1 (opcional)
     Returns: [{"id": 1, "cliente": {...}, ...}]
     """
-    usuario_id = get_jwt_identity()
+    usuario_id = int(get_jwt_identity())
     cliente_id = request.args.get('cliente_id', type=int)
     
     # Query base - préstamos del cobrador
@@ -161,7 +161,7 @@ def api_ruta_cobro():
     Headers: Authorization: Bearer TOKEN
     Returns: [{"prestamo": {...}, "debe_pagar_hoy": true, ...}]
     """
-    usuario_id = get_jwt_identity()
+    usuario_id = int(get_jwt_identity())
     
     # Obtener préstamos activos del cobrador
     prestamos_activos = Prestamo.query.filter(
@@ -219,7 +219,7 @@ def api_registrar_pago():
     }
     Returns: {"pago_id": 1, "saldo_nuevo": 2400, ...}
     """
-    usuario_id = get_jwt_identity()
+    usuario_id = int(get_jwt_identity())
     data = request.get_json()
     
     if not data or not data.get('prestamo_id') or not data.get('monto'):
@@ -293,7 +293,7 @@ def api_estadisticas_cobrador():
     Headers: Authorization: Bearer TOKEN
     Returns: {"total_cartera": 50000, "cobrado_hoy": 1200, ...}
     """
-    usuario_id = get_jwt_identity()
+    usuario_id = int(get_jwt_identity())
     
     # Préstamos activos del cobrador (usando cobrador_id directamente)
     prestamos_activos = Prestamo.query.filter_by(
