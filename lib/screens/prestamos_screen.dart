@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/prestamo_model.dart';
-import '../services/api_service.dart';
-import '../services/auth_service.dart';
+import '../services/sync_service.dart';
 import 'prestamo_detalle_screen.dart';
 
 class PrestamosScreen extends StatefulWidget {
@@ -27,14 +26,11 @@ class _PrestamosScreenState extends State<PrestamosScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final apiService = context.read<ApiService>();
-      final authService = context.read<AuthService>();
-      final headers = await authService.getAuthHeaders();
-
-      final response = await apiService.getList('/api/v1/cobrador/prestamos', headers: headers);
+      final syncService = context.read<SyncService>();
+      final prestamos = await syncService.getPrestamos(forceOnline: syncService.isOnline);
 
       setState(() {
-        _prestamos = response.map((json) => Prestamo.fromJson(json)).toList();
+        _prestamos = prestamos;
         _isLoading = false;
       });
     } catch (e) {

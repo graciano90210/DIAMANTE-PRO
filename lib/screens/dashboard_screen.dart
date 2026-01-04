@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
+import '../services/sync_service.dart';
 import 'clientes_screen.dart';
 import 'prestamos_screen.dart';
 import 'cobros_screen.dart';
@@ -30,15 +31,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() => _isLoading = true);
     
     try {
-      final apiService = context.read<ApiService>();
-      final authService = context.read<AuthService>();
-      final headers = await authService.getAuthHeaders();
+      final syncService = context.read<SyncService>();
       
       print('🔍 Cargando estadísticas del cobrador...');
-      print('📡 URL: /api/v1/cobrador/estadisticas');
-      print('🔑 Headers: $headers');
       
-      final response = await apiService.get('/api/v1/cobrador/estadisticas', headers: headers);
+      // Usar SyncService en lugar de API directamente
+      final response = await syncService.getEstadisticas();
       
       print('✅ Respuesta recibida: $response');
       
@@ -48,6 +46,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       });
       
       print('📊 Stats guardados: $_stats');
+      
+      // Sincronizar en segundo plano si hay conexión
+      if (syncService.isOnline) {
+        syncService.syncAll().catchError((e) {
+          print('⚠️ Error en sincronización de fondo: $e');
+        });
+      }
     } catch (e) {
       print('❌ Error al cargar dashboard: $e');
       setState(() => _isLoading = false);
@@ -73,14 +78,76 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
+    final syncService = context.watch<SyncService>();
     
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard'),
+        title: Row(
+          children: [
+            const Text('Dashboard'),
+            const SizedBox(width: 8),
+            // Indicador de conexión
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: syncService.isOnline ? Colors.green : Colors.grey,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    syncService.isOnline ? Icons.cloud_done : Icons.cloud_off,
+                    size: 16,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    syncService.isOnline ? 'ONLINE' : 'OFFLINE',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (syncService.isSyncing)
+              const Padding(
+                padding: EdgeInsets.only(left: 8),
+                child: SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+              ),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: _loadDashboard,
+            onPressed: _isLoading ? null : _loadDashboard,
+          ),
+          IconButton(
+            icon: const Icon(Icons.sync),
+            onPressed: syncService.isSyncing 
+                ? null 
+                : () {
+                    syncService.syncAll().then((_) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Sincronización completada')),
+                      );
+                      _loadDashboard();
+                    }).catchError((e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error: $e')),
+                      );
+                    });
+                  },
           ),
           IconButton(
             icon: const Icon(Icons.logout),

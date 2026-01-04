@@ -5,6 +5,7 @@ import 'screens/dashboard_screen.dart';
 import 'screens/registrar_cobro_screen.dart';
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
+import 'services/sync_service.dart';
 import 'providers/auth_provider.dart';
 import 'models/prestamo_model.dart';
 
@@ -24,6 +25,14 @@ class DiamantePro extends StatelessWidget {
         ),
         ProxyProvider<ApiService, AuthService>(
           update: (_, apiService, __) => AuthService(apiService),
+        ),
+        ChangeNotifierProxyProvider2<ApiService, AuthService, SyncService>(
+          create: (context) => SyncService(
+            context.read<ApiService>(),
+            context.read<AuthService>(),
+          ),
+          update: (_, apiService, authService, previous) =>
+              previous ?? SyncService(apiService, authService),
         ),
         ChangeNotifierProxyProvider<AuthService, AuthProvider>(
           create: (context) => AuthProvider(context.read<AuthService>()),

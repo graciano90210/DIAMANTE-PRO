@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/cliente_model.dart';
-import '../services/api_service.dart';
-import '../services/auth_service.dart';
+import '../services/sync_service.dart';
 
 class ClientesScreen extends StatefulWidget {
   const ClientesScreen({super.key});
@@ -26,14 +25,11 @@ class _ClientesScreenState extends State<ClientesScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final apiService = context.read<ApiService>();
-      final authService = context.read<AuthService>();
-      final headers = await authService.getAuthHeaders();
-
-      final response = await apiService.getList('/api/v1/cobrador/clientes', headers: headers);
+      final syncService = context.read<SyncService>();
+      final clientes = await syncService.getClientes(forceOnline: syncService.isOnline);
 
       setState(() {
-        _clientes = response.map((json) => Cliente.fromJson(json)).toList();
+        _clientes = clientes;
         _isLoading = false;
       });
     } catch (e) {

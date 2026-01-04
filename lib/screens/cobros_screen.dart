@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/prestamo_model.dart';
 import '../models/cobro_model.dart';
-import '../services/api_service.dart';
-import '../services/auth_service.dart';
+import '../services/sync_service.dart';
+import '../providers/auth_provider.dart';
 
 class CobrosScreen extends StatefulWidget {
   const CobrosScreen({super.key});
@@ -37,17 +37,11 @@ class _CobrosScreenState extends State<CobrosScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final apiService = context.read<ApiService>();
-      final authService = context.read<AuthService>();
-      final headers = await authService.getAuthHeaders();
-
-      final response = await apiService.getList('/api/v1/cobrador/prestamos', headers: headers);
+      final syncService = context.read<SyncService>();
+      final prestamos = await syncService.getPrestamos();
 
       setState(() {
-        _prestamos = response
-            .where((json) => json['estado'] == 'ACTIVO')
-            .map((json) => Prestamo.fromJson(json))
-            .toList();
+        _prestamos = prestamos.where((p) => p.estado == 'ACTIVO').toList();
         _isLoading = false;
       });
     } catch (e) {
@@ -78,32 +72,37 @@ class _CobrosScreenState extends State<CobrosScreen> {
     setState(() => _isSaving = true);
 
     try {
-      final apiService = context.read<ApiService>();
-      final authService = context.read<AuthService>();
-      final headers = await authService.getAuthHeaders();
+      final syncService = context.read<SyncService>();
+      final authProvider = context.read<AuthProvider>();
 
-      final cobro = Cobro(
+      final result = await syncService.registrarPago(
         prestamoId: _selectedPrestamo!.id,
         clienteNombre: _selectedPrestamo!.clienteNombre,
         monto: double.parse(_montoController.text),
-        fecha: DateTime.now().toIso8601String(),
+        cobradorId: authProvider.currentUser!.id,
         observaciones: _observacionesController.text.isEmpty
             ? null
             : _observacionesController.text,
-        cobradorId: 1, // ID del cobrador
-      );
-
-      await apiService.post(
-        '/api/v1/cobrador/registrar-pago',
-        body: cobro.toJson(),
-        headers: headers,
       );
 
       if (mounted) {
+        final mensaje = result['sincronizado'] == true
+            ? 'Cobro registrado y sincronizado'
+            : 'Cobro guardado (se sincronizará con conexión)';
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Cobro registrado exitosamente'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: Text(mensaje),
+            backgroundColor: result['sincronizado'] == true ? Colors.green : Colors.orange,
+            action: result['sincronizado'] != true
+                ? SnackBarAction(
+                    label: 'SINCRONIZAR',
+                    textColor: Colors.white,
+                    onPressed: () {
+                      syncService.syncAll();
+                    },
+                  )
+                : null,
           ),
         );
 
