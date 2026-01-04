@@ -6,6 +6,7 @@ import '../services/auth_service.dart';
 import 'clientes_screen.dart';
 import 'prestamos_screen.dart';
 import 'cobros_screen.dart';
+import 'ruta_dia_screen.dart';
 import 'login_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -33,13 +34,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final authService = context.read<AuthService>();
       final headers = await authService.getAuthHeaders();
       
-      final response = await apiService.get('/dashboard', headers: headers);
+      print('🔍 Cargando estadísticas del cobrador...');
+      print('📡 URL: /api/v1/cobrador/estadisticas');
+      print('🔑 Headers: $headers');
+      
+      final response = await apiService.get('/api/v1/cobrador/estadisticas', headers: headers);
+      
+      print('✅ Respuesta recibida: $response');
       
       setState(() {
         _stats = response;
         _isLoading = false;
       });
+      
+      print('📊 Stats guardados: $_stats');
     } catch (e) {
+      print('❌ Error al cargar dashboard: $e');
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -144,6 +154,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
               },
             ),
             ListTile(
+              leading: const Icon(Icons.route),
+              title: const Text('Ruta del Día'),
+              trailing: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.orange,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  _stats != null ? (_stats!['por_cobrar_hoy'] ?? 0).toString() : '0',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const RutaDiaScreen()),
+                );
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.payment),
               title: const Text('Registrar Cobro'),
               onTap: () {
@@ -169,6 +205,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
               onRefresh: _loadDashboard,
               child: _buildDashboard(),
             ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const RutaDiaScreen()),
+          );
+        },
+        icon: const Icon(Icons.route),
+        label: const Text('Ruta del Día'),
+        backgroundColor: Colors.orange,
+      ),
     );
   }
 

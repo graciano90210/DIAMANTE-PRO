@@ -41,11 +41,11 @@ class _CobrosScreenState extends State<CobrosScreen> {
       final authService = context.read<AuthService>();
       final headers = await authService.getAuthHeaders();
 
-      final response = await apiService.get('/prestamos', headers: headers);
+      final response = await apiService.getList('/api/v1/cobrador/prestamos', headers: headers);
 
       setState(() {
-        _prestamos = (response['prestamos'] as List)
-            .where((json) => json['estado'] == 'activo')
+        _prestamos = response
+            .where((json) => json['estado'] == 'ACTIVO')
             .map((json) => Prestamo.fromJson(json))
             .toList();
         _isLoading = false;
@@ -94,7 +94,7 @@ class _CobrosScreenState extends State<CobrosScreen> {
       );
 
       await apiService.post(
-        '/cobros',
+        '/api/v1/cobrador/registrar-pago',
         body: cobro.toJson(),
         headers: headers,
       );
@@ -188,7 +188,7 @@ class _CobrosScreenState extends State<CobrosScreen> {
                             _buildInfoRow('Cuota sugerida:',
                                 '\$${_selectedPrestamo!.valorCuota.toStringAsFixed(2)}'),
                             _buildInfoRow('Saldo pendiente:',
-                                '\$${_selectedPrestamo!.saldoPendiente.toStringAsFixed(2)}'),
+                                '\$${_selectedPrestamo!.saldoActual.toStringAsFixed(2)}'),
                             _buildInfoRow('Cuotas atrasadas:',
                                 '${_selectedPrestamo!.cuotasAtrasadas}'),
                           ],

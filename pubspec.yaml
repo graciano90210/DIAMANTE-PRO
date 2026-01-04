@@ -19,6 +19,16 @@ dependencies:
   # Almacenamiento local
   shared_preferences: ^2.2.2
   
+  # Captura de imágenes
+  image_picker: ^1.0.7
+  
+  # Geolocalización
+  geolocator: ^11.0.0
+  permission_handler: ^11.2.0
+  
+  # Enlaces externos (WhatsApp, llamadas, mapas)
+  url_launcher: ^6.2.4
+  
   # Iconos
   cupertino_icons: ^1.0.2
 

@@ -1,48 +1,40 @@
 class User {
-  final String id;
-  final String email;
+  final int id;
   final String name;
-  final String? token;
+  final String username;
+  final String? email;
+  final String rol;
 
   User({
     required this.id,
-    required this.email,
     required this.name,
-    this.token,
+    required this.username,
+    this.email,
+    required this.rol,
   });
 
-  // Crear un User desde JSON
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['id']?.toString() ?? '',
-      email: json['email'] ?? '',
-      name: json['name'] ?? '',
-      token: json['token'],
+      id: json['id'],
+      name: json['nombre'],
+      username: json['usuario'],
+      email: json['email'],
+      rol: json['rol'],
     );
   }
 
-  // Convertir User a JSON
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'nombre': name,
+      'usuario': username,
       'email': email,
-      'name': name,
-      'token': token,
+      'rol': rol,
     };
   }
 
-  // Crear una copia con campos modificados
-  User copyWith({
-    String? id,
-    String? email,
-    String? name,
-    String? token,
-  }) {
-    return User(
-      id: id ?? this.id,
-      email: email ?? this.email,
-      name: name ?? this.name,
-      token: token ?? this.token,
-    );
-  }
+  bool get isDueno => rol == 'dueno';
+  bool get isGerente => rol == 'gerente';
+  bool get isCobrador => rol == 'cobrador';
+  bool get canManageUsers => isDueno || isGerente;
 }

@@ -30,12 +30,10 @@ class _ClientesScreenState extends State<ClientesScreen> {
       final authService = context.read<AuthService>();
       final headers = await authService.getAuthHeaders();
 
-      final response = await apiService.get('/clientes', headers: headers);
+      final response = await apiService.getList('/api/v1/cobrador/clientes', headers: headers);
 
       setState(() {
-        _clientes = (response['clientes'] as List)
-            .map((json) => Cliente.fromJson(json))
-            .toList();
+        _clientes = response.map((json) => Cliente.fromJson(json)).toList();
         _isLoading = false;
       });
     } catch (e) {
@@ -121,7 +119,7 @@ class _ClientesScreenState extends State<ClientesScreen> {
                                       Text(cliente.telefono),
                                     ],
                                   ),
-                                  if (cliente.direccion.isNotEmpty) ...[
+                                  if (cliente.direccionNegocio.isNotEmpty) ...[
                                     const SizedBox(height: 4),
                                     Row(
                                       children: [
@@ -129,7 +127,7 @@ class _ClientesScreenState extends State<ClientesScreen> {
                                         const SizedBox(width: 4),
                                         Expanded(
                                           child: Text(
-                                            cliente.direccion,
+                                            cliente.direccionNegocio,
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                           ),
@@ -139,10 +137,9 @@ class _ClientesScreenState extends State<ClientesScreen> {
                                   ],
                                 ],
                               ),
-                              trailing: cliente.activo
-                                  ? const Icon(Icons.check_circle,
-                                      color: Colors.green)
-                                  : const Icon(Icons.cancel, color: Colors.red),
+                              trailing: cliente.esVip
+                                  ? const Icon(Icons.star, color: Colors.amber)
+                                  : null,
                               onTap: () {
                                 // Navegar a detalles del cliente
                               },

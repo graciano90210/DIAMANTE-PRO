@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_service.dart';
+import '../models/user_model.dart';
 
 class AuthService {
   final ApiService _apiService;
@@ -8,61 +10,37 @@ class AuthService {
 
   AuthService(this._apiService);
 
-  // Login
-  Future<Map<String, dynamic>> login(String usuario, String password) async {
-    try {
-      final response = await _apiService.post(
-        '/login',
-        body: {
-          'usuario': usuario,
-          'password': password,
-        },
-      );
+  Future<Map<String, dynamic>> login(String username, String password) async {
+    final response = await _apiService.post(
+      '/login',
+      body: {
+        'usuario': username,
+        'password': password,
+      },
+    );
 
-      // Guardar token y datos del usuario
-      if (response['access_token'] != null) {
-        await _saveToken(response['access_token']);
-        await _saveUserData(response['usuario']);
-      }
-
-      return response;
-    } catch (e) {
-      throw Exception('Error al iniciar sesión: $e');
-    }
-  }
-
-  // Guardar token
-  Future<void> _saveToken(String token) async {
+    // Guardar token y usuario
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_tokenKey, token);
+    await prefs.setString(_tokenKey, response['access_token']);
+    await prefs.setString(_userKey, json.encode(response['usuario']));
+
+    return response;
   }
 
-  // Guardar datos del usuario
-  Future<void> _saveUserData(Map<String, dynamic> userData) async {
+  Future<User?> getCurrentUser() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_userKey, userData.toString());
+    final userData = prefs.getString(_userKey);
+    
+    if (userData == null) return null;
+    
+    return User.fromJson(json.decode(userData));
   }
 
-  // Obtener token guardado
   Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_tokenKey);
   }
 
-  // Verificar si hay sesión activa
-  Future<bool> isLoggedIn() async {
-    final token = await getToken();
-    return token != null && token.isNotEmpty;
-  }
-
-  // Logout
-  Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_tokenKey);
-    await prefs.remove(_userKey);
-  }
-
-  // Obtener headers con token
   Future<Map<String, String>> getAuthHeaders() async {
     final token = await getToken();
     return {
@@ -70,5 +48,16 @@ class AuthService {
       'Accept': 'application/json',
       'Authorization': 'Bearer $token',
     };
+  }
+
+  Future<void> logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_tokenKey);
+    await prefs.remove(_userKey);
+  }
+
+  Future<bool> isLoggedIn() async {
+    final token = await getToken();
+    return token != null;
   }
 }

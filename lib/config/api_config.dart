@@ -1,6 +1,6 @@
 class ApiConfig {
-  // URL de tu backend en Heroku (URL directa)
-  static const String baseUrl = 'https://diamante-pro-1951dcdb66df.herokuapp.com/api/v1';
+  // URL de tu backend con la ruta de la API
+  static const String baseUrl = 'http://localhost:5001/api/v1';
   
   // Endpoints
   static const String login = '/login';

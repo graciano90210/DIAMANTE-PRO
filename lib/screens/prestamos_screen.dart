@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/prestamo_model.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
+import 'prestamo_detalle_screen.dart';
 
 class PrestamosScreen extends StatefulWidget {
   const PrestamosScreen({super.key});
@@ -30,12 +31,10 @@ class _PrestamosScreenState extends State<PrestamosScreen> {
       final authService = context.read<AuthService>();
       final headers = await authService.getAuthHeaders();
 
-      final response = await apiService.get('/prestamos', headers: headers);
+      final response = await apiService.getList('/api/v1/cobrador/prestamos', headers: headers);
 
       setState(() {
-        _prestamos = (response['prestamos'] as List)
-            .map((json) => Prestamo.fromJson(json))
-            .toList();
+        _prestamos = response.map((json) => Prestamo.fromJson(json)).toList();
         _isLoading = false;
       });
     } catch (e) {
@@ -145,11 +144,11 @@ class _PrestamosScreenState extends State<PrestamosScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   const SizedBox(height: 4),
-                                  Text('Monto: \$${prestamo.monto.toStringAsFixed(2)}'),
+                                  Text('Monto: \$${prestamo.montoPrestado.toStringAsFixed(2)}'),
                                   Text(
                                       'Cuota: \$${prestamo.valorCuota.toStringAsFixed(2)}'),
                                   Text(
-                                      'Saldo: \$${prestamo.saldoPendiente.toStringAsFixed(2)}'),
+                                      'Saldo: \$${prestamo.saldoActual.toStringAsFixed(2)}'),
                                   Text(
                                       'Cuotas pagadas: ${prestamo.cuotasPagadas}/${prestamo.numeroCuotas}'),
                                 ],
@@ -180,7 +179,14 @@ class _PrestamosScreenState extends State<PrestamosScreen> {
                                 ],
                               ),
                               onTap: () {
-                                // Navegar a detalles del préstamo
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => PrestamoDetalleScreen(
+                                      prestamo: prestamo,
+                                    ),
+                                  ),
+                                );
                               },
                             ),
                           );

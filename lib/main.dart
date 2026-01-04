@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/dashboard_screen.dart';
+import 'screens/registrar_cobro_screen.dart';
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
 import 'providers/auth_provider.dart';
+import 'models/prestamo_model.dart';
 
 void main() {
   runApp(const DiamantePro());
@@ -41,6 +43,12 @@ class DiamantePro extends StatelessWidget {
           ),
         ),
         home: const AuthCheck(),
+        routes: {
+          '/registrar-cobro': (context) {
+            final prestamo = ModalRoute.of(context)?.settings.arguments as Prestamo?;
+            return RegistrarCobroScreen(prestamo: prestamo);
+          },
+        },
       ),
     );
   }

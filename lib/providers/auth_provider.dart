@@ -15,7 +15,6 @@ class AuthProvider with ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _currentUser != null;
 
-  // Login
   Future<bool> login(String usuario, String password) async {
     _isLoading = true;
     _errorMessage = null;
@@ -23,7 +22,6 @@ class AuthProvider with ChangeNotifier {
 
     try {
       final response = await _authService.login(usuario, password);
-      
       _currentUser = User.fromJson(response['usuario']);
       _isLoading = false;
       notifyListeners();
@@ -36,7 +34,6 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // Logout
   Future<void> logout() async {
     await _authService.logout();
     _currentUser = null;
@@ -44,9 +41,13 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Verificar sesión
   Future<bool> checkSession() async {
-    return await _authService.isLoggedIn();
+    final isLoggedIn = await _authService.isLoggedIn();
+    if (isLoggedIn) {
+      _currentUser = await _authService.getCurrentUser();
+      notifyListeners();
+    }
+    return isLoggedIn;
   }
 
   void clearError() {
