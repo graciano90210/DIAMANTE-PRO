@@ -10,6 +10,7 @@ psycopg2-binary==2.9.9
 # Monitoreo y Emails (GitHub Student Pack)
 sentry-sdk[flask]==1.39.2
 sendgrid==6.11.0
+twilio==8.11.1
 
 # Testing
 pytest==7.4.3

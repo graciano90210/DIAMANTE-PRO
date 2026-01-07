@@ -80,5 +80,10 @@ def create_app():
     # Esto permite guardar los aportes de dinero de los socios
     from .rutas_capital import capital_bp
     app.register_blueprint(capital_bp)
+    
+    # NUEVO: Notificaciones SMS/WhatsApp con Twilio 📱
+    # GitHub Student Pack: $50 de crédito gratuito
+    from .notificaciones import notificaciones_bp
+    app.register_blueprint(notificaciones_bp)
 
     return app
