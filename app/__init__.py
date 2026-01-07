@@ -53,17 +53,12 @@ def create_app():
     db.init_app(app)
     jwt = JWTManager(app)
     
-    # Configurar CORS para la app móvil y web
-    CORS(app, resources={
-        r"/api/*": {
-            "origins": "*",
-            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Authorization"],
-            "expose_headers": ["Content-Type", "Authorization"],
-            "supports_credentials": False,
-            "max_age": 3600
-        }
-    })
+    # Configurar CORS - Aceptar peticiones desde cualquier origen (localhost, web, etc.)
+    CORS(app, 
+         origins="*",
+         allow_headers=["Content-Type", "Authorization"],
+         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+         supports_credentials=False)
     
     # Solo crear tablas en desarrollo (SQLite)
     # En producción (PostgreSQL), usar init_db_heroku.py
