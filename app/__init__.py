@@ -53,12 +53,15 @@ def create_app():
     db.init_app(app)
     jwt = JWTManager(app)
     
-    # Configurar CORS para la app móvil
+    # Configurar CORS para la app móvil y web
     CORS(app, resources={
         r"/api/*": {
-            "origins": "*",  # En producción, especificar dominio de la app
-            "methods": ["GET", "POST", "PUT", "DELETE"],
-            "allow_headers": ["Content-Type", "Authorization"]
+            "origins": "*",
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"],
+            "expose_headers": ["Content-Type", "Authorization"],
+            "supports_credentials": False,
+            "max_age": 3600
         }
     })
     
