@@ -152,6 +152,35 @@ def api_obtener_prestamos():
         'estado': prestamo.estado
     } for prestamo in prestamos]), 200
 
+# ==================== PAGOS DE UN PRÉSTAMO ====================
+@api.route('/cobrador/prestamos/<int:prestamo_id>/pagos', methods=['GET'])
+@jwt_required()
+def api_obtener_pagos_prestamo(prestamo_id):
+    """
+    Obtener historial de pagos de un préstamo
+    Headers: Authorization: Bearer TOKEN
+    Returns: [{"id": 1, "monto": 100, ...}]
+    """
+    usuario_id = int(get_jwt_identity())
+    
+    prestamo = Prestamo.query.get_or_404(prestamo_id)
+    
+    # Verificar permisos (si es cobrador, debe ser SU préstamo o de su ruta)
+    if prestamo.cobrador_id != usuario_id:
+        return jsonify({'error': 'No tienes permiso para ver este préstamo'}), 403
+        
+    pagos = Pago.query.filter_by(prestamo_id=prestamo_id).order_by(Pago.fecha_pago.desc()).all()
+    
+    return jsonify([{
+        'id': pago.id,
+        'monto': float(pago.monto),
+        'fecha_pago': pago.fecha_pago.isoformat(),
+        'observaciones': pago.observaciones,
+        'saldo_anterior': float(pago.saldo_anterior),
+        'saldo_nuevo': float(pago.saldo_nuevo),
+        'cuotas_pagadas': pago.numero_cuotas_pagadas
+    } for pago in pagos]), 200
+
 # ==================== RUTA DE COBRO DIARIA ====================
 @api.route('/cobrador/ruta-cobro', methods=['GET'])
 @jwt_required()

@@ -1,3 +1,11 @@
+print("DEBUG: Starting run.py")
+# Parche de compatibilidad para Python 3.14 en Windows
+import platform
+try:
+    platform.machine()
+except Exception:
+    platform.machine = lambda: 'AMD64'
+
 from app import create_app
 import os
 
@@ -14,4 +22,4 @@ if __name__ == '__main__':
     host = '0.0.0.0' if os.environ.get('DATABASE_URL') else '127.0.0.1'
     debug = not bool(os.environ.get('DATABASE_URL'))
     
-    app.run(host=host, port=port, debug=debug, threaded=True)
+    app.run(host=host, port=port, debug=debug, threaded=True, use_reloader=False)

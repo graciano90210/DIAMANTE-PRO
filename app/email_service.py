@@ -2,9 +2,14 @@
 Servicio de Email con SendGrid para DIAMANTE PRO
 """
 import os
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail, Email, To, Content
 import logging
+
+try:
+    from sendgrid import SendGridAPIClient
+    from sendgrid.helpers.mail import Mail, Email, To, Content
+    SENDGRID_AVAILABLE = True
+except ImportError:
+    SENDGRID_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -15,9 +20,12 @@ class EmailService:
     def __init__(self):
         self.api_key = os.getenv('SENDGRID_API_KEY')
         self.from_email = os.getenv('SENDGRID_FROM_EMAIL', 'noreply@diamantepro.me')
-        self.enabled = bool(self.api_key)
+        self.enabled = bool(self.api_key) and SENDGRID_AVAILABLE
         
-        if not self.enabled:
+        if not SENDGRID_AVAILABLE:
+            logger.warning("⚠️ SendGrid no instalado. Emails deshabilitados.")
+        elif not self.enabled:
+            logger.warning("⚠️ SENDGRID_API_KEY no configurada. Emails deshabilitados.")
             logger.warning("SendGrid no configurado. Los emails no se enviarán.")
     
     def send_email(self, to_email, subject, html_content, plain_content=None):

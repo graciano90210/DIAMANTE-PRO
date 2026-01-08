@@ -3,8 +3,11 @@ from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from .models import db
 import os
-import sentry_sdk
-from sentry_sdk.integrations.flask import FlaskIntegration
+try:
+    import sentry_sdk
+    from sentry_sdk.integrations.flask import FlaskIntegration
+except ImportError:
+    pass # Managed in create_app
 import logging
 
 # Configurar logging
@@ -16,17 +19,22 @@ def create_app():
     
     # Inicializar Sentry para monitoreo de errores (GitHub Student Pack)
     sentry_dsn = os.environ.get('SENTRY_DSN')
-    if sentry_dsn:
-        sentry_sdk.init(
-            dsn=sentry_dsn,
-            integrations=[FlaskIntegration()],
-            traces_sample_rate=1.0,  # 100% de transacciones en producción
-            environment=os.environ.get('FLASK_ENV', 'production'),
-            release=os.environ.get('HEROKU_SLUG_COMMIT', 'dev')
-        )
-        logger.info("✅ Sentry inicializado - Monitoreo activo")
-    else:
-        logger.info("⚠️ Sentry no configurado - Agregar SENTRY_DSN")
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.flask import FlaskIntegration
+        if sentry_dsn:
+            sentry_sdk.init(
+                dsn=sentry_dsn,
+                integrations=[FlaskIntegration()],
+                traces_sample_rate=1.0,  # 100% de transacciones en producción
+                environment=os.environ.get('FLASK_ENV', 'production'),
+                release=os.environ.get('HEROKU_SLUG_COMMIT', 'dev')
+            )
+            logger.info("✅ Sentry inicializado - Monitoreo activo")
+        else:
+            logger.info("⚠️ Sentry no configurado - Agregar SENTRY_DSN")
+    except ImportError:
+        logger.warning("⚠️ Sentry SDK no instalado - Se omite monitoreo")
     
     # Configuración - Detectar entorno
     if os.environ.get('DATABASE_URL'):
@@ -78,10 +86,5 @@ def create_app():
     # Esto permite guardar los aportes de dinero de los socios
     from .rutas_capital import capital_bp
     app.register_blueprint(capital_bp)
-    
-    # NUEVO: Notificaciones SMS/WhatsApp con Twilio 📱
-    # GitHub Student Pack: $50 de crédito gratuito
-    from .notificaciones import notificaciones_bp
-    app.register_blueprint(notificaciones_bp)
 
     return app

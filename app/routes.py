@@ -9,7 +9,13 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
 from io import BytesIO
-from PIL import Image, ImageDraw, ImageFont
+try:
+    from PIL import Image, ImageDraw, ImageFont
+except ImportError:
+    print("⚠️ Warning: PIL (Pillow) not available. Image features will be disabled.")
+    Image = None
+    ImageDraw = None
+    ImageFont = None
 import os
 import base64
 
