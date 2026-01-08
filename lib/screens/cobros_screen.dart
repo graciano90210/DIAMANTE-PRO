@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/prestamo_model.dart';
-import '../models/cobro_model.dart';
 import '../services/sync_service.dart';
 import '../providers/auth_provider.dart';
 

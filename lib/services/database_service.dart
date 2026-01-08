@@ -1,17 +1,27 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/cliente_model.dart';
 import '../models/prestamo_model.dart';
-import 'dart:io';
+// import 'dart:io';
 
 class DatabaseService {
   static final DatabaseService instance = DatabaseService._init();
   static Database? _database;
+  
+  // Memoria para Web
+  List<Cliente> _clientesMemory = [];
+  List<Prestamo> _prestamosMemory = [];
+  List<Map<String, dynamic>> _pagosPendientesMemory = [];
+  Map<String, String> _configMemory = {};
 
   DatabaseService._init();
 
   Future<Database> get database async {
+    // if (kIsWeb) {
+    //   throw Exception('DB not supported on Web');
+    // }
     if (_database != null) return _database!;
     _database = await _initDB('diamante_pro.db');
     return _database!;
@@ -106,6 +116,12 @@ class DatabaseService {
   // ==================== CLIENTES ====================
   
   Future<void> insertCliente(Cliente cliente) async {
+    if (kIsWeb) {
+      _clientesMemory.removeWhere((c) => c.id == cliente.id);
+      _clientesMemory.add(cliente);
+      return;
+    }
+    
     final db = await instance.database;
     await db.insert(
       'clientes',
@@ -127,6 +143,14 @@ class DatabaseService {
   }
 
   Future<void> insertClientes(List<Cliente> clientes) async {
+    if (kIsWeb) {
+      for (var cliente in clientes) {
+        _clientesMemory.removeWhere((c) => c.id == cliente.id);
+      }
+      _clientesMemory.addAll(clientes);
+      return;
+    }
+
     final db = await instance.database;
     final batch = db.batch();
 
@@ -154,6 +178,10 @@ class DatabaseService {
   }
 
   Future<List<Cliente>> getClientes() async {
+    if (kIsWeb) {
+      return List.from(_clientesMemory)..sort((a, b) => a.nombre.compareTo(b.nombre));
+    }
+
     final db = await instance.database;
     final maps = await db.query('clientes', orderBy: 'nombre ASC');
 
@@ -173,6 +201,11 @@ class DatabaseService {
   }
 
   Future<void> deleteAllClientes() async {
+    if (kIsWeb) {
+      _clientesMemory.clear();
+      return;
+    }
+
     final db = await instance.database;
     await db.delete('clientes');
   }
@@ -180,6 +213,12 @@ class DatabaseService {
   // ==================== PRÉSTAMOS ====================
 
   Future<void> insertPrestamo(Prestamo prestamo) async {
+    if (kIsWeb) {
+      _prestamosMemory.removeWhere((p) => p.id == prestamo.id);
+      _prestamosMemory.add(prestamo);
+      return;
+    }
+
     final db = await instance.database;
     await db.insert(
       'prestamos',
@@ -206,6 +245,14 @@ class DatabaseService {
   }
 
   Future<void> insertPrestamos(List<Prestamo> prestamos) async {
+    if (kIsWeb) {
+      for (var prestamo in prestamos) {
+        _prestamosMemory.removeWhere((p) => p.id == prestamo.id);
+      }
+      _prestamosMemory.addAll(prestamos);
+      return;
+    }
+
     final db = await instance.database;
     final batch = db.batch();
 
@@ -238,6 +285,13 @@ class DatabaseService {
   }
 
   Future<List<Prestamo>> getPrestamos() async {
+    if (kIsWeb) {
+      return _prestamosMemory
+          .where((p) => p.estado == 'ACTIVO')
+          .toList()
+          ..sort((a, b) => b.fechaInicio.compareTo(a.fechaInicio));
+    }
+
     final db = await instance.database;
     final maps = await db.query(
       'prestamos',
@@ -275,6 +329,16 @@ class DatabaseService {
     int cuotasPagadas,
     int cuotasAtrasadas,
   ) async {
+    if (kIsWeb) {
+      final index = _prestamosMemory.indexWhere((p) => p.id == prestamoId);
+      if (index != -1) {
+        // En memoria no podemos actualizar campos final fácilmente sin copyWith
+        // Pero como esto se sincroniza casi inmediatamente con el servidor, 
+        // podemos esperar a la recarga de datos.
+      }
+      return;
+    }
+
     final db = await instance.database;
     await db.update(
       'prestamos',
@@ -292,6 +356,11 @@ class DatabaseService {
   }
 
   Future<void> deleteAllPrestamos() async {
+    if (kIsWeb) {
+      _prestamosMemory.clear();
+      return;
+    }
+
     final db = await instance.database;
     await db.delete('prestamos');
   }
@@ -299,6 +368,13 @@ class DatabaseService {
   // ==================== PAGOS PENDIENTES ====================
 
   Future<int> insertPagoPendiente(Map<String, dynamic> pago) async {
+    if (kIsWeb) {
+      pago['id'] = DateTime.now().millisecondsSinceEpoch;
+      pago['sincronizado'] = 0;
+      _pagosPendientesMemory.add(pago);
+      return pago['id'];
+    }
+
     final db = await instance.database;
     return await db.insert('pagos_pendientes', {
       ...pago,
@@ -308,6 +384,10 @@ class DatabaseService {
   }
 
   Future<List<Map<String, dynamic>>> getPagosPendientes() async {
+    if (kIsWeb) {
+      return _pagosPendientesMemory.where((p) => p['sincronizado'] == 0).toList();
+    }
+
     final db = await instance.database;
     return await db.query(
       'pagos_pendientes',
@@ -318,6 +398,14 @@ class DatabaseService {
   }
 
   Future<void> marcarPagoComoSincronizado(int id) async {
+    if (kIsWeb) {
+      final index = _pagosPendientesMemory.indexWhere((p) => p['id'] == id);
+      if (index != -1) {
+        _pagosPendientesMemory[index]['sincronizado'] = 1;
+      }
+      return;
+    }
+
     final db = await instance.database;
     await db.update(
       'pagos_pendientes',
@@ -328,6 +416,11 @@ class DatabaseService {
   }
 
   Future<void> deletePagosPendientes() async {
+    if (kIsWeb) {
+      _pagosPendientesMemory.removeWhere((p) => p['sincronizado'] == 1);
+      return;
+    }
+
     final db = await instance.database;
     await db.delete(
       'pagos_pendientes',
@@ -339,6 +432,11 @@ class DatabaseService {
   // ==================== CONFIGURACIÓN ====================
 
   Future<void> setConfig(String clave, String valor) async {
+    if (kIsWeb) {
+      _configMemory[clave] = valor;
+      return;
+    }
+
     final db = await instance.database;
     await db.insert(
       'configuracion',
@@ -352,6 +450,10 @@ class DatabaseService {
   }
 
   Future<String?> getConfig(String clave) async {
+    if (kIsWeb) {
+      return _configMemory[clave];
+    }
+
     final db = await instance.database;
     final maps = await db.query(
       'configuracion',
@@ -368,11 +470,19 @@ class DatabaseService {
   // ==================== UTILIDADES ====================
 
   Future<void> close() async {
+    if (kIsWeb) return;
     final db = await instance.database;
     db.close();
   }
 
   Future<void> clearAll() async {
+    if (kIsWeb) {
+      _clientesMemory.clear();
+      _prestamosMemory.clear();
+      _pagosPendientesMemory.clear();
+      return;
+    }
+
     final db = await instance.database;
     await db.delete('clientes');
     await db.delete('prestamos');

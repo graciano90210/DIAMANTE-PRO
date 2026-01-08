@@ -5,9 +5,10 @@ import '../services/api_service.dart';
 import 'registrar_cobro_screen.dart';
 import 'prestamo_detalle_screen.dart';
 import '../models/prestamo_model.dart';
+import '../config/api_config.dart';
 
 class RutaDiaScreen extends StatefulWidget {
-  const RutaDiaScreen({Key? key}) : super(key: key);
+  const RutaDiaScreen({super.key});
 
   @override
   State<RutaDiaScreen> createState() => _RutaDiaScreenState();
@@ -30,7 +31,7 @@ class _RutaDiaScreenState extends State<RutaDiaScreen> {
     setState(() => _isLoading = true);
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
-      final response = await apiService.get('cobrador/ruta-cobro');
+      final response = await apiService.get(ApiConfig.cobros);
       
       setState(() {
         _rutaCobro = response['cobros'] ?? [];

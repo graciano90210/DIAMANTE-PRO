@@ -7,11 +7,12 @@ import '../models/prestamo_model.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../services/location_service.dart';
+import '../config/api_config.dart';
 
 class RegistrarCobroScreen extends StatefulWidget {
   final Prestamo? prestamo;
 
-  const RegistrarCobroScreen({Key? key, this.prestamo}) : super(key: key);
+  const RegistrarCobroScreen({super.key, this.prestamo});
 
   @override
   State<RegistrarCobroScreen> createState() => _RegistrarCobroScreenState();
@@ -54,7 +55,7 @@ class _RegistrarCobroScreenState extends State<RegistrarCobroScreen> {
     setState(() => _isLoading = true);
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
-      final response = await apiService.getList('prestamos/activos');
+      final response = await apiService.getList(ApiConfig.prestamos);
       setState(() {
         _prestamos = response.map((json) => Prestamo.fromJson(json)).toList();
         _isLoading = false;
@@ -283,7 +284,7 @@ class _RegistrarCobroScreenState extends State<RegistrarCobroScreen> {
                               ),
                               const SizedBox(height: 12),
                               DropdownButtonFormField<Prestamo>(
-                                value: _prestamoSeleccionado,
+                                initialValue: _prestamoSeleccionado,
                                 decoration: const InputDecoration(
                                   border: OutlineInputBorder(),
                                   labelText: 'Préstamo',

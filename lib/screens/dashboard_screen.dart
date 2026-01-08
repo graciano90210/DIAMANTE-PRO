@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import '../services/api_service.dart';
-import '../services/auth_service.dart';
 import '../services/sync_service.dart';
 import 'clientes_screen.dart';
 import 'prestamos_screen.dart';

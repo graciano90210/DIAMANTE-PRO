@@ -8,8 +8,23 @@ import 'services/auth_service.dart';
 import 'services/sync_service.dart';
 import 'providers/auth_provider.dart';
 import 'models/prestamo_model.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
 void main() {
+  if (kIsWeb) {
+    // Initialize FFI for Web
+    databaseFactory = databaseFactoryFfiWeb;
+  } else if (Platform.isWindows || Platform.isLinux) {
+    // Initialize FFI
+    sqfliteFfiInit();
+    
+    // Change the default factory
+    databaseFactory = databaseFactoryFfi;
+  }
+
   runApp(const DiamantePro());
 }
 

@@ -6,6 +6,7 @@ import 'api_service.dart';
 import 'auth_service.dart';
 import '../models/cliente_model.dart';
 import '../models/prestamo_model.dart';
+import '../config/api_config.dart';
 
 class SyncService extends ChangeNotifier {
   final DatabaseService _dbService = DatabaseService.instance;
@@ -108,7 +109,7 @@ class SyncService extends ChangeNotifier {
       print('📥 Descargando clientes...');
       final headers = await _authService.getAuthHeaders();
       final response = await _apiService.getList(
-        '/api/v1/cobrador/clientes',
+        ApiConfig.clientes,
         headers: headers,
       );
 
@@ -132,7 +133,7 @@ class SyncService extends ChangeNotifier {
       print('📥 Descargando préstamos...');
       final headers = await _authService.getAuthHeaders();
       final response = await _apiService.getList(
-        '/api/v1/cobrador/prestamos',
+        ApiConfig.prestamos,
         headers: headers,
       );
 
@@ -168,7 +169,7 @@ class SyncService extends ChangeNotifier {
       for (var pago in pagosPendientes) {
         try {
           await _apiService.post(
-            '/api/v1/cobrador/registrar-pago',
+            ApiConfig.registrarPago,
             body: {
               'prestamo_id': pago['prestamo_id'],
               'monto': pago['monto'],
@@ -273,7 +274,7 @@ class SyncService extends ChangeNotifier {
         try {
           final headers = await _authService.getAuthHeaders();
           final response = await _apiService.post(
-            '/api/v1/cobrador/registrar-pago',
+            ApiConfig.registrarPago,
             body: {
               'prestamo_id': prestamoId,
               'monto': monto,
