@@ -14,6 +14,7 @@ class Prestamo {
   final int diasAtraso;
   final String frecuencia;
   final String estado;
+  final String moneda;
 
   Prestamo({
     required this.id,
@@ -31,6 +32,7 @@ class Prestamo {
     required this.diasAtraso,
     required this.frecuencia,
     required this.estado,
+    this.moneda = 'COP', // Valor por defecto
   });
 
   factory Prestamo.fromJson(Map<String, dynamic> json) {
@@ -53,6 +55,7 @@ class Prestamo {
       diasAtraso: json['dias_atraso'] as int? ?? 0,
       frecuencia: json['frecuencia'] as String? ?? 'DIARIO',
       estado: json['estado'] as String? ?? 'ACTIVO',
+      moneda: json['moneda'] as String? ?? 'COP',
     );
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
 import 'registrar_cobro_screen.dart';
 import 'prestamo_detalle_screen.dart';
 import '../models/prestamo_model.dart';
@@ -31,7 +32,13 @@ class _RutaDiaScreenState extends State<RutaDiaScreen> {
     setState(() => _isLoading = true);
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
-      final response = await apiService.get(ApiConfig.cobros);
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final headers = await authService.getAuthHeaders();
+      
+      final response = await apiService.get(
+        ApiConfig.cobros, 
+        headers: headers
+      );
       
       setState(() {
         _rutaCobro = response['cobros'] ?? [];

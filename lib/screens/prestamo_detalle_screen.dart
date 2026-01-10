@@ -28,7 +28,13 @@ class _PrestamoDetalleScreenState extends State<PrestamoDetalleScreen> {
     setState(() => _isLoading = true);
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
-      final response = await apiService.getList('${ApiConfig.prestamos}/${widget.prestamo.id}/pagos');
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final headers = await authService.getAuthHeaders();
+
+      final response = await apiService.getList(
+        '${ApiConfig.prestamos}/${widget.prestamo.id}/pagos',
+        headers: headers,
+      );
       setState(() {
         _historialPagos = response;
         _isLoading = false;

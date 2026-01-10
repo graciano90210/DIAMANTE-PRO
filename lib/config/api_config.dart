@@ -12,6 +12,7 @@ class ApiConfig {
   static const String registrarPago = '/cobrador/registrar-pago';
   static const String estadisticas = '/cobrador/estadisticas';
   static const String rutas = '/cobrador/rutas';
+  static const String nuevoCobro = '/cobros';
   
   // Timeout para peticiones
   static const Duration timeout = Duration(seconds: 30);

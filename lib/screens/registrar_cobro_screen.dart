@@ -55,7 +55,13 @@ class _RegistrarCobroScreenState extends State<RegistrarCobroScreen> {
     setState(() => _isLoading = true);
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
-      final response = await apiService.getList(ApiConfig.prestamos);
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final headers = await authService.getAuthHeaders();
+      
+      final response = await apiService.getList(
+        ApiConfig.prestamos,
+        headers: headers,
+      );
       setState(() {
         _prestamos = response.map((json) => Prestamo.fromJson(json)).toList();
         _isLoading = false;
@@ -170,7 +176,7 @@ class _RegistrarCobroScreenState extends State<RegistrarCobroScreen> {
       // TODO: Subir imagen del recibo si existe
       // if (_imagenRecibo != null) { ... }
 
-      await apiService.post('cobros', body: data);
+      await apiService.post(ApiConfig.nuevoCobro, body: data);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

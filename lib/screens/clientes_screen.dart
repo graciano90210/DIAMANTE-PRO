@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/cliente_model.dart';
 import '../services/sync_service.dart';
+import 'cliente_detalle_screen.dart';
+import 'crear_cliente_screen.dart';
 
 class ClientesScreen extends StatefulWidget {
   const ClientesScreen({super.key});
@@ -62,6 +64,18 @@ class _ClientesScreenState extends State<ClientesScreen> {
             onPressed: _loadClientes,
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const CrearClienteScreen()),
+          );
+          if (result == true) {
+            _loadClientes();
+          }
+        },
+        child: const Icon(Icons.person_add),
       ),
       body: Column(
         children: [
@@ -133,11 +147,14 @@ class _ClientesScreenState extends State<ClientesScreen> {
                                   ],
                                 ],
                               ),
-                              trailing: cliente.esVip
-                                  ? const Icon(Icons.star, color: Colors.amber)
-                                  : null,
+                              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                               onTap: () {
-                                // Navegar a detalles del cliente
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => ClienteDetalleScreen(cliente: cliente),
+                                  ),
+                                );
                               },
                             ),
                           );
