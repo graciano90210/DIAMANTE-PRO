@@ -1,5 +1,16 @@
 # Script para construir la APK de DiamantePro
 
+# Add Flutter to PATH if not present
+if (-not (Get-Command flutter -ErrorAction SilentlyContinue)) {
+    if (Test-Path "C:\src\flutter\bin") {
+        $env:Path += ";C:\src\flutter\bin"
+        Write-Host "Added Flutter to PATH" -ForegroundColor Green
+    } else {
+        Write-Error "Flutter not found. Please install Flutter."
+        exit 1
+    }
+}
+
 Write-Host "=====================================" -ForegroundColor Cyan
 Write-Host "  Construyendo DiamantePro APK" -ForegroundColor Cyan
 Write-Host "=====================================" -ForegroundColor Cyan
