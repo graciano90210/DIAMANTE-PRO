@@ -105,7 +105,116 @@ def api_obtener_clientes():
         'es_vip': cliente.es_vip
     } for cliente in clientes]), 200
 
+@api.route('/cobrador/clientes', methods=['POST'])
+@jwt_required()
+def api_crear_cliente():
+    """
+    Crear nuevo cliente desde la app móvil
+    Headers: Authorization: Bearer TOKEN
+    Body: {"nombre": "Juan", "documento": "123", "telefono": "555", "direccion": "Calle 1"}
+    Returns: {"id": 1, "nombre": "Juan", ...}
+    """
+    data = request.get_json()
+    
+    if not data or not data.get('nombre') or not data.get('documento') or not data.get('telefono'):
+        return jsonify({'error': 'Faltan datos obligatorios (nombre, documento, telefono)'}), 400
+        
+    # Verificar si ya existe
+    if Cliente.query.filter_by(documento=data['documento']).first():
+        return jsonify({'error': 'Ya existe un cliente con este documento'}), 400
+        
+    nuevo_cliente = Cliente(
+        nombre=data['nombre'],
+        documento=data['documento'],
+        telefono=data['telefono'],
+        whatsapp_numero=data.get('whatsapp', data['telefono']), # Por defecto mismo telefono
+        direccion_negocio=data.get('direccion', ''),
+        gps_latitud=data.get('gps_latitud'),
+        gps_longitud=data.get('gps_longitud'),
+        es_vip=False
+    )
+    
+    try:
+        db.session.add(nuevo_cliente)
+        db.session.commit()
+        return jsonify({
+            'id': nuevo_cliente.id,
+            'nombre': nuevo_cliente.nombre,
+            'mensaje': 'Cliente creado exitosamente'
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
 # ==================== PRÉSTAMOS ====================
+@api.route('/cobrador/prestamos', methods=['POST'])
+@jwt_required()
+def api_crear_prestamo():
+    """
+    Crear nuevo préstamo desde la app móvil
+    Headers: Authorization: Bearer TOKEN
+    Body: {
+        "cliente_id": 1, 
+        "monto": 1000, 
+        "interes": 20, 
+        "cuotas": 24, 
+        "frecuencia": "DIARIO",
+        "ruta_id": 1
+    }
+    """
+    usuario_id = int(get_jwt_identity())
+    data = request.get_json()
+    
+    required_fields = ['cliente_id', 'monto', 'cuotas', 'frecuencia', 'ruta_id']
+    if not all(k in data for k in required_fields):
+        return jsonify({'error': f'Faltan campos requeridos: {required_fields}'}), 400
+        
+    try:
+        cliente = Cliente.query.get_or_404(data['cliente_id'])
+        ruta = Ruta.query.get_or_404(data['ruta_id'])
+        
+        # Verificar que la ruta pertenece al cobrador
+        if ruta.cobrador_id != usuario_id:
+            return jsonify({'error': 'No puedes crear préstamos en una ruta ajena'}), 403
+            
+        monto = float(data['monto'])
+        interes_pct = float(data.get('interes', 20)) / 100.0
+        num_cuotas = int(data['cuotas'])
+        
+        # Cálculos financieros
+        total_pagar = monto * (1 + interes_pct)
+        valor_cuota = total_pagar / num_cuotas
+        
+        nuevo_prestamo = Prestamo(
+            cliente_id=cliente.id,
+            ruta_id=ruta.id,
+            cobrador_id=usuario_id,
+            monto_prestado=monto,
+            monto_a_pagar=total_pagar,
+            saldo_actual=total_pagar,
+            valor_cuota=valor_cuota,
+            moneda=ruta.moneda, # Heredar moneda de la ruta
+            frecuencia=data['frecuencia'],
+            numero_cuotas=num_cuotas,
+            tasa_interes=interes_pct,
+            estado='ACTIVO',
+            fecha_inicio=datetime.now()
+        )
+        
+        db.session.add(nuevo_prestamo)
+        db.session.commit()
+        
+        return jsonify({
+            'id': nuevo_prestamo.id,
+            'mensaje': 'Préstamo creado exitosamente',
+            'saldo': total_pagar,
+            'cuota': valor_cuota
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
 @api.route('/cobrador/prestamos', methods=['GET'])
 @jwt_required()
 def api_obtener_prestamos():
@@ -359,3 +468,88 @@ def api_estadisticas_cobrador():
         'prestamos_atrasados': sum(1 for p in prestamos_activos if p.cuotas_atrasadas > 0),
         'prestamos_mora_grave': sum(1 for p in prestamos_activos if p.cuotas_atrasadas > 3)
     }), 200
+
+# ==================== REGISTRAR PAGO ====================
+@api.route('/cobros', methods=['POST'])
+@jwt_required()
+def api_registrar_cobro():
+    """
+    Registrar un pago/abono a un préstamo
+    Headers: Authorization: Bearer TOKEN
+    Body: {
+        "prestamo_id": 1,
+        "monto_pagado": 50,
+        "observaciones": "Pago parcial",
+        "gps_latitud": "...",
+        "gps_longitud": "..."
+    }
+    """
+    usuario_id = int(get_jwt_identity())
+    data = request.get_json()
+    
+    if not data or not data.get('prestamo_id') or not data.get('monto_pagado'):
+        return jsonify({'error': 'Faltan datos obligatorios (prestamo_id, monto_pagado)'}), 400
+        
+    try:
+        prestamo = Prestamo.query.get_or_404(data['prestamo_id'])
+        
+        # Validación de derechos
+        if prestamo.cobrador_id != usuario_id:
+             return jsonify({'error': 'No tienes permiso para cobrar este préstamo'}), 403
+             
+        monto_pago = float(data['monto_pagado'])
+        
+        # Actualizar préstamo
+        saldo_anterior = prestamo.saldo_actual
+        prestamo.saldo_actual -= monto_pago
+        
+        # Actualizar estado si se pagó completo
+        if prestamo.saldo_actual <= 0:
+            prestamo.saldo_actual = 0
+            prestamo.estado = 'PAGADO'
+            prestamo.fecha_ultimo_pago = datetime.now()
+        else:
+            prestamo.fecha_ultimo_pago = datetime.now()
+            
+        # Calcular cuotas pagadas (aproximado, solo como referencia estadística)
+        # cuotas_canceladas = int(monto_pago / prestamo.valor_cuota)
+        # prestamo.cuotas_pagadas += cuotas_canceladas 
+        
+        # Registrar Pago
+        nuevo_pago = Pago(
+            prestamo_id=prestamo.id,
+            cobrador_id=usuario_id,
+            monto=monto_pago,
+            # numero_cuotas_pagadas simplificado a 0 por ahora o cálculo simple
+            numero_cuotas_pagadas=0, 
+            saldo_anterior=saldo_anterior,
+            saldo_nuevo=prestamo.saldo_actual,
+            fecha_pago=datetime.now(),
+            observaciones=data.get('observaciones', ''),
+            tipo_pago='ABONO' if monto_pago < prestamo.valor_cuota else 'NORMAL'
+        )
+        
+        db.session.add(nuevo_pago)
+        
+        # Registrar Transaccion (Entrada de dinero)
+        nueva_transaccion = Transaccion(
+            naturaleza='INGRESO',
+            concepto='COBRO_PRESTAMO',
+            descripcion=f"Cobro préstamo #{prestamo.id} - Cliente {prestamo.cliente.nombre}",
+            monto=monto_pago,
+            usuario_origen_id=usuario_id, # El cobrador recibe el dinero
+            prestamo_id=prestamo.id
+        )
+        db.session.add(nueva_transaccion)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'mensaje': 'Cobro registrado exitosamente',
+            'nuevo_saldo': prestamo.saldo_actual,
+            'estado_prestamo': prestamo.estado
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
