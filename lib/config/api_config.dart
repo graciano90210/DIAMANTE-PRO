@@ -1,7 +1,7 @@
 class ApiConfig {
   // URL de tu backend con la ruta de la API
-  // static const String baseUrl = 'https://diamante-pro-1951dcdb66df.herokuapp.com/api/v1'; // Producción
-  static const String baseUrl = 'http://localhost:5001/api/v1'; // Local Windows/Web
+  static const String baseUrl = 'https://diamante-pro-1951dcdb66df.herokuapp.com/api/v1'; // Producción
+  // static const String baseUrl = 'http://localhost:5001/api/v1'; // Local Windows/Web
   // static const String baseUrl = 'http://10.0.2.2:5001/api/v1'; // Local Android Emulator
   
   // Endpoints
