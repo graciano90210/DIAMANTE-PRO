@@ -33,9 +33,17 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _createDB,
+      onUpgrade: _onUpgrade,
     );
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Agregar columna moneda a prestamos si venimos de v1
+      await db.execute('ALTER TABLE prestamos ADD COLUMN moneda TEXT DEFAULT "COP"');
+    }
   }
 
   Future<void> _createDB(Database db, int version) async {
@@ -80,6 +88,7 @@ class DatabaseService {
         fecha_inicio $textType,
         fecha_ultimo_pago $textTypeNullable,
         estado $textType,
+        moneda $textType,
         sincronizado $boolType,
         updated_at $textType
       )
@@ -237,6 +246,7 @@ class DatabaseService {
         'fecha_inicio': prestamo.fechaInicio,
         'fecha_ultimo_pago': prestamo.fechaUltimoPago,
         'estado': prestamo.estado,
+        'moneda': prestamo.moneda,
         'sincronizado': 1,
         'updated_at': DateTime.now().toIso8601String(),
       },
@@ -274,6 +284,7 @@ class DatabaseService {
           'fecha_inicio': prestamo.fechaInicio,
           'fecha_ultimo_pago': prestamo.fechaUltimoPago,
           'estado': prestamo.estado,
+          'moneda': prestamo.moneda,
           'sincronizado': 1,
           'updated_at': DateTime.now().toIso8601String(),
         },
@@ -318,6 +329,7 @@ class DatabaseService {
         'fecha_inicio': maps[i]['fecha_inicio'],
         'fecha_ultimo_pago': maps[i]['fecha_ultimo_pago'],
         'estado': maps[i]['estado'],
+        'moneda': maps[i]['moneda'] ?? 'COP',
         'dias_atraso': 0,
       });
     });

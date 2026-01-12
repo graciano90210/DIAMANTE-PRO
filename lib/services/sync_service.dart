@@ -169,10 +169,10 @@ class SyncService extends ChangeNotifier {
       for (var pago in pagosPendientes) {
         try {
           await _apiService.post(
-            ApiConfig.registrarPago,
+            ApiConfig.nuevoCobro,
             body: {
               'prestamo_id': pago['prestamo_id'],
-              'monto': pago['monto'],
+              'monto_pagado': pago['monto'],
               'observaciones': pago['observaciones'],
             },
             headers: headers,
@@ -274,10 +274,10 @@ class SyncService extends ChangeNotifier {
         try {
           final headers = await _authService.getAuthHeaders();
           final response = await _apiService.post(
-            ApiConfig.registrarPago,
+            ApiConfig.nuevoCobro,
             body: {
               'prestamo_id': prestamoId,
-              'monto': monto,
+              'monto_pagado': monto,
               'observaciones': observaciones,
             },
             headers: headers,
@@ -320,6 +320,25 @@ class SyncService extends ChangeNotifier {
   // ==================== ESTADÍSTICAS ====================
 
   Future<Map<String, dynamic>> getEstadisticas() async {
+    // Si hay conexión, intentar obtener del servidor
+    if (_isOnline) {
+      try {
+        final headers = await _authService.getAuthHeaders();
+        final response = await _apiService.get(
+          ApiConfig.estadisticas, // Asegurarse que este endpoint existe en ApiConfig
+          headers: headers,
+        );
+        return {
+          ...response,
+          'sincronizado': true,
+        };
+      } catch (e) {
+        print('⚠️ Error obteniendo estadísticas online: $e');
+        // Fallback a cálculo local
+      }
+    }
+
+    // Cálculo local (Offline)
     final prestamos = await _dbService.getPrestamos();
 
     final totalCartera = prestamos.fold<double>(
