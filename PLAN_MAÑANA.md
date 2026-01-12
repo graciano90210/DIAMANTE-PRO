@@ -1,49 +1,32 @@
-# Plan de Finalización - Diamante PRO (Móvil)
+﻿# 📅 Plan para Mañana - 13 de Enero 2026
 
-## Estado Actual (09/01/2026)
-- **Login**: Funcional.
-- **Lista de Clientes**: Funcional.
-- **Creación de Clientes**: Implementada y conectada.
-- **Creación de Préstamos**: Implementada y conectada.
-- **Listado de Préstamos por Cliente**: Implementado.
-- **Registro de Cobros (Abonos)**: Implementado (Core logic).
-- **Backend**: Endpoints de Cobrador Completos.
+## 🔴 Prioridad Alta (Errores Críticos)
 
-## Tareas Pendientes para Mañana
+### 1. Corregir Error "Error 401: Missing Authorization Header"
+El servidor rechaza el registro de pagos porque el token no está llegando.
+- **Hipótesis:** `AuthService.getToken()` está devolviendo `null` o el formato del header está mal en `sync_service.dart`.
+- **Acción:**
+  - Depurar `AuthService.getToken()` en el dispositivo.
+  - Asegurar que el token persista al cerrar la app.
+  - Verificar que el prefijo `Bearer ` (con espacio) se esté añadiendo correctamente.
 
-### 1. Refinamiento y Pruebas
-- [ ] **Probar ciclo completo**: Crear Cliente -> Crear Préstamo -> Registrar Cobro. (Verificar que el saldo baje).
-- [ ] **Validaciones UI**: Mejorar mensajes de error y loaders.
-- [ ] **Dashboard**: Verificar que los contadores del Dashboard (Cobrado Hoy) se actualicen tras un cobro.
+### 2. Verificar Flujo Offline -> Online
+Confirmar que si se guarda un pago sin internet, este se envíe automáticamente al recuperar la conexión.
 
-### 2. Sincronización Offline (Critico)
-- [ ] **SQLite Local**: Implementar tablas locales (`clientes`, `prestamos`, `pagos`).
-- [ ] **Cola de Sincronización**: Guardar POSTs fallidos en local y reintentar cuando haya conexión.
-- [ ] **Descarga Inicial**: Al login, descargar toda la data del cobrador a SQLite.
+## 🟡 Prioridad Media (Mejoras)
 
-### 3. Funciones Adicionales
-- [ ] **Impresión Bluetooth**: Investigar librería para imprimir recibos (termales).
-- [ ] **Subida de Fotos**: Habilitar multipart/form-data para subir foto del recibo en `registrar_cobro_screen.dart`.
-- [ ] **Edición**: Permitir editar datos básicos del cliente.
+### 3. Eliminar Advertencias de Consola
+- **Deprecated:** `WillPopScope` ha sido reemplazado por `PopScope` en las nuevas versiones de Flutter.
+- **Gradle:** Actualizar configuración de `android/build.gradle` para eliminar warnings de Kotlin y AGP.
 
-### 4. Despliegue
-- [ ] **Build Android APK**: Generar APK firmado (`flutter build apk --release`).
-- [ ] **Distribuir**: Subir APK a un drive o distribuir a cobradores para pruebas de campo.
-- [ ] **Switch a Producción**: Cambiar `baseUrl` en `api_config.dart` a la URL de Heroku antes del build.
+### 4. Pruebas de Usabilidad
+- Verificar tamaño de fuentes en pantallas pequeñas.
+- Probar el flujo completo de creación de clientes desde la app.
 
-## Comandos Útiles
+## 🟢 Prioridad Baja (Futuro)
 
-**Correr Backend Local:**
-```bash
-python run.py
-```
+### 5. Notificaciones Push
+Implementar avisos cuando se asigne una nueva ruta al cobrador.
 
-**Correr App Web:**
-```bash
-flutter run -d chrome --web-port 8080
-```
-
-**Generar APK:**
-```bash
-flutter build apk --release
-```
+---
+**Nota:** El despliegue en Heroku (v38) ya incluye el driver de PostgreSQL, por lo que el Error 503 está resuelto. El foco ahora es la autenticación móvil.
