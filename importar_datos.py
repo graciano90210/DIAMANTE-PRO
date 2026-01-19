@@ -3,6 +3,7 @@ Script para importar datos a PostgreSQL en Heroku
 Lee el archivo JSON y crea los registros en la base de datos
 """
 import json
+import os
 from app import create_app
 from app.models import Usuario, Cliente, Prestamo, Pago, Ruta, Sociedad, db
 from datetime import datetime
@@ -19,7 +20,8 @@ with app.app_context():
     print("📥 Importando datos a PostgreSQL...")
     
     # Leer archivo JSON
-    with open('datos_exportados.json', 'r', encoding='utf-8') as f:
+    json_path = os.path.join(os.path.dirname(__file__), 'datos_exportados.json')
+    with open(json_path, 'r', encoding='utf-8') as f:
         data = json.load(f)
     
     # Importar usuarios (excepto admin que ya existe)
