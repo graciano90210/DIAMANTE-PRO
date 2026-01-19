@@ -1,4 +1,5 @@
 from flask import render_template, request, redirect, url_for, session, flash, make_response, send_file
+from werkzeug.utils import secure_filename
 from .models import Usuario, Cliente, Prestamo, Pago, Transaccion, Sociedad, Ruta, AporteCapital, Activo, db
 from datetime import datetime, timedelta
 from sqlalchemy import func
@@ -2419,13 +2420,28 @@ Gracias por su pago!"""
             return redirect(url_for('home'))
         
         try:
+            # Procesar archivo de recibo si existe
+            foto_evidencia = None
+            if 'recibo' in request.files:
+                file = request.files['recibo']
+                if file and file.filename != '':
+                    filename = secure_filename(f"gasto_{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}")
+                    # Asegurar directorio de subida (en static para acceso público protegido)
+                    upload_folder = os.path.join(app.root_path, 'static', 'uploads', 'recibos')
+                    if not os.path.exists(upload_folder):
+                        os.makedirs(upload_folder)
+                    
+                    file.save(os.path.join(upload_folder, filename))
+                    foto_evidencia = f"uploads/recibos/{filename}"
+            
             nueva_transaccion = Transaccion(
                 naturaleza='EGRESO',
                 concepto=request.form.get('concepto'),
                 descripcion=request.form.get('descripcion'),
                 monto=float(request.form.get('monto')),
                 fecha=datetime.strptime(request.form.get('fecha'), '%Y-%m-%d'),
-                usuario_origen_id=session.get('usuario_id')
+                usuario_origen_id=session.get('usuario_id'),
+                foto_evidencia=foto_evidencia
             )
             
             db.session.add(nueva_transaccion)

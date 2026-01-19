@@ -35,10 +35,10 @@
                         <div class="alert alert-danger">{{ error }}</div>
                         {% endif %}
 
-                        <form method="POST" action="/caja/gastos/guardar">
+                        <form method="POST" action="/caja/gastos/guardar" enctype="multipart/form-data">
                             <div class="mb-3">
                                 <label class="form-label">Fecha del Gasto *</label>
-                                <input type="date" name="fecha" class="form-control" required 
+                                <input type="date" name="fecha" class="form-control" required
                                        value="{{ fecha_hoy }}">
                             </div>
 
@@ -67,9 +67,15 @@
                                 <label class="form-label">Monto *</label>
                                 <div class="input-group">
                                     <span class="input-group-text">$</span>
-                                    <input type="number" name="monto" class="form-control" required 
-                                           min="0" step="0.01" placeholder="0">
+                                    <input type="number" name="monto" class="form-control" required
+                                           placeholder="0" min="0" step="100">
                                 </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label class="form-label">Evidencia / Recibo (Opcional)</label>
+                                <input type="file" name="recibo" class="form-control" accept="image/*,.pdf">
+                                <div class="form-text">Puede subir una foto del recibo o factura.</div>
                             </div>
 
                             <div class="d-grid gap-2">

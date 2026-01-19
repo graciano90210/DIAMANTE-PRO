@@ -56,6 +56,7 @@
                                 <th>Concepto</th>
                                 <th>Descripción</th>
                                 <th>Monto</th>
+                                <th>Evidencia</th>
                                 <th>Usuario</th>
                             </tr>
                         </thead>
@@ -69,6 +70,15 @@
                                 <td>{{ gasto.descripcion or '-' }}</td>
                                 <td>
                                     <span class="text-danger fw-bold">${{ "{:,.0f}".format(gasto.monto) }}</span>
+                                </td>
+                                <td>
+                                    {% if gasto.foto_evidencia %}
+                                    <a href="{{ url_for('static', filename=gasto.foto_evidencia) }}" target="_blank" class="btn btn-sm btn-outline-secondary" title="Ver Recibo">
+                                        <i class="bi bi-image"></i> Ver
+                                    </a>
+                                    {% else %}
+                                    <span class="text-muted"><small>-</small></span>
+                                    {% endif %}
                                 </td>
                                 <td>
                                     <small class="text-muted">{{ gasto.usuario_origen.nombre }}</small>
