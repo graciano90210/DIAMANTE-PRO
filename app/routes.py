@@ -19,6 +19,10 @@ except ImportError:
     ImageFont = None
 import os
 import base64
+try:
+    import boto3
+except ImportError:
+    boto3 = None
 
 def init_routes(app):
     # ==================== AUTENTICACIÓN ====================
@@ -2426,13 +2430,51 @@ Gracias por su pago!"""
                 file = request.files['recibo']
                 if file and file.filename != '':
                     filename = secure_filename(f"gasto_{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}")
-                    # Asegurar directorio de subida (en static para acceso público protegido)
-                    upload_folder = os.path.join(app.root_path, 'static', 'uploads', 'recibos')
-                    if not os.path.exists(upload_folder):
-                        os.makedirs(upload_folder)
                     
-                    file.save(os.path.join(upload_folder, filename))
-                    foto_evidencia = f"uploads/recibos/{filename}"
+                    # --- INTENTO DE SUBIDA A AWS S3 ---
+                    s3_bucket = os.environ.get('AWS_BUCKET_NAME')
+                    
+                    if boto3 and s3_bucket:
+                        try:
+                            s3 = boto3.client(
+                                's3',
+                                aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
+                                aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY'),
+                                region_name=os.environ.get('AWS_REGION', 'us-east-1')
+                            )
+                            
+                            # Subir archivo directamente desde memoria
+                            s3.upload_fileobj(
+                                file,
+                                s3_bucket,
+                                filename,
+                                ExtraArgs={'ContentType': file.content_type, 'ACL': 'public-read'}
+                            )
+                            
+                            # Generar URL pública
+                            # Formato virtual-hosted-style: https://bucket-name.s3.region.amazonaws.com/key
+                            # O path-style (más seguro por default): https://s3.region.amazonaws.com/bucket-name/key
+                            region = os.environ.get('AWS_REGION', 'us-east-1')
+                            foto_evidencia = f"https://{s3_bucket}.s3.{region}.amazonaws.com/{filename}"
+                            print(f"✅ Archivo subido a S3: {foto_evidencia}")
+                            
+                        except Exception as e_s3:
+                            print(f"⚠️ Error subiendo a S3: {e_s3}. Usando almacenamiento local temporal.")
+                            # Fallback a local si falla S3
+                            upload_folder = os.path.join(app.root_path, 'static', 'uploads', 'recibos')
+                            if not os.path.exists(upload_folder):
+                                os.makedirs(upload_folder)
+                            file.seek(0) # Reiniciar puntero del archivo
+                            file.save(os.path.join(upload_folder, filename))
+                            foto_evidencia = f"uploads/recibos/{filename}"
+                    else:
+                        # Almacenamiento Local (Heroku Temporal)
+                        upload_folder = os.path.join(app.root_path, 'static', 'uploads', 'recibos')
+                        if not os.path.exists(upload_folder):
+                            os.makedirs(upload_folder)
+                        
+                        file.save(os.path.join(upload_folder, filename))
+                        foto_evidencia = f"uploads/recibos/{filename}"
             
             nueva_transaccion = Transaccion(
                 naturaleza='EGRESO',
