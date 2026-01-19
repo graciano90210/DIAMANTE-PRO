@@ -338,6 +338,11 @@ def init_routes(app):
                                      rol=session.get('rol'))
             
             # Crear nuevo cliente
+            direccion = request.form.get('direccion_negocio')
+            cep = request.form.get('cep')
+            if cep:
+                direccion = f"{direccion} - CEP: {cep}"
+
             nuevo_cliente = Cliente(
                 nombre=request.form.get('nombre'),
                 documento=documento,
@@ -345,7 +350,7 @@ def init_routes(app):
                 telefono=request.form.get('telefono'),
                 whatsapp_codigo_pais=request.form.get('whatsapp_codigo_pais', '57'),
                 whatsapp_numero=request.form.get('whatsapp_numero'),
-                direccion_negocio=request.form.get('direccion_negocio'),
+                direccion_negocio=direccion,
                 gps_latitud=request.form.get('gps_latitud') or None,
                 gps_longitud=request.form.get('gps_longitud') or None,
                 es_vip=bool(request.form.get('es_vip'))
@@ -503,7 +508,29 @@ def init_routes(app):
         if 'usuario_id' not in session:
             return redirect(url_for('home'))
         
-        clientes = Cliente.query.order_by(Cliente.nombre).all()
+        # Filtrar clientes: mostrar solo los de la ruta actual + nuevos (sin préstamos)
+        ruta_id = session.get('ruta_seleccionada_id')
+        usuario_id = session.get('usuario_id')
+        rol = session.get('rol')
+        
+        # Si es cobrador y no hay ruta seleccionada, usar su ruta asignada
+        if not ruta_id and rol == 'cobrador':
+             ruta = Ruta.query.filter_by(cobrador_id=usuario_id).first()
+             if ruta:
+                 ruta_id = ruta.id
+
+        if ruta_id:
+             # 1. Clientes con prestamos en ESTA ruta
+             clientes_ruta_ids = [r[0] for r in db.session.query(Prestamo.cliente_id).filter_by(ruta_id=ruta_id).distinct().all()]
+             # 2. Clientes SIN prestamos (Nuevos)
+             clientes_nuevos_ids = [r[0] for r in db.session.query(Cliente.id).outerjoin(Prestamo).filter(Prestamo.id == None).all()]
+             
+             ids_validos = list(set(clientes_ruta_ids + clientes_nuevos_ids))
+             clientes = Cliente.query.filter(Cliente.id.in_(ids_validos)).order_by(Cliente.nombre).all()
+        else:
+             # Si no hay ruta definida, mostrar todos
+             clientes = Cliente.query.order_by(Cliente.nombre).all()
+
         # Cobradores pueden ser: supervisor, cobrador, o admin (por compatibilidad)
         cobradores = Usuario.query.filter(Usuario.rol.in_(['admin', 'dueno', 'supervisor', 'cobrador'])).all()
         
@@ -568,9 +595,22 @@ def init_routes(app):
             else:  # MENSUAL
                 fecha_fin = fecha_inicio + timedelta(days=numero_cuotas * 30)
             
+            # Obtener Ruta ID (Contexto de ruta)
+            ruta_id = session.get('ruta_seleccionada_id')
+            if not ruta_id:
+                 cobrador_id_form = int(request.form.get('cobrador_id'))
+                 ruta = Ruta.query.filter_by(cobrador_id=cobrador_id_form).first()
+                 if ruta:
+                     ruta_id = ruta.id
+                 else:
+                     # Fallback: Usar la primera ruta disponible para evitar error de base de datos
+                     ruta = Ruta.query.first()
+                     ruta_id = ruta.id if ruta else 1
+
             # Crear préstamo
             nuevo_prestamo = Prestamo(
                 cliente_id=cliente_id,
+                ruta_id=ruta_id,
                 cobrador_id=int(request.form.get('cobrador_id')),
                 monto_prestado=monto_prestado,
                 tasa_interes=tasa_interes,
