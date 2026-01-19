@@ -1035,90 +1035,130 @@ Gracias por su pago!"""
         prestamo = pago.prestamo
         cliente = prestamo.cliente
         
-        # Crear imagen en memoria (1080x1680 - Formato para recibo)
-        width, height = 1080, 1680
-        img = Image.new('RGB', (width, height), color='white')
+        # Crear imagen en memoria (1080x1350 - Formato Instagram Portrait)
+        width, height = 1080, 1350
+        # Color de fondo blanco humo muy suave
+        bg_color = '#f8fafc'
+        img = Image.new('RGB', (width, height), color=bg_color)
         draw = ImageDraw.Draw(img)
         
-        # Usar fuentes del sistema
+        # Fuentes (Intentar cargar fuentes elegantes)
         try:
-            font_title = ImageFont.truetype("arial.ttf", 70)
-            font_subtitle = ImageFont.truetype("arial.ttf", 38)
-            font_header = ImageFont.truetype("arialbd.ttf", 48)
-            font_label = ImageFont.truetype("arial.ttf", 36)
-            font_value = ImageFont.truetype("arialbd.ttf", 40)
-            font_big = ImageFont.truetype("arialbd.ttf", 60)
-            font_small = ImageFont.truetype("arial.ttf", 30)
+            # Fuentes estándar Windows/Linux
+            font_title = ImageFont.truetype("arialbd.ttf", 70)      # Título principal
+            font_subtitle = ImageFont.truetype("arial.ttf", 35)     # Subtítulos
+            font_section = ImageFont.truetype("arialbd.ttf", 35)    # Encabezados de sección
+            font_label = ImageFont.truetype("arial.ttf", 30)        # Etiquetas pequeñas
+            font_value = ImageFont.truetype("arialbd.ttf", 38)      # Valores
+            font_money = ImageFont.truetype("arialbd.ttf", 60)      # Cifras grandes
+            font_money_main = ImageFont.truetype("arialbd.ttf", 80) # Cifra central enorme
+            font_footer = ImageFont.truetype("arial.ttf", 28)       # Pie de página
         except:
+            # Fallback
             font_title = ImageFont.load_default()
             font_subtitle = ImageFont.load_default()
-            font_header = ImageFont.load_default()
+            font_section = ImageFont.load_default()
             font_label = ImageFont.load_default()
             font_value = ImageFont.load_default()
-            font_big = ImageFont.load_default()
-            font_small = ImageFont.load_default()
+            font_money = ImageFont.load_default()
+            font_money_main = ImageFont.load_default()
+            font_footer = ImageFont.load_default()
         
-        # Encabezado verde (pago exitoso)
-        draw.rectangle([0, 0, width, 220], fill='#059669')
-        draw.text((width//2, 70), "💎 DIAMANTE PRO", fill='white', font=font_title, anchor='mm')
-        draw.text((width//2, 140), "RECIBO DE PAGO", fill='white', font=font_subtitle, anchor='mm')
-        draw.text((width//2, 190), f"Recibo #{pago.id} - {pago.fecha_pago.strftime('%d/%m/%Y %H:%M')}", fill='#d1fae5', font=font_subtitle, anchor='mm')
+        # Colores Corporativos "Diamante Pro"
+        c_primary = '#0f172a'       # Azul oscuro casi negro (Slate 900)
+        c_accent = '#0284c7'        # Azul brillante (Sky 600)
+        c_success = '#059669'       # Verde esmeralda (Emerald 600)
+        c_success_bg = '#d1fae5'    # Verde muy claro fondo
+        c_text = '#334155'          # Gris texto (Slate 700)
+        c_muted = '#64748b'         # Gris suave (Slate 500)
+        c_white = '#ffffff'
+
+        # --- ENCABEZADO ---
+        header_h = 280
+        draw.rectangle([0, 0, width, header_h], fill=c_success) # Verde para indicar pago exitoso
         
-        y = 280
+        # Logo y Título
+        draw.text((width//2, 100), "💎 DIAMANTE PRO", fill=c_white, font=font_title, anchor='mm')
+        draw.text((width//2, 180), "RECIBO DE PAGO OFICIAL", fill='#ecfdf5', font=font_subtitle, anchor='mm')
         
-        # Información del cliente
-        draw.text((80, y), "CLIENTE", fill='#059669', font=font_header)
-        y += 70
-        draw.rectangle([50, y, width-50, y+180], outline='#10b981', width=3)
-        y += 25
-        draw.text((80, y), cliente.nombre.upper(), fill='#111827', font=font_value)
-        y += 60
-        draw.text((80, y), f"Doc: {cliente.documento}  |  Tel: {cliente.telefono}", fill='#6b7280', font=font_label)
-        y += 120
+        # Fecha y ID (Etiqueta estilo "Ticket")
+        tag_w, tag_h = 600, 60
+        tag_x = (width - tag_w) // 2
+        tag_y = 220
+        draw.rectangle([tag_x, tag_y, tag_x + tag_w, tag_y + tag_h], fill='#047857') # Verde más oscuro
+        draw.text((width//2, tag_y + 30), f"RECIBO #{pago.id}  •  {pago.fecha_pago.strftime('%d/%m/%Y %H:%M')}", fill=c_white, font=font_section, anchor='mm')
+
+        current_y = 330
+        margin_x = 60
         
-        # Información del crédito
-        draw.text((80, y), f"Crédito #{prestamo.id}", fill='#6b7280', font=font_label)
-        y += 100
+        # Función auxiliar para dibujar tarjetas
+        def draw_card(y_pos, height):
+            # Sombra suave
+            draw.rectangle([margin_x+5, y_pos+5, width-margin_x+5, y_pos+height+5], fill='#e2e8f0') 
+            # Tarjeta blanca
+            draw.rectangle([margin_x, y_pos, width-margin_x, y_pos+height], fill=c_white, outline='#cbd5e1', width=1)
+            return y_pos
+
+        # --- TARJETA 1: DATOS CLIENTE ---
+        card1_h = 250
+        draw_card(current_y, card1_h)
         
-        # Monto recibido (destacado)
-        draw.rectangle([0, y, width, y+200], fill='#d1fae5')
-        y += 50
-        draw.text((width//2, y), "MONTO RECIBIDO", fill='#059669', font=font_header, anchor='mm')
-        y += 80
-        draw.text((width//2, y), f"{prestamo.moneda} ${pago.monto:,.0f}", fill='#047857', font=font_big, anchor='mm')
-        y += 150
+        draw.text((margin_x + 40, current_y + 50), "👤 DATOS DEL CLIENTE", fill=c_success, font=font_section)
+        
+        # Nombre Cliente
+        draw.text((margin_x + 40, current_y + 110), cliente.nombre.upper(), fill=c_primary, font=font_money)
+        draw.text((margin_x + 40, current_y + 170), f"Documento: {cliente.documento}  |  Crédito #{prestamo.id}", fill=c_muted, font=font_subtitle)
+        
+        current_y += card1_h + 40
+        
+        # --- TARJETA 2: MONTO PAGADO (Destacado) ---
+        card2_h = 250
+        draw_card(current_y, card2_h)
+        # Fondo verde suave para esta tarjeta
+        draw.rectangle([margin_x, current_y, width-margin_x, current_y+card2_h], fill=c_success_bg, outline='#10b981', width=2)
+        
+        draw.text((width//2, current_y + 60), "MONTO RECIBIDO", fill='#047857', font=font_section, anchor='mm')
+        draw.text((width//2, current_y + 140), f"{prestamo.moneda} ${pago.monto:,.0f}", fill='#065f46', font=font_money_main, anchor='mm')
+        
+        current_y += card2_h + 40
+
+        # --- TARJETA 3: ESTADO DE CUENTA ---
+        card3_h = 280
+        draw_card(current_y, card3_h)
+        
+        draw.text((margin_x + 40, current_y + 50), "📉 ESTADO DE CUENTA", fill=c_primary, font=font_section)
         
         # Saldos
-        draw.text((80, y), "Saldo Anterior:", fill='#6b7280', font=font_label)
-        draw.text((width-80, y), f"{prestamo.moneda} ${pago.saldo_anterior:,.0f}", fill='#6b7280', font=font_value, anchor='rm')
-        y += 70
+        row_space = 100
+        row_start = current_y + 110
+        col1_x = margin_x + 40
+        col2_x = width // 2 + 20
         
-        draw.text((80, y), "Saldo Nuevo:", fill='#1e40af', font=font_value)
-        draw.text((width-80, y), f"{prestamo.moneda} ${pago.saldo_nuevo:,.0f}", fill='#1e40af', font=font_big, anchor='rm')
-        y += 100
+        # Saldo Anterior
+        draw.text((col1_x, row_start), "Saldo Anterior:", fill=c_muted, font=font_label)
+        draw.text((col1_x, row_start + 40), f"${pago.saldo_anterior:,.0f}", fill=c_text, font=font_value)
         
-        # Cuotas
-        draw.line([50, y, width-50, y], fill='#d1d5db', width=2)
-        y += 40
-        draw.text((80, y), f"Cuotas Pagadas: {prestamo.cuotas_pagadas} / {prestamo.numero_cuotas}", fill='#4b5563', font=font_label)
-        y += 80
+        # Saldo Nuevo (Destacado)
+        draw.text((col2_x, row_start), "Nuevo Saldo:", fill=c_muted, font=font_label)
+        draw.text((col2_x, row_start + 40), f"${pago.saldo_nuevo:,.0f}", fill=c_accent, font=font_money)
         
-        # Observaciones si existen
+        current_y += card3_h + 50
+
+        # --- OBSERVACIONES Y PIE ---
         if pago.observaciones:
-            draw.text((80, y), "Observaciones:", fill='#6b7280', font=font_label)
-            y += 50
-            # Limitar texto de observaciones
-            obs_text = pago.observaciones[:100] + "..." if len(pago.observaciones) > 100 else pago.observaciones
-            draw.text((80, y), obs_text, fill='#6b7280', font=font_small)
-            y += 80
+            draw.text((margin_x, current_y), "📝 Observaciones:", fill=c_muted, font=font_label)
+            obs_text = pago.observaciones[:80] + "..." if len(pago.observaciones) > 80 else pago.observaciones
+            draw.text((margin_x + 230, current_y), obs_text, fill=c_text, font=font_label)
+            current_y += 50
+            
+        draw.line([margin_x, current_y, width - margin_x, current_y], fill='#cbd5e1', width=2)
+        current_y += 30
         
-        # Pie de página
-        y = height - 150
-        draw.line([50, y, width-50, y], fill='#d1d5db', width=2)
-        y += 40
-        draw.text((width//2, y), f"Cobrador: {session.get('nombre')}", fill='#9ca3af', font=font_small, anchor='mm')
-        y += 50
-        draw.text((width//2, y), "¡Gracias por su pago!", fill='#059669', font=font_value, anchor='mm')
+        draw.text((width//2, current_y), f"Recibido por: {session.get('nombre')}", fill=c_muted, font=font_footer, anchor='mm')
+        
+        # Mensaje final
+        draw.rectangle([0, height-80, width, height], fill='#f1f5f9')
+        draw.text((width//2, height-40), "¡Gracias por su pago a tiempo!", fill=c_success, font=font_section, anchor='mm')
         
         # Guardar en buffer
         buffer = BytesIO()
