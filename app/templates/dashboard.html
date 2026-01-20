@@ -191,6 +191,49 @@
 
         <div class="row">
             <div class="col-12">
+                <h4 class="mb-3 fw-bold">🚀 Acciones Rápidas</h4>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+             <div class="col-6 col-md-2">
+                <div class="card menu-card h-100 border-0 shadow-sm text-center py-3" style="cursor: pointer;" onclick="window.location.href='/clientes/nuevo'">
+                     <i class="bi bi-person-plus-fill fs-2 text-primary mb-2"></i>
+                     <h6 class="fw-bold mb-0 text-white">Nuevo Cliente</h6>
+                </div>
+             </div>
+             
+             <div class="col-6 col-md-2">
+                <div class="card menu-card h-100 border-0 shadow-sm text-center py-3" style="cursor: pointer;" onclick="window.location.href='/prestamos/nuevo'">
+                     <i class="bi bi-cash-stack fs-2 text-success mb-2"></i>
+                     <h6 class="fw-bold mb-0 text-white">Nuevo Préstamo</h6>
+                </div>
+             </div>
+
+             <div class="col-6 col-md-2">
+                <div class="card menu-card h-100 border-0 shadow-sm text-center py-3" style="cursor: pointer;" onclick="window.location.href='/cobro/lista'">
+                     <i class="bi bi-wallet2 fs-2 text-warning mb-2"></i>
+                     <h6 class="fw-bold mb-0 text-white">Ir a Cobrar</h6>
+                </div>
+             </div>
+             
+             <div class="col-6 col-md-2">
+                <div class="card menu-card h-100 border-0 shadow-sm text-center py-3" style="cursor: pointer;" onclick="alert('Funcionalidad de Mapa GPS próximamente')">
+                     <i class="bi bi-geo-alt-fill fs-2 text-danger mb-2"></i>
+                     <h6 class="fw-bold mb-0 text-white">Mapa GPS</h6>
+                </div>
+             </div>
+
+             <div class="col-6 col-md-2">
+                <div class="card menu-card h-100 border-0 shadow-sm text-center py-3" style="cursor: pointer;" onclick="window.location.href='/reportes'">
+                     <i class="bi bi-graph-up fs-2 text-info mb-2"></i>
+                     <h6 class="fw-bold mb-0 text-white">Reportes</h6>
+                </div>
+             </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
                 <h2 class="mb-4">Panel de Control</h2>
             </div>
         </div>
@@ -249,13 +292,19 @@
             <div class="col-md-3">
                 <div class="card stat-card warning text-white">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title">Por Cobrar Hoy</h6>
-                                <h2 class="mb-0">${{ "{:,.0f}".format(por_cobrar_hoy) }}</h2>
-                                <small>Cobros diarios/bisemanales</small>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="card-title mb-0">Flujo de Cobro</h6>
+                            <i class="bi bi-calendar-check fs-2"></i>
+                        </div>
+                        <div class="row text-center">
+                            <div class="col-6 border-end" style="border-color: rgba(255,255,255,0.3) !important;">
+                                <small class="text-white-50">Hoy</small>
+                                <h4 class="mb-0 fw-bold">${{ "{:,.0f}".format(por_cobrar_hoy) }}</h4>
                             </div>
-                            <i class="bi bi-calendar-check fs-1"></i>
+                            <div class="col-6">
+                                <small class="text-white-50">Mañana</small>
+                                <h4 class="mb-0 fw-bold">${{ "{:,.0f}".format(proyeccion_manana) }}</h4>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -386,19 +435,36 @@
 
         <!-- Gráficos y Widgets -->
         <div class="row g-4 mb-4">
-            <!-- Gráfico de Cobros Últimos 7 Días -->
-            <div class="col-md-8">
+            <!-- Gráfico de Cobros Últimos 7 Días (Full Width) -->
+            <div class="col-12">
                 <div class="chart-container">
                     <h5 class="fw-bold mb-3"><i class="bi bi-graph-up text-primary"></i> Cobros Últimos 7 Días</h5>
                     <canvas id="cobrosChart"></canvas>
                 </div>
             </div>
+        </div>
 
+        <div class="row g-4 mb-4">
             <!-- Gráfico de Estado de Préstamos -->
-            <div class="col-md-4">
+            <div class="col-md-6">
                 <div class="chart-container">
                     <h5 class="fw-bold mb-3"><i class="bi bi-pie-chart text-success"></i> Estado Préstamos</h5>
                     <canvas id="estadoChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Gráfico de Riesgo (NUEVO) -->
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-shield-check text-warning"></i> Distribución de Riesgo</h5>
+                    {% if riesgo_data and riesgo_data|sum > 0 %}
+                        <canvas id="riesgoChart"></canvas>
+                    {% else %}
+                        <div class="d-flex flex-column align-items-center justify-content-center h-100 text-muted">
+                            <i class="bi bi-inbox fs-1 mb-2"></i>
+                            <p>No hay datos de riesgo suficientes</p>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -495,60 +561,7 @@
             </div>
         </div>
 
-        <!-- Quick Actions -->
-        <div class="row g-4">
-            <div class="col-12">
-                <h4 class="mb-3 fw-bold">Acciones Rápidas</h4>
-            </div>
-            <div class="col-md-12 mb-3">
-                <a href="/clientes" class="btn btn-outline-primary me-2 px-4 py-2 rounded-pill">
-                    <i class="bi bi-people"></i> Ver Todos los Clientes
-                </a>
-                <a href="/prestamos" class="btn btn-outline-success px-4 py-2 rounded-pill">
-                    <i class="bi bi-cash-stack"></i> Ver Todos los Préstamos
-                </a>
-            </div>
-            <div class="col-md-3">
-                <div class="card menu-card h-100 border-0 shadow-sm">
-                    <div class="card-body text-center">
-                        <div class="menu-icon mb-3"><i class="bi bi-person-plus-fill"></i></div>
-                        <h5 class="fw-bold" style="color: #1f2937;">Nuevo Cliente</h5>
-                        <p class="text-muted small">Registrar un nuevo cliente</p>
-                        <a href="/clientes/nuevo" class="btn btn-primary px-4" style="background: #1e3c72; border: none;">Registrar</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card menu-card h-100 border-0 shadow-sm">
-                    <div class="card-body text-center">
-                        <div class="menu-icon mb-3"><i class="bi bi-cash-stack"></i></div>
-                        <h5 class="fw-bold" style="color: #1f2937;">Nuevo Préstamo</h5>
-                        <p class="text-muted small">Otorgar un préstamo</p>
-                        <a href="/prestamos/nuevo" class="btn btn-success px-4" style="background: #00ab41; border: none;">Otorgar</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card menu-card h-100 border-0 shadow-sm">
-                    <div class="card-body text-center">
-                        <div class="menu-icon mb-3"><i class="bi bi-wallet2"></i></div>
-                        <h5 class="fw-bold" style="color: #1f2937;">Ruta de Cobro</h5>
-                        <p class="text-muted small">Lista de cobros del día</p>
-                        <a href="/cobro/lista" class="btn btn-warning px-4" style="background: #d97706; border: none; color: white;">Ir a Cobrar</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card menu-card h-100 border-0 shadow-sm">
-                    <div class="card-body text-center">
-                        <div class="menu-icon mb-3"><i class="bi bi-graph-up"></i></div>
-                        <h5 class="fw-bold" style="color: #1f2937;">Reportes</h5>
-                        <p class="text-muted small">Ver estadísticas</p>
-                        <a href="/reportes" class="btn px-4" style="background: #0891b2; border: none; color: white;">Ver Reportes</a>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <!-- Quick Actions Moved to Top -->
 
         <!-- Módulo de Caja -->
         <div class="row g-4 mt-2">
@@ -765,6 +778,38 @@
                                     return label + ': ' + value + ' (' + percentage + '%)';
                                 }
                             }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Gráfico de Riesgo
+        const riesgoCtx = document.getElementById('riesgoChart');
+        if (riesgoCtx) {
+            new Chart(riesgoCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: {{ riesgo_labels | tojson }},
+                    datasets: [{
+                        data: {{ riesgo_data | tojson }},
+                        backgroundColor: [
+                            '#10b981', // EXCELENTE - Verde
+                            '#3b82f6', // BUENO - Azul
+                            '#f59e0b', // REGULAR - Amarillo
+                            '#ef4444', // ALTO - Rojo
+                            '#1f2937', // CRITICO - Gris Oscuro
+                            '#6b7280'  // NUEVO - Gris Claro
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
                         }
                     }
                 }

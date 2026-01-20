@@ -230,45 +230,74 @@ def init_routes(app):
         if rol == 'cobrador':
             prestamos_pagados = Prestamo.query.filter_by(estado='PAGADO', cobrador_id=usuario_id).count()
             prestamos_cancelados = Prestamo.query.filter_by(estado='CANCELADO', cobrador_id=usuario_id).count()
-        elif ruta_seleccionada_id:
-            prestamos_pagados = Prestamo.query.filter_by(estado='PAGADO', ruta_id=ruta_seleccionada_id).count()
-            prestamos_cancelados = Prestamo.query.filter_by(estado='CANCELADO', ruta_id=ruta_seleccionada_id).count()
-        else:
-            prestamos_pagados = Prestamo.query.filter_by(estado='PAGADO').count()
-            prestamos_cancelados = Prestamo.query.filter_by(estado='CANCELADO').count()
-        
-        return render_template('dashboard.html', 
-                             nombre=session.get('nombre'), 
-                             rol=session.get('rol'),
-                             total_clientes=total_clientes,
-                             clientes_vip=clientes_vip,
-                             total_prestamos_activos=total_prestamos_activos,
-                             total_cartera=total_cartera,
-                             capital_prestado=capital_prestado,
-                             por_cobrar_hoy=por_cobrar_hoy,
-                             prestamos_al_dia=prestamos_al_dia,
-                             prestamos_atrasados=prestamos_atrasados,
-                             prestamos_mora=prestamos_mora,
-                             total_cobrado_hoy=total_cobrado_hoy,
-                             num_pagos_hoy=num_pagos_hoy,
-                             todas_las_rutas=todas_las_rutas,
-                             ruta_seleccionada=ruta_seleccionada,
-                             ganancia_esperada=ganancia_esperada,
-                             porcentaje_ganancia=porcentaje_ganancia,
-                             tasa_cobro_diaria=tasa_cobro_diaria,
-                             ultimos_pagos=ultimos_pagos,
-                             prestamos_recientes=prestamos_recientes,
-                             cobros_ultimos_7_dias=cobros_ultimos_7_dias,
-                             labels_7_dias=labels_7_dias,
-                             prestamos_pagados=prestamos_pagados,
-                             prestamos_cancelados=prestamos_cancelados,
-                             capital_total_aportado=capital_total_aportado,
-                             capital_invertido_activos=capital_invertido_activos,
-                             capital_disponible=capital_disponible)
-    
-    @app.route('/seleccionar-ruta/<int:ruta_id>')
-    def seleccionar_ruta(ruta_id):
-        if 'usuario_id' not in session:
+                
+                # Proyección de cobro mañana (Simplificación: misma lógica que hoy para clientes activos)
+                proyeccion_manana = por_cobrar_hoy # Asumimos constancia en Gota a Gota diario
+                
+                # Distribución de Riesgo (Solo clientes del cobrador)
+                # Como Prestamo no tiene nivel_riesgo, unimos con Cliente
+                riesgo_stats = db.session.query(Cliente.nivel_riesgo, func.count(Cliente.id))\
+                    .join(Prestamo).filter(Prestamo.cobrador_id == usuario_id, Prestamo.estado == 'ACTIVO')\
+                    .group_by(Cliente.nivel_riesgo).all()
+                    
+            elif ruta_seleccionada_id:
+                prestamos_pagados = Prestamo.query.filter_by(estado='PAGADO', ruta_id=ruta_seleccionada_id).count()
+                prestamos_cancelados = Prestamo.query.filter_by(estado='CANCELADO', ruta_id=ruta_seleccionada_id).count()
+                
+                proyeccion_manana = por_cobrar_hoy
+                
+                riesgo_stats = db.session.query(Cliente.nivel_riesgo, func.count(Cliente.id))\
+                    .join(Prestamo).filter(Prestamo.ruta_id == ruta_seleccionada_id, Prestamo.estado == 'ACTIVO')\
+                    .group_by(Cliente.nivel_riesgo).all()
+            else:
+                prestamos_pagados = Prestamo.query.filter_by(estado='PAGADO').count()
+                prestamos_cancelados = Prestamo.query.filter_by(estado='CANCELADO').count()
+                
+                proyeccion_manana = por_cobrar_hoy
+                
+                # Distribución Global (Contamos clientes, no préstamos, para riesgo general)
+                riesgo_stats = db.session.query(Cliente.nivel_riesgo, func.count(Cliente.id)).group_by(Cliente.nivel_riesgo).all()
+            
+            # Procesar datos de riesgo para gráficas
+            riesgo_labels = []
+            riesgo_data = []
+            for r in riesgo_stats:
+                label = r[0] if r[0] else 'NUEVO'
+                count = r[1]
+                riesgo_labels.append(label)
+                riesgo_data.append(count)
+            
+            return render_template('dashboard.html', 
+                                nombre=session.get('nombre'), 
+                                rol=session.get('rol'),
+                                total_clientes=total_clientes,
+                                clientes_vip=clientes_vip,
+                                total_prestamos_activos=total_prestamos_activos,
+                                total_cartera=total_cartera,
+                                capital_prestado=capital_prestado,
+                                por_cobrar_hoy=por_cobrar_hoy,
+                                proyeccion_manana=proyeccion_manana,
+                                prestamos_al_dia=prestamos_al_dia,
+                                prestamos_atrasados=prestamos_atrasados,
+                                prestamos_mora=prestamos_mora,
+                                total_cobrado_hoy=total_cobrado_hoy,
+                                num_pagos_hoy=num_pagos_hoy,
+                                todas_las_rutas=todas_las_rutas,
+                                ruta_seleccionada=ruta_seleccionada,
+                                ganancia_esperada=ganancia_esperada,
+                                porcentaje_ganancia=porcentaje_ganancia,
+                                tasa_cobro_diaria=tasa_cobro_diaria,
+                                ultimos_pagos=ultimos_pagos,
+                                prestamos_recientes=prestamos_recientes,
+                                cobros_ultimos_7_dias=cobros_ultimos_7_dias,
+                                labels_7_dias=labels_7_dias,
+                                prestamos_pagados=prestamos_pagados,
+                                prestamos_cancelados=prestamos_cancelados,
+                                capital_total_aportado=capital_total_aportado,
+                                capital_invertido_activos=capital_invertido_activos,
+                                capital_disponible=capital_disponible,
+                                riesgo_labels=riesgo_labels,
+                                riesgo_data=riesgo_data)
             return redirect(url_for('home'))
         
         if session.get('rol') not in ['dueno', 'gerente']:
