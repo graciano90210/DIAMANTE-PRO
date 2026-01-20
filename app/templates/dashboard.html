@@ -141,16 +141,16 @@
         {% if rol in ['dueno', 'gerente'] %}
         <div class="row mb-3">
             <div class="col-12">
-                <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #1D1E33 0%, #0A0E21 100%); color: white; border: 1px solid rgba(0, 229, 255, 0.2) !important;">
                     <div class="card-body p-3">
                         <div class="row align-items-center">
                             <div class="col-auto">
-                                <i class="bi bi-map" style="font-size: 1.5rem;"></i>
+                                <i class="bi bi-map" style="font-size: 1.5rem; color: #00E5FF;"></i>
                             </div>
                             <div class="col">
-                                <label class="form-label fw-bold mb-1">Filtrar Dashboard por Ruta:</label>
+                                <label class="form-label fw-bold mb-1" style="color: #00E5FF;">Filtrar Dashboard por Ruta:</label>
                                 {% if todas_las_rutas and todas_las_rutas|length > 0 %}
-                                <select class="form-select" onchange="window.location.href=this.value" style="background: white; color: #1f2937;">
+                                <select class="form-select" onchange="window.location.href=this.value" style="background: #0A0E21; color: white; border: 1px solid #2d2f45;">
                                     <option value="/ver-todas-rutas" {% if not ruta_seleccionada %}selected{% endif %}>
                                         📊 Ver Todas las Rutas
                                     </option>
