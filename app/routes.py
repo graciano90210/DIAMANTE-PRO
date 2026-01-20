@@ -184,17 +184,22 @@ def init_routes(app):
         capital_invertido_activos = 0
         capital_disponible = 0
         
-        if rol in ['dueno', 'gerente']:
-            # Total de aportes de capital
-            capital_total_aportado = db.session.query(func.sum(AporteCapital.monto)).scalar() or 0
-            capital_total_aportado = float(capital_total_aportado)
-            
-            # Total invertido en activos
-            capital_invertido_activos = db.session.query(func.sum(Activo.valor_compra)).scalar() or 0
-            capital_invertido_activos = float(capital_invertido_activos)
-            
-            # Capital disponible = Aportes - Activos
-            capital_disponible = capital_total_aportado - capital_invertido_activos
+        # COMENTADO TEMPORALMENTE POR ERRORES EN PRODUCCIÓN
+        # if rol in ['dueno', 'gerente']:
+        #     # Total de aportes de capital
+        #     try:
+        #         capital_total_aportado = db.session.query(func.sum(AporteCapital.monto)).scalar() or 0
+        #         capital_total_aportado = float(capital_total_aportado)
+                
+        #         # Total invertido en activos
+        #         capital_invertido_activos = db.session.query(func.sum(Activo.valor_compra)).scalar() or 0
+        #         capital_invertido_activos = float(capital_invertido_activos)
+                
+        #         # Capital disponible = Aportes - Activos
+        #         capital_disponible = capital_total_aportado - capital_invertido_activos
+        #     except Exception as e:
+        #         print(f"Error calculando capital: {e}")
+        #         capital_disponible = 0
         
         # Estadísticas de los últimos 7 días para gráficos
         fecha_inicio = datetime.now().date() - timedelta(days=6)
