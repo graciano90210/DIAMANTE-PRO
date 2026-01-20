@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <defs>
+    <!-- Gradiente principal del diamante -->
+    <linearGradient id="diamondMain" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00FFFF;stop-opacity:1" />
+      <stop offset="30%" style="stop-color:#00E5FF;stop-opacity:1" />
+      <stop offset="70%" style="stop-color:#00B8D4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0097A7;stop-opacity:1" />
+    </linearGradient>
+    <!-- Gradiente para facetas -->
+    <linearGradient id="facetLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00E5FF;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#006064;stop-opacity:0.6" />
+    </linearGradient>
+    <linearGradient id="facetRight" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#00FFFF;stop-opacity:0.9" />
+      <stop offset="100%" style="stop-color:#00838F;stop-opacity:0.7" />
+    </linearGradient>
+    <linearGradient id="facetCenter" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" style="stop-color:#00E5FF;stop-opacity:0.4" />
+      <stop offset="100%" style="stop-color:#00BCD4;stop-opacity:0.8" />
+    </linearGradient>
+    <!-- Brillo neón -->
+    <filter id="neonGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur1"/>
+      <feGaussianBlur stdDeviation="6" result="blur2"/>
+      <feMerge>
+        <feMergeNode in="blur2"/>
+        <feMergeNode in="blur1"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <!-- Brillo suave -->
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Fondo circular con gradiente oscuro -->
+  <circle cx="60" cy="60" r="58" fill="#0A0E21"/>
+  <circle cx="60" cy="60" r="56" fill="none" stroke="url(#diamondMain)" stroke-width="1" opacity="0.3"/>
+  
+  <!-- Anillos decorativos -->
+  <circle cx="60" cy="60" r="52" fill="none" stroke="#00E5FF" stroke-width="0.3" opacity="0.2"/>
+  
+  <!-- Grupo del diamante con efecto neón -->
+  <g filter="url(#neonGlow)">
+    <!-- DIAMANTE PRINCIPAL - Estilo 3D isométrico moderno -->
+    
+    <!-- Cara superior izquierda -->
+    <path d="M60 18 L35 38 L60 48 Z" fill="url(#facetLeft)" stroke="#00E5FF" stroke-width="1"/>
+    
+    <!-- Cara superior derecha -->
+    <path d="M60 18 L85 38 L60 48 Z" fill="url(#facetRight)" stroke="#00E5FF" stroke-width="1"/>
+    
+    <!-- Cara inferior izquierda -->
+    <path d="M35 38 L60 48 L60 98 Z" fill="url(#facetLeft)" stroke="#00E5FF" stroke-width="1" opacity="0.9"/>
+    
+    <!-- Cara inferior derecha -->
+    <path d="M85 38 L60 48 L60 98 Z" fill="url(#facetRight)" stroke="#00E5FF" stroke-width="1" opacity="0.9"/>
+    
+    <!-- Línea central brillante -->
+    <path d="M60 18 L60 98" stroke="#00FFFF" stroke-width="1.5" opacity="0.8"/>
+    
+    <!-- Línea horizontal -->
+    <path d="M35 38 L85 38" stroke="#00FFFF" stroke-width="1" opacity="0.6"/>
+    
+    <!-- Destellos superiores -->
+    <path d="M60 18 L55 8" stroke="#00FFFF" stroke-width="1" opacity="0.5" stroke-linecap="round"/>
+    <path d="M60 18 L65 8" stroke="#00FFFF" stroke-width="1" opacity="0.5" stroke-linecap="round"/>
+    
+    <!-- Punto brillante en la punta superior -->
+    <circle cx="60" cy="18" r="3" fill="#FFFFFF" opacity="0.9"/>
+    <circle cx="60" cy="18" r="2" fill="#00FFFF"/>
+  </g>
+  
+  <!-- Reflejos decorativos -->
+  <g opacity="0.4">
+    <circle cx="45" cy="35" r="1.5" fill="#FFFFFF"/>
+    <circle cx="70" cy="55" r="1" fill="#FFFFFF"/>
+  </g>
+</svg>
