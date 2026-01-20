@@ -81,10 +81,10 @@ class Cliente(db.Model):
     __tablename__ = 'clientes'
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
-    documento = db.Column(db.String(20), unique=True, nullable=False)
-    tipo_documento = db.Column(db.String(20), default='CPF') # CPF, CNPJ
+    documento = db.Column(db.String(20), unique=True, nullable=False) # CPF (Documento Personal)
+    tipo_documento = db.Column(db.String(20), default='CPF') # Siempre CPF para el cliente
     fecha_nacimiento = db.Column(db.Date) # Nueva fecha de nacimiento
-    documento_negocio = db.Column(db.String(30)) 
+    # documento_negocio se mueve a la sección FORMALIZACIÓN FISCAL para evitar duplicidad
     telefono = db.Column(db.String(20), nullable=False)
     email = db.Column(db.String(100)) # Email de contacto
     whatsapp_codigo_pais = db.Column(db.String(5), default='57')  # Código de país para WhatsApp
@@ -96,10 +96,54 @@ class Cliente(db.Model):
     direccion_casa = db.Column(db.String(200)) # Dirección de casa
     cep_casa = db.Column(db.String(20)) # CEP de casa
     
-    gps_latitud = db.Column(db.Float)
-    gps_longitud = db.Column(db.Float)
+    gps_latitud = db.Column(db.Float)  # GPS del negocio
+    gps_longitud = db.Column(db.Float)  # GPS del negocio
+    gps_latitud_casa = db.Column(db.Float)  # GPS de residencia
+    gps_longitud_casa = db.Column(db.Float)  # GPS de residencia
     es_vip = db.Column(db.Boolean, default=False)
     fecha_registro = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # NUEVOS CAMPOS PARA SCORING (Capacidad de Pago y Estabilidad)
+    gastos_mensuales_promedio = db.Column(db.Float) # Vital para calcular capacidad de pago real
+    personas_a_cargo = db.Column(db.Integer, default=0) # Carga familiar afecta riesgo
+    estado_civil = db.Column(db.String(20)) # SOLTERO, CASADO, UNION_LIBRE
+    tiempo_residencia_meses = db.Column(db.Integer) # Estabilidad domiciliaria (meses viviendo ahí)
+    
+    # ==================== DATOS DEL COMERCIO (Scoring) ====================
+    tipo_negocio = db.Column(db.String(50))  # tienda, restaurante, ferretería, peluquería, etc.
+    nombre_negocio = db.Column(db.String(100))  # Nombre del comercio
+    antiguedad_negocio_meses = db.Column(db.Integer)  # Meses que lleva el negocio
+    local_propio = db.Column(db.Boolean, default=False)  # ¿Es dueño o alquila?
+    dias_trabajo = db.Column(db.String(20))  # L-V, L-S, L-D
+    hora_cobro_preferida = db.Column(db.String(10))  # 08:00, 10:00, etc.
+    ingresos_diarios_estimados = db.Column(db.Float)  # Ventas diarias aproximadas
+    referido_por_cliente_id = db.Column(db.Integer, db.ForeignKey('clientes.id'), nullable=True)  # Quién lo recomendó
+    
+    # ==================== FORMALIZACIÓN FISCAL (Scoring) ====================
+    negocio_formalizado = db.Column(db.Boolean, default=False)  # ¿Tiene registro fiscal?
+    tipo_documento_fiscal = db.Column(db.String(20), default='CNPJ')  # CNPJ (Documento del Negocio)
+    documento_fiscal_negocio = db.Column(db.String(30))  # Número del CNPJ
+    fecha_verificacion_fiscal = db.Column(db.DateTime)  # Cuándo se verificó
+    
+    # ==================== COMPROBANTE DE RESIDENCIA (Scoring) ====================
+    tiene_comprobante_residencia = db.Column(db.Boolean, default=False)
+    tipo_comprobante_residencia = db.Column(db.String(30))  # LUZ, AGUA, INTERNET, GAS, ALQUILER, ESCRITURA
+    comprobante_a_nombre_propio = db.Column(db.Boolean, default=False)  # ¿A su nombre?
+    nombre_titular_comprobante = db.Column(db.String(100))  # Si no está a su nombre
+    parentesco_titular = db.Column(db.String(30))  # esposa, padre, hermano, etc.
+    fecha_comprobante = db.Column(db.Date)  # Fecha del comprobante
+    foto_comprobante_residencia = db.Column(db.String(300))  # Ruta del archivo
+    
+    # ==================== SCORING CREDITICIO (Calculado por IA) ====================
+    score_crediticio = db.Column(db.Integer, default=500)  # 0-1000 puntos
+    nivel_riesgo = db.Column(db.String(20), default='NUEVO')  # EXCELENTE, BUENO, REGULAR, ALTO, CRITICO, NUEVO
+    limite_credito_sugerido = db.Column(db.Float)  # Máximo a prestar según IA
+    credito_bloqueado = db.Column(db.Boolean, default=False)  # No prestarle más
+    motivo_bloqueo = db.Column(db.String(200))  # Razón del bloqueo
+    fecha_ultimo_calculo_score = db.Column(db.DateTime)  # Última actualización del score
+    
+    # Relación con el cliente que lo refirió
+    referido_por = db.relationship('Cliente', remote_side=[id], backref='clientes_referidos')
     
     @property
     def whatsapp_completo(self):
@@ -107,6 +151,28 @@ class Cliente(db.Model):
         if self.whatsapp_numero:
             return f"{self.whatsapp_codigo_pais}{self.whatsapp_numero}"
         return self.telefono  # Fallback al teléfono regular
+    
+    @property
+    def score_color(self):
+        """Retorna el color CSS según el nivel de riesgo"""
+        colores = {
+            'EXCELENTE': 'success',
+            'BUENO': 'info',
+            'REGULAR': 'warning',
+            'ALTO': 'danger',
+            'CRITICO': 'dark',
+            'NUEVO': 'secondary'
+        }
+        return colores.get(self.nivel_riesgo, 'secondary')
+    
+    @property
+    def puede_recibir_prestamo(self):
+        """Verifica si el cliente puede recibir un nuevo préstamo"""
+        if self.credito_bloqueado:
+            return False
+        if self.nivel_riesgo == 'CRITICO':
+            return False
+        return True
 
 # 3. LOS PRÉSTAMOS
 class Prestamo(db.Model):
@@ -233,3 +299,58 @@ class Activo(db.Model):
     ruta = db.relationship('Ruta', backref='activos_asignados')
     usuario_responsable = db.relationship('Usuario', foreign_keys=[usuario_responsable_id], backref='activos_a_cargo')
     registrado_por = db.relationship('Usuario', foreign_keys=[registrado_por_id], backref='activos_registrados')
+
+
+# 8. HISTORIAL DE SCORING (Para IA y auditoría)
+class HistorialScoring(db.Model):
+    __tablename__ = 'historial_scoring'
+    id = db.Column(db.Integer, primary_key=True)
+    cliente_id = db.Column(db.Integer, db.ForeignKey('clientes.id'), nullable=False)
+    
+    # Scores
+    score_anterior = db.Column(db.Integer)
+    score_nuevo = db.Column(db.Integer, nullable=False)
+    nivel_riesgo_anterior = db.Column(db.String(20))
+    nivel_riesgo_nuevo = db.Column(db.String(20), nullable=False)
+    
+    # Límites de crédito
+    limite_anterior = db.Column(db.Float)
+    limite_nuevo = db.Column(db.Float)
+    
+    # Detalles del cálculo (JSON con los factores)
+    factores_calculo = db.Column(db.Text)  # JSON con puntaje por cada factor
+    # Ejemplo: {"antiguedad_negocio": 80, "tasa_pago": 250, "comprobante_residencia": 150, ...}
+    
+    # Metadatos
+    fecha_calculo = db.Column(db.DateTime, default=datetime.utcnow)
+    calculado_por = db.Column(db.String(50), default='SISTEMA')  # SISTEMA, MANUAL, RECALCULO_MASIVO
+    observaciones = db.Column(db.String(500))
+    
+    # Relaciones
+    cliente = db.relationship('Cliente', backref='historial_scores')
+
+
+# 9. ALERTAS DE SCORING (Recomendaciones de la IA)
+class AlertaScoring(db.Model):
+    __tablename__ = 'alertas_scoring'
+    id = db.Column(db.Integer, primary_key=True)
+    cliente_id = db.Column(db.Integer, db.ForeignKey('clientes.id'), nullable=False)
+    
+    tipo_alerta = db.Column(db.String(30), nullable=False)  
+    # SUBIR_CREDITO, BAJAR_CREDITO, BLOQUEAR, REVISAR_MANUAL, CLIENTE_ESTRELLA
+    
+    mensaje = db.Column(db.String(500), nullable=False)  # Descripción de la alerta
+    accion_sugerida = db.Column(db.String(200))  # Qué debería hacer el dueño
+    
+    prioridad = db.Column(db.String(10), default='MEDIA')  # ALTA, MEDIA, BAJA
+    
+    # Estado de la alerta
+    estado = db.Column(db.String(20), default='PENDIENTE')  # PENDIENTE, VISTA, ATENDIDA, IGNORADA
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha_atencion = db.Column(db.DateTime)
+    atendida_por_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True)
+    notas_atencion = db.Column(db.String(500))
+    
+    # Relaciones
+    cliente = db.relationship('Cliente', backref='alertas_scoring')
+    atendida_por = db.relationship('Usuario', backref='alertas_atendidas')

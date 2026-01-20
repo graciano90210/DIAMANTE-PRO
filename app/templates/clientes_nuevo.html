@@ -47,29 +47,42 @@
                             <h5 class="mb-3 text-primary">Información Personal</h5>
                             
                             <div class="row mb-3">
-                                <div class="col-md-8">
+                                <div class="col-md-6">
                                     <label class="form-label">Nombre Completo *</label>
                                     <input type="text" name="nombre" class="form-control" required 
                                            placeholder="Ej: Juan Pérez García">
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Documento (Cédula) *</label>
+                                <div class="col-md-3">
+                                    <label class="form-label">CPF (Documento) *</label>
                                     <input type="text" name="documento" class="form-control" required 
-                                           placeholder="Ej: 1234567890">
+                                           placeholder="Ej: 111.222.333-44">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Fecha Nacimiento</label>
+                                    <input type="date" name="fecha_nacimiento" class="form-control">
                                 </div>
                             </div>
 
                             <div class="row mb-3">
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <label class="form-label">Teléfono *</label>
                                     <input type="tel" name="telefono" class="form-control" required 
                                            placeholder="Ej: 3001234567">
                                     <small class="text-muted">Número local sin código de país</small>
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">RUT / Cámara de Comercio</label>
-                                    <input type="text" name="documento_negocio" class="form-control" 
-                                           placeholder="Opcional">
+                                <div class="col-md-4">
+                                    <label class="form-label">Estado Civil</label>
+                                    <select name="estado_civil" class="form-select">
+                                        <option value="SOLTERO">Soltero/a</option>
+                                        <option value="CASADO">Casado/a</option>
+                                        <option value="UNION_LIBRE">Unión Libre</option>
+                                        <option value="DIVORCIADO">Divorciado/a</option>
+                                        <option value="VIUDO">Viudo/a</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Personas a Cargo</label>
+                                    <input type="number" name="personas_a_cargo" class="form-control" value="0">
                                 </div>
                             </div>
 
@@ -108,30 +121,106 @@
 
                             <!-- Información del Negocio -->
                             <h5 class="mb-3 text-primary mt-4">Información del Negocio</h5>
+
+                            <!-- Documentación Fiscal -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">CNPJ (Documento Negocio)</label>
+                                    <input type="text" name="documento_fiscal_negocio" class="form-control" 
+                                           placeholder="Ej: 12.345.678/0001-90">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Tipo de Negocio</label>
+                                    <input type="text" name="tipo_negocio" class="form-control" 
+                                           placeholder="Ej: Tienda, Peluquería, Taller...">
+                                </div>
+                            </div>
                             
                             <div class="row mb-3">
                                 <div class="col-md-8">
                                     <label class="form-label">Dirección del Negocio</label>
                                     <input type="text" name="direccion_negocio" class="form-control" 
-                                           placeholder="Ej: Calle 10 # 20-30, Local 5, Barrio Centro">
+                                           placeholder="Ej: Av. Principal 123, Sala 4">
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label">CEP / Código Postal</label>
-                                    <input type="text" name="cep" class="form-control" 
+                                    <label class="form-label">CEP (Negocio)</label>
+                                    <input type="text" name="cep_negocio" class="form-control" 
                                            placeholder="Ej: 12345-678">
+                                </div>
+                            </div>
+
+                            <!-- Datos Financieros y Estabilidad -->
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">Antigüedad (Meses)</label>
+                                    <input type="number" name="antiguedad_negocio_meses" class="form-control" placeholder="0">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Ingresos Diarios</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" step="any" name="ingresos_diarios_estimados" class="form-control">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Gastos Mensuales</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" step="any" name="gastos_mensuales_promedio" class="form-control">
+                                    </div>
+                                </div>
+                                <div class="col-md-3 d-flex align-items-end">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="local_propio" id="localPropio">
+                                        <label class="form-check-label" for="localPropio">¿Local Propio?</label>
+                                    </div>
                                 </div>
                             </div>
 
                             <div class="row mb-3">
                                 <div class="col-md-6">
-                                    <label class="form-label">GPS Latitud</label>
+                                    <label class="form-label">GPS Latitud (Negocio)</label>
                                     <input type="number" step="any" name="gps_latitud" class="form-control" 
-                                           placeholder="Ej: 4.6097">
+                                           placeholder="Ej: -23.5505">
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label">GPS Longitud</label>
+                                    <label class="form-label">GPS Longitud (Negocio)</label>
                                     <input type="number" step="any" name="gps_longitud" class="form-control" 
-                                           placeholder="Ej: -74.0817">
+                                           placeholder="Ej: -46.6333">
+                                </div>
+                            </div>
+
+                            <!-- Información Residencial (NUEVO) -->
+                            <h5 class="mb-3 text-primary mt-4">Información Residencial</h5>
+
+                            <div class="row mb-3">
+                                <div class="col-md-8">
+                                    <label class="form-label">Dirección de Casa</label>
+                                    <input type="text" name="direccion_casa" class="form-control" 
+                                           placeholder="Dirección completa de residencia">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">CEP (Casa)</label>
+                                    <input type="text" name="cep_casa" class="form-control">
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Tiempo Residencia (Meses)</label>
+                                    <input type="number" name="tiempo_residencia_meses" class="form-control" placeholder="0">
+                                </div>
+                                <div class="col-md-4 d-flex align-items-end">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="tiene_comprobante_residencia" id="chkComprobante">
+                                        <label class="form-check-label" for="chkComprobante">Tiene Comprobante</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 d-flex align-items-end">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="comprobante_a_nombre_propio" id="chkNombrePropio">
+                                        <label class="form-check-label" for="chkNombrePropio">¿A nombre propio?</label>
+                                    </div>
                                 </div>
                             </div>
 

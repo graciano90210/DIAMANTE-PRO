@@ -342,24 +342,61 @@ def init_routes(app):
                                      nombre=session.get('nombre'), 
                                      rol=session.get('rol'))
             
-            # Crear nuevo cliente
-            direccion = request.form.get('direccion_negocio')
-            cep = request.form.get('cep')
-            if cep:
-                direccion = f"{direccion} - CEP: {cep}"
+            # Validar fecha nacimiento
+            fecha_nac = request.form.get('fecha_nacimiento')
+            fecha_nacimiento = datetime.strptime(fecha_nac, '%Y-%m-%d').date() if fecha_nac else None
+
+            # Conversiones seguras
+            def to_float(val):
+                try:
+                    return float(val) if val else None
+                except ValueError:
+                    return None
+            
+            def to_int(val):
+                try:
+                    return int(val) if val else None
+                except ValueError:
+                    return None
 
             nuevo_cliente = Cliente(
                 nombre=request.form.get('nombre'),
                 documento=documento,
-                documento_negocio=request.form.get('documento_negocio'),
+                fecha_nacimiento=fecha_nacimiento,
                 telefono=request.form.get('telefono'),
                 whatsapp_codigo_pais=request.form.get('whatsapp_codigo_pais', '57'),
                 whatsapp_numero=request.form.get('whatsapp_numero'),
-                direccion_negocio=direccion,
-                gps_latitud=request.form.get('gps_latitud') or None,
-                gps_longitud=request.form.get('gps_longitud') or None,
+                
+                # Nuevos campos Scoring
+                estado_civil=request.form.get('estado_civil'),
+                personas_a_cargo=to_int(request.form.get('personas_a_cargo')) or 0,
+                
+                # Datos Negocio
+                documento_fiscal_negocio=request.form.get('documento_fiscal_negocio'),
+                tipo_negocio=request.form.get('tipo_negocio'),
+                direccion_negocio=request.form.get('direccion_negocio'),
+                cep_negocio=request.form.get('cep_negocio'),
+                antiguedad_negocio_meses=to_int(request.form.get('antiguedad_negocio_meses')),
+                ingresos_diarios_estimados=to_float(request.form.get('ingresos_diarios_estimados')),
+                gastos_mensuales_promedio=to_float(request.form.get('gastos_mensuales_promedio')),
+                local_propio=bool(request.form.get('local_propio')),
+                
+                gps_latitud=to_float(request.form.get('gps_latitud')),
+                gps_longitud=to_float(request.form.get('gps_longitud')),
+                
+                # Datos Residencia
+                direccion_casa=request.form.get('direccion_casa'),
+                cep_casa=request.form.get('cep_casa'),
+                tiempo_residencia_meses=to_int(request.form.get('tiempo_residencia_meses')),
+                tiene_comprobante_residencia=bool(request.form.get('tiene_comprobante_residencia')),
+                comprobante_a_nombre_propio=bool(request.form.get('comprobante_a_nombre_propio')),
+                
                 es_vip=bool(request.form.get('es_vip'))
             )
+            
+            # Si tiene CNPJ, lo marcamos como formalizado
+            if nuevo_cliente.documento_fiscal_negocio:
+                nuevo_cliente.negocio_formalizado = True
             
             db.session.add(nuevo_cliente)
             db.session.commit()
@@ -403,17 +440,59 @@ def init_routes(app):
                                          nombre=session.get('nombre'),
                                          rol=session.get('rol'))
             
-            # Actualizar datos
+            # Helpers para conversión
+            def to_float(val):
+                try:
+                    return float(val) if val else None
+                except ValueError:
+                    return None
+            
+            def to_int(val):
+                try:
+                    return int(val) if val else None
+                except ValueError:
+                    return None
+            
+            # Procesar fecha nacimiento
+            fecha_nac = request.form.get('fecha_nacimiento')
+            cliente.fecha_nacimiento = datetime.strptime(fecha_nac, '%Y-%m-%d').date() if fecha_nac else None
+
+            # Actualizar datos básicos
             cliente.nombre = request.form.get('nombre')
             cliente.documento = nuevo_documento
-            cliente.documento_negocio = request.form.get('documento_negocio')
             cliente.telefono = request.form.get('telefono')
             cliente.whatsapp_codigo_pais = request.form.get('whatsapp_codigo_pais', '57')
             cliente.whatsapp_numero = request.form.get('whatsapp_numero')
+            
+            # Nuevos datos Scoring (Personal)
+            cliente.estado_civil = request.form.get('estado_civil')
+            cliente.personas_a_cargo = to_int(request.form.get('personas_a_cargo')) or 0
+            
+            # Datos Negocio / Fiscal
+            cliente.documento_fiscal_negocio = request.form.get('documento_fiscal_negocio')
+            cliente.tipo_negocio = request.form.get('tipo_negocio')
             cliente.direccion_negocio = request.form.get('direccion_negocio')
-            cliente.gps_latitud = request.form.get('gps_latitud') or None
-            cliente.gps_longitud = request.form.get('gps_longitud') or None
+            cliente.cep_negocio = request.form.get('cep_negocio')
+            cliente.antiguedad_negocio_meses = to_int(request.form.get('antiguedad_negocio_meses'))
+            cliente.ingresos_diarios_estimados = to_float(request.form.get('ingresos_diarios_estimados'))
+            cliente.gastos_mensuales_promedio = to_float(request.form.get('gastos_mensuales_promedio'))
+            cliente.local_propio = bool(request.form.get('local_propio'))
+            
+            cliente.gps_latitud = to_float(request.form.get('gps_latitud'))
+            cliente.gps_longitud = to_float(request.form.get('gps_longitud'))
+            
+            # Datos Residencia
+            cliente.direccion_casa = request.form.get('direccion_casa')
+            cliente.cep_casa = request.form.get('cep_casa')
+            cliente.tiempo_residencia_meses = to_int(request.form.get('tiempo_residencia_meses'))
+            cliente.tiene_comprobante_residencia = bool(request.form.get('tiene_comprobante_residencia'))
+            cliente.comprobante_a_nombre_propio = bool(request.form.get('comprobante_a_nombre_propio'))
+            
             cliente.es_vip = bool(request.form.get('es_vip'))
+                        
+            # Actualización automática de estado formalizado
+            if cliente.documento_fiscal_negocio and not cliente.negocio_formalizado:
+                cliente.negocio_formalizado = True
             
             db.session.commit()
             
