@@ -230,33 +230,33 @@ def init_routes(app):
         if rol == 'cobrador':
             prestamos_pagados = Prestamo.query.filter_by(estado='PAGADO', cobrador_id=usuario_id).count()
             prestamos_cancelados = Prestamo.query.filter_by(estado='CANCELADO', cobrador_id=usuario_id).count()
-                
-                # Proyección de cobro mañana (Simplificación: misma lógica que hoy para clientes activos)
-                proyeccion_manana = por_cobrar_hoy # Asumimos constancia en Gota a Gota diario
-                
-                # Distribución de Riesgo (Solo clientes del cobrador)
-                # Como Prestamo no tiene nivel_riesgo, unimos con Cliente
-                riesgo_stats = db.session.query(Cliente.nivel_riesgo, func.count(Cliente.id))\
-                    .join(Prestamo).filter(Prestamo.cobrador_id == usuario_id, Prestamo.estado == 'ACTIVO')\
-                    .group_by(Cliente.nivel_riesgo).all()
-                    
-            elif ruta_seleccionada_id:
-                prestamos_pagados = Prestamo.query.filter_by(estado='PAGADO', ruta_id=ruta_seleccionada_id).count()
-                prestamos_cancelados = Prestamo.query.filter_by(estado='CANCELADO', ruta_id=ruta_seleccionada_id).count()
-                
-                proyeccion_manana = por_cobrar_hoy
-                
-                riesgo_stats = db.session.query(Cliente.nivel_riesgo, func.count(Cliente.id))\
-                    .join(Prestamo).filter(Prestamo.ruta_id == ruta_seleccionada_id, Prestamo.estado == 'ACTIVO')\
-                    .group_by(Cliente.nivel_riesgo).all()
-            else:
-                prestamos_pagados = Prestamo.query.filter_by(estado='PAGADO').count()
-                prestamos_cancelados = Prestamo.query.filter_by(estado='CANCELADO').count()
-                
-                proyeccion_manana = por_cobrar_hoy
-                
-                # Distribución Global (Contamos clientes, no préstamos, para riesgo general)
-                riesgo_stats = db.session.query(Cliente.nivel_riesgo, func.count(Cliente.id)).group_by(Cliente.nivel_riesgo).all()
+            
+            # Proyección de cobro mañana (Simplificación: misma lógica que hoy para clientes activos)
+            proyeccion_manana = por_cobrar_hoy # Asumimos constancia en Gota a Gota diario
+            
+            # Distribución de Riesgo (Solo clientes del cobrador)
+            # Como Prestamo no tiene nivel_riesgo, unimos con Cliente
+            riesgo_stats = db.session.query(Cliente.nivel_riesgo, func.count(Cliente.id))\
+                .join(Prestamo).filter(Prestamo.cobrador_id == usuario_id, Prestamo.estado == 'ACTIVO')\
+                .group_by(Cliente.nivel_riesgo).all()
+
+        elif ruta_seleccionada_id:
+            prestamos_pagados = Prestamo.query.filter_by(estado='PAGADO', ruta_id=ruta_seleccionada_id).count()
+            prestamos_cancelados = Prestamo.query.filter_by(estado='CANCELADO', ruta_id=ruta_seleccionada_id).count()
+            
+            proyeccion_manana = por_cobrar_hoy
+            
+            riesgo_stats = db.session.query(Cliente.nivel_riesgo, func.count(Cliente.id))\
+                .join(Prestamo).filter(Prestamo.ruta_id == ruta_seleccionada_id, Prestamo.estado == 'ACTIVO')\
+                .group_by(Cliente.nivel_riesgo).all()
+        else:
+            prestamos_pagados = Prestamo.query.filter_by(estado='PAGADO').count()
+            prestamos_cancelados = Prestamo.query.filter_by(estado='CANCELADO').count()
+            
+            proyeccion_manana = por_cobrar_hoy
+            
+            # Distribución Global (Contamos clientes, no préstamos, para riesgo general)
+            riesgo_stats = db.session.query(Cliente.nivel_riesgo, func.count(Cliente.id)).group_by(Cliente.nivel_riesgo).all()
             
             # Procesar datos de riesgo para gráficas
             riesgo_labels = []
