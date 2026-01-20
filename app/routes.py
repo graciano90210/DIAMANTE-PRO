@@ -258,22 +258,22 @@ def init_routes(app):
             # Distribución Global (Contamos clientes, no préstamos, para riesgo general)
             riesgo_stats = db.session.query(Cliente.nivel_riesgo, func.count(Cliente.id)).group_by(Cliente.nivel_riesgo).all()
             
-            # Procesar datos de riesgo para gráficas
-            riesgo_labels = []
-            riesgo_data = []
-            for r in riesgo_stats:
-                label = r[0] if r[0] else 'NUEVO'
-                count = r[1]
-                riesgo_labels.append(label)
-                riesgo_data.append(count)
-            
-            return render_template('dashboard.html', 
-                                nombre=session.get('nombre'), 
-                                rol=session.get('rol'),
-                                total_clientes=total_clientes,
-                                clientes_vip=clientes_vip,
-                                total_prestamos_activos=total_prestamos_activos,
-                                total_cartera=total_cartera,
+        # Procesar datos de riesgo para gráficas
+        riesgo_labels = []
+        riesgo_data = []
+        for r in riesgo_stats:
+            label = r[0] if r[0] else 'NUEVO'
+            count = r[1]
+            riesgo_labels.append(label)
+            riesgo_data.append(count)
+        
+        return render_template('dashboard.html', 
+                            nombre=session.get('nombre'), 
+                            rol=session.get('rol'),
+                            total_clientes=total_clientes,
+                            clientes_vip=clientes_vip,
+                            total_prestamos_activos=total_prestamos_activos,
+                            total_cartera=total_cartera,
                                 capital_prestado=capital_prestado,
                                 por_cobrar_hoy=por_cobrar_hoy,
                                 proyeccion_manana=proyeccion_manana,
@@ -298,8 +298,12 @@ def init_routes(app):
                                 capital_disponible=capital_disponible,
                                 riesgo_labels=riesgo_labels,
                                 riesgo_data=riesgo_data)
+    
+    @app.route('/seleccionar-ruta/<int:ruta_id>')
+    def seleccionar_ruta(ruta_id):
+        if 'usuario_id' not in session:
             return redirect(url_for('home'))
-        
+
         if session.get('rol') not in ['dueno', 'gerente']:
             return redirect(url_for('dashboard'))
         
