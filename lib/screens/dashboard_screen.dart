@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'dart:math' as math;
 import '../providers/auth_provider.dart';
 import '../services/sync_service.dart';
 import 'clientes_screen.dart';
@@ -7,6 +9,26 @@ import 'prestamos_screen.dart';
 import 'cobros_screen.dart';
 import 'ruta_dia_screen.dart';
 import 'login_screen.dart';
+import 'registrar_gasto_screen.dart';
+import '../main.dart'; // Importamos las constantes globales
+
+// Estilo de sombra brillante (Neon Glow)
+List<BoxShadow> kNeonShadow = [
+  BoxShadow(
+    color: kNeonCyan.withOpacity(0.3),
+    blurRadius: 8,
+    spreadRadius: 1,
+    offset: const Offset(0, 2),
+  ),
+];
+
+// Estilo de texto para títulos
+const TextStyle kHeadingStyle = TextStyle(
+  fontSize: 22,
+  fontWeight: FontWeight.bold,
+  color: kTextWhite,
+  letterSpacing: 1.2,
+);
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -30,359 +52,443 @@ class _DashboardScreenState extends State<DashboardScreen> {
     
     try {
       final syncService = context.read<SyncService>();
-      
-      print('🔍 Cargando estadísticas del cobrador...');
-      
-      // Usar SyncService en lugar de API directamente
       final response = await syncService.getEstadisticas();
       
-      print('✅ Respuesta recibida: $response');
+      if (mounted) {
+        setState(() {
+          _stats = response;
+          _isLoading = false;
+        });
+      }
       
-      setState(() {
-        _stats = response;
-        _isLoading = false;
-      });
-      
-      print('📊 Stats guardados: $_stats');
-      
-      // Sincronizar en segundo plano si hay conexión
       if (syncService.isOnline) {
         syncService.syncAll().catchError((e) {
-          print('⚠️ Error en sincronización de fondo: $e');
+          debugPrint('⚠️ Error en sincronización de fondo: $e');
         });
       }
     } catch (e) {
-      print('❌ Error al cargar dashboard: $e');
-      setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
-      }
+      debugPrint('❌ Error al cargar dashboard: $e');
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _handleLogout() async {
     final authProvider = context.read<AuthProvider>();
     await authProvider.logout();
-    
     if (mounted) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const LoginScreen()),
       );
     }
   }
+  
+  String _getFormattedDateShort() {
+    final now = DateTime.now();
+    final weekDays = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+    final months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    return '${weekDays[now.weekday - 1]}, ${now.day} ${months[now.month - 1]}';
+  }
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = context.watch<AuthProvider>();
-    final syncService = context.watch<SyncService>();
+    // Default values
+    final totalCobrar = ((_stats?['total_cobrar'] ?? 0) as num).toDouble();
+    final clientesVisitados = (_stats?['clientes_visitados'] ?? 0) as int;
+    final clientesPendientes = (_stats?['clientes_pendientes'] ?? 0) as int;
+    //final nuevosClientes = _stats?['nuevos_clientes'] ?? 0;
+    final recaudadoHoy = ((_stats?['recaudado_hoy'] ?? 0) as num).toDouble();
     
+    // Calculates
+    final totalCreditos = clientesVisitados + clientesPendientes;
+    // Evitamos NaN si totalCreditos es 0
+    final visitadosPercentage = totalCreditos > 0 ? (clientesVisitados / totalCreditos) : 0.0;
+    
+    // Asumimos meta diaria basada en total a cobrar vs recaudado (ejemplo)
+    final efectividadPercentage = totalCobrar > 0 ? (recaudadoHoy / totalCobrar) : 0.0;
+
+
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            const Text('Dashboard'),
-            const SizedBox(width: 8),
-            // Indicador de conexión
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: syncService.isOnline ? Colors.green : Colors.grey,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    syncService.isOnline ? Icons.cloud_done : Icons.cloud_off,
-                    size: 16,
-                    color: Colors.white,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    syncService.isOnline ? 'ONLINE' : 'OFFLINE',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (syncService.isSyncing)
-              const Padding(
-                padding: EdgeInsets.only(left: 8),
-                child: SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                ),
-              ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _isLoading ? null : _loadDashboard,
-          ),
-          IconButton(
-            icon: const Icon(Icons.sync),
-            onPressed: syncService.isSyncing 
-                ? null 
-                : () {
-                    syncService.syncAll().then((_) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Sincronización completada')),
-                      );
-                      _loadDashboard();
-                    }).catchError((e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Error: $e')),
-                      );
-                    });
-                  },
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: _handleLogout,
-          ),
-        ],
-      ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  const Icon(
-                    Icons.diamond,
-                    size: 50,
-                    color: Colors.white,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    authProvider.currentUser?.name ?? 'Usuario',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    authProvider.currentUser?.email ?? '',
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.dashboard),
-              title: const Text('Dashboard'),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.people),
-              title: const Text('Clientes'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ClientesScreen()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.attach_money),
-              title: const Text('Préstamos'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const PrestamosScreen()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.route),
-              title: const Text('Ruta del Día'),
-              trailing: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.orange,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  _stats != null ? (_stats!['por_cobrar_hoy'] ?? 0).toString() : '0',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const RutaDiaScreen()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.payment),
-              title: const Text('Registrar Cobro'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const CobrosScreen()),
-                );
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Cerrar Sesión'),
-              onTap: _handleLogout,
-            ),
-          ],
-        ),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadDashboard,
-              child: _buildDashboard(),
-            ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const RutaDiaScreen()),
-          );
-        },
-        icon: const Icon(Icons.route),
-        label: const Text('Ruta del Día'),
-        backgroundColor: Colors.orange,
-      ),
-    );
-  }
-
-  Widget _buildDashboard() {
-    if (_stats == null) {
-      return const Center(
-        child: Text('No hay datos disponibles'),
-      );
-    }
-
-    return SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Resumen General',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: 16),
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
+      backgroundColor: kBgDark,
+      // Usamos un Container como fondo para dar un degradado sutil
+      body: Container(
+        decoration: const BoxDecoration(
+            gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [kBgDark, Color(0xFF121212)])),
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildStatCard(
-                'Préstamos Activos',
-                '${_stats!['total_prestamos'] ?? 0}',
-                Icons.assignment,
-                Colors.blue,
+              // --- HEADER PERSONALIZADO ---
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      icon: const Icon(FontAwesomeIcons.barsStaggered, color: kTextWhite),
+                      onPressed: () =>  _showCustomDrawer(context), // Implementaremos un drawer personalizado o modal
+                    ),
+                    const Icon(FontAwesomeIcons.gem, color: kNeonCyan, size: 30), // Logo Diamante Brillante
+                    const Icon(FontAwesomeIcons.solidBell, color: kTextWhite),
+                  ],
+                ),
               ),
-              _buildStatCard(
-                'Total Cartera',
-                '\$${(_stats!['total_cartera'] ?? 0).toStringAsFixed(2)}',
-                Icons.account_balance_wallet,
-                Colors.green,
+
+              // --- SECCIÓN DE ACCESOS RÁPIDOS FUTURISTAS ---
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.0),
+                child: Text("Accesos Rápidos", style: kHeadingStyle),
               ),
-              _buildStatCard(
-                'Cobrado Hoy',
-                '\$${(_stats!['cobrado_hoy'] ?? 0).toStringAsFixed(2)}',
-                Icons.check_circle,
-                Colors.teal,
+              const SizedBox(height: 15),
+              SizedBox(
+                height: 100, // Altura fija para el scroll horizontal
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.only(left: 20),
+                  children: [
+                    TechActionCard(
+                      icon: FontAwesomeIcons.users, 
+                      label: "Clientes", 
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ClientesScreen()))
+                    ),
+                    TechActionCard(
+                      icon: FontAwesomeIcons.handHoldingDollar, 
+                      label: "Créditos", 
+                      isPrimary: true, 
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PrestamosScreen()))
+                    ), // Destacado
+                    TechActionCard(
+                      icon: FontAwesomeIcons.moneyBillTrendUp, 
+                      label: "Cobrar", 
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CobrosScreen()))
+                    ),
+                     TechActionCard(
+                      icon: FontAwesomeIcons.cartShopping, 
+                      label: "Gastos", 
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegistrarGastoScreen()))
+                    ),
+                    TechActionCard(
+                      icon: FontAwesomeIcons.route, 
+                      label: "Ruta", 
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RutaDiaScreen()))
+                    ),
+                  ],
+                ),
               ),
-              _buildStatCard(
-                'Por Cobrar Hoy',
-                '\$${(_stats!['por_cobrar_hoy'] ?? 0).toStringAsFixed(2)}',
-                Icons.schedule,
-                Colors.orange,
+
+              const SizedBox(height: 25),
+
+              // --- SECCIÓN DEL DASHBOARD (Resumen) ---
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Row(
+                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                   children: [
+                     const Text("Resumen de Hoy", style: kHeadingStyle),
+                      Text(_getFormattedDateShort(), style: const TextStyle(color: kNeonCyan)),
+                   ]
+                ),
               ),
-              _buildStatCard(
-                'Al Día',
-                '${_stats!['prestamos_al_dia'] ?? 0}',
-                Icons.check,
-                Colors.green,
-              ),
-              _buildStatCard(
-                'Atrasados',
-                '${_stats!['prestamos_atrasados'] ?? 0}',
-                Icons.warning,
-                Colors.red,
+              const SizedBox(height: 15),
+
+              // Expanded para que el resto ocupe el espacio sobrante
+              Expanded(
+                child: RefreshIndicator(
+                  color: kNeonCyan,
+                  backgroundColor: kCardDark,
+                  onRefresh: _loadDashboard,
+                  child: ListView(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    children: [
+                      // --- TARJETA PRINCIPAL (Cobranza) ---
+                      TechDataCard(
+                        title: "Cobranza del Día",
+                        totalValue: totalCobrar, 
+                        currentValue: recaudadoHoy,
+                        icon: FontAwesomeIcons.sackDollar,
+                        isHighlight: true, // Tarjeta destacada
+                      ),
+                      const SizedBox(height: 15),
+                  
+                      // --- TARJETAS SECUNDARIAS EN FILA ---
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TechDataCardSmall(
+                              title: "Clientes Visitados",
+                              value: "$clientesVisitados/${clientesVisitados + clientesPendientes}",
+                              percentage: visitadosPercentage, 
+                              icon: FontAwesomeIcons.route,
+                            ),
+                          ),
+                          const SizedBox(width: 15),
+                          Expanded(
+                            child: TechDataCardSmall(
+                              title: "Efectividad Cobro",
+                              value: "${(efectividadPercentage * 100).toStringAsFixed(1)}%",
+                              percentage: efectividadPercentage,
+                              icon: FontAwesomeIcons.bullseye,
+                              colorAccent: Colors.purpleAccent, // Color diferente
+                            ),
+                          ),
+                        ],
+                      ),
+                       const SizedBox(height: 20),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
+        ),
+      ),
+        // Un BottomNavigationBar moderno y oscuro para cerrar con broche de oro
+      bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: kBgDark,
+        selectedItemColor: kNeonCyan,
+        unselectedItemColor: kTextGrey,
+        type: BottomNavigationBarType.fixed,
+        currentIndex: 0, 
+        onTap: (index) {
+          // Implement navigation logic if needed
+        },
+        items: const [
+          BottomNavigationBarItem(icon: Icon(FontAwesomeIcons.house), label: ''),
+          BottomNavigationBarItem(icon: Icon(FontAwesomeIcons.listUl), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.add_circle_outline, size: 40, color: kNeonCyan), label: ''), // Botón central destacado
+          BottomNavigationBarItem(icon: Icon(FontAwesomeIcons.solidCreditCard), label: ''),
+          BottomNavigationBarItem(icon: Icon(FontAwesomeIcons.gear), label: ''),
         ],
       ),
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
-    return Card(
-      elevation: 4,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+  void _showCustomDrawer(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: kCardDark,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(25))
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 20),
+            Container(height: 4, width: 40, decoration: BoxDecoration(color: kTextGrey, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 20),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.redAccent),
+              title: const Text('Cerrar Sesión', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(context);
+                _handleLogout();
+              },
+            ),
+            const SizedBox(height: 40),
+          ],
+        ),
+      )
+    );
+  }
+}
+
+// Widget para los botones de acceso rápido superiores
+class TechActionCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool isPrimary;
+
+  const TechActionCard({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.isPrimary = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(right: 15),
+        padding: const EdgeInsets.all(15),
+        width: 110,
+        decoration: BoxDecoration(
+          // Si es primario, el fondo es cian, si no, es oscuro
+          color: isPrimary ? kNeonCyan.withOpacity(0.2) : kCardDark,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+              color: isPrimary ? kNeonCyan : Colors.transparent, width: 1.5),
+          boxShadow: isPrimary ? kNeonShadow : [],
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 40, color: color),
-            const SizedBox(height: 12),
+            Icon(icon, color: isPrimary ? kNeonCyan : kTextWhite, size: 28),
+            const SizedBox(height: 8),
             Text(
-              value,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              title,
+              label,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
+                color: isPrimary ? kNeonCyan : kTextGrey,
                 fontSize: 12,
-                color: Colors.grey,
+                fontWeight: isPrimary ? FontWeight.bold : FontWeight.normal
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// Widget para la tarjeta grande principal
+class TechDataCard extends StatelessWidget {
+  final String title;
+  final double totalValue;
+  final double currentValue;
+  final IconData icon;
+  final bool isHighlight;
+
+  const TechDataCard({
+    super.key,
+    required this.title,
+    required this.totalValue,
+    required this.currentValue,
+    required this.icon,
+    this.isHighlight = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // --- CORRECCIÓN LÓGICA MATEMÁTICA ---
+    // Si el total es 0, el porcentaje es 0. Evitamos división por cero.
+    double percentage = totalValue == 0 ? 0.0 : (currentValue / totalValue);
+    // Aseguramos que no pase de 1.0 (100%)
+    if (percentage > 1.0) percentage = 1.0;
+
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: kCardDark,
+        borderRadius: BorderRadius.circular(25),
+        // Sombra neón solo si está destacada
+        boxShadow: isHighlight ? kNeonShadow : [],
+        border: isHighlight ? Border.all(color: kNeonCyan.withOpacity(0.5)) : null,
+      ),
+      child: Row(
+        children: [
+          // Columna de textos
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(icon, color: kTextGrey, size: 18),
+                    const SizedBox(width: 8),
+                    Text(title, style: const TextStyle(color: kTextGrey)),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                // Muestra el valor monetario
+                Text(
+                  '\$${totalValue.toStringAsFixed(2)}',
+                  style: kHeadingStyle.copyWith(fontSize: 28, color: isHighlight ? kNeonCyan : kTextWhite),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  'Cobrado: \$${currentValue.toStringAsFixed(2)}',
+                   style: const TextStyle(color: kTextGrey, fontSize: 12),
+                )
+              ],
+            ),
+          ),
+          // Gráfico Circular (Indicator)
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              SizedBox(
+                height: 80,
+                width: 80,
+                child: CircularProgressIndicator(
+                  // Usamos el porcentaje corregido
+                  value: percentage,
+                  backgroundColor: kBgDark,
+                  color: isHighlight ? kNeonCyan : Colors.purpleAccent,
+                  strokeWidth: 8,
+                ),
+              ),
+              Text(
+                // Muestra el porcentaje sin decimales
+                '${(percentage * 100).toStringAsFixed(0)}%',
+                style: const TextStyle(color: kTextWhite, fontWeight: FontWeight.bold),
+              )
+            ],
+          )
+        ],
+      ),
+    );
+  }
+}
+
+// Widget para las tarjetas secundarias más pequeñas
+class TechDataCardSmall extends StatelessWidget {
+  final String title;
+  final String value;
+  final double percentage;
+  final IconData icon;
+  final Color colorAccent;
+
+  const TechDataCardSmall({
+    super.key,
+    required this.title,
+    required this.value,
+    required this.percentage,
+    required this.icon,
+    this.colorAccent = kNeonCyan, // Por defecto cian, pero se puede cambiar
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: kCardDark,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Icon(icon, color: colorAccent, size: 20),
+               // Pequeño indicador circular arriba a la derecha
+               SizedBox(
+                height: 25,
+                width: 25,
+                child: CircularProgressIndicator(
+                  value: percentage,
+                  backgroundColor: kBgDark,
+                  color: colorAccent,
+                  strokeWidth: 3,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 15),
+          Text(value, style: kHeadingStyle),
+          const SizedBox(height: 5),
+          Text(title, style: const TextStyle(color: kTextGrey, fontSize: 12)),
+        ],
       ),
     );
   }

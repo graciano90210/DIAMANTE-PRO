@@ -151,6 +151,14 @@ class _ClienteDetalleScreenState extends State<ClienteDetalleScreen> {
             ),
             const SizedBox(height: 24),
 
+            if (_prestamos.isNotEmpty)
+              _ResumenFinancieroCard(
+                prestado: _prestamos.fold(0, (sum, p) => sum + p.montoPrestado),
+                pagado: _prestamos.fold(0, (sum, p) => sum + (p.montoAPagar - p.saldoActual)),
+                pendiente: _prestamos.fold(0, (sum, p) => sum + p.saldoActual),
+              ),
+            const SizedBox(height: 24),
+
              // Lista de Préstamos Activos
             if (_isLoading)
                const Center(child: CircularProgressIndicator())
@@ -330,6 +338,67 @@ class _InfoRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+class _ResumenFinancieroCard extends StatelessWidget {
+  final double prestado;
+  final double pagado;
+  final double pendiente;
+
+  const _ResumenFinancieroCard({
+    required this.prestado,
+    required this.pagado,
+    required this.pendiente,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 4,
+      color: Colors.blue.shade50,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            const Text(
+              'Resumen Financiero Activo',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.blue),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _StatItem(label: 'Prestado', value: prestado, color: Colors.blue),
+                _StatItem(label: 'Pagado', value: pagado, color: Colors.green),
+                _StatItem(label: 'Deben', value: pendiente, color: Colors.red),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatItem extends StatelessWidget {
+  final String label;
+  final double value;
+  final Color color;
+
+  const _StatItem({required this.label, required this.value, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        Text(
+          '\$${value.toStringAsFixed(0)}',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color),
+        ),
+      ],
     );
   }
 }

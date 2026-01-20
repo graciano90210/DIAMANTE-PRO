@@ -43,6 +43,9 @@ class AuthService {
 
   Future<Map<String, String>> getAuthHeaders() async {
     final token = await getToken();
+    if (token == null) {
+      throw Exception('Usuario no autenticado (Token no encontrado)');
+    }
     return {
       'Content-Type': 'application/json',
       'Accept': 'application/json',

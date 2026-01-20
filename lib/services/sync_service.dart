@@ -172,7 +172,7 @@ class SyncService extends ChangeNotifier {
             ApiConfig.nuevoCobro,
             body: {
               'prestamo_id': pago['prestamo_id'],
-              'monto_pagado': pago['monto'],
+              'monto': pago['monto'],
               'observaciones': pago['observaciones'],
             },
             headers: headers,
@@ -277,7 +277,7 @@ class SyncService extends ChangeNotifier {
             ApiConfig.nuevoCobro,
             body: {
               'prestamo_id': prestamoId,
-              'monto_pagado': monto,
+              'monto': monto,
               'observaciones': observaciones,
             },
             headers: headers,

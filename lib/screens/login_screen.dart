@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
+// IMPORTANTE: Asegúrate de importar el archivo donde definiste las constantes de color (main.dart o constants.dart)
+import '../main.dart'; 
 import '../providers/auth_provider.dart';
 import 'dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({super.key}); // Added super.key for consistency
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _formKey = GlobalKey<FormState>();
+  // Controllers and State
   final _usuarioController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _isLoading = false;
   bool _obscurePassword = true;
 
   @override
@@ -24,172 +28,129 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleLogin() async {
-    if (!_formKey.currentState!.validate()) return;
+    final username = _usuarioController.text.trim();
+    final password = _passwordController.text;
+
+    if (username.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor ingresa usuario y contraseña')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
 
     final authProvider = context.read<AuthProvider>();
-    final success = await authProvider.login(
-      _usuarioController.text.trim(),
-      _passwordController.text,
-    );
+    final success = await authProvider.login(username, password);
 
-    if (success && mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const DashboardScreen()),
-      );
-    } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(authProvider.errorMessage ?? 'Error al iniciar sesión'),
-          backgroundColor: Colors.red,
-        ),
-      );
+    if (mounted) {
+      setState(() => _isLoading = false);
+      if (success) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authProvider.errorMessage ?? 'Error al iniciar sesión'),
+            backgroundColor: kNeonRed,
+          ),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Obtenemos el tema actual para usar sus estilos
+    final theme = Theme.of(context);
+
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Theme.of(context).primaryColor,
-              Theme.of(context).primaryColor.withValues(alpha: 0.7),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
-              child: Card(
-                elevation: 8,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+      // El color de fondo ya lo pone el tema global
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 30.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // --- LOGO CON EFECTO NEÓN ---
+              Container(
+                padding: const EdgeInsets.all(25),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: kCardDark, // Usa la constante de color oscuro
+                  boxShadow: [
+                    BoxShadow(
+                      color: kNeonCyan.withOpacity(0.4), // Brillo cian
+                      blurRadius: 30,
+                      spreadRadius: 5,
+                    )
+                  ],
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // LOGO O ICONO MEJORADO
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Image.asset(
-                            'assets/images/logo.png',
-                            height: 80,
-                            width: 80,
-                            errorBuilder: (context, error, stackTrace) =>
-                                const Icon(
-                              Icons.diamond_outlined,
-                              size: 80,
-                              color: Colors.blue,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'DIAMANTE PRO',
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blue,
-                              ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Sistema de Cobranza',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.grey[600],
-                              ),
-                        ),
-                        const SizedBox(height: 32),
-                        TextFormField(
-                          controller: _usuarioController,
-                          decoration: InputDecoration(
-                            labelText: 'Usuario',
-                            prefixIcon: const Icon(Icons.person),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Ingrese su usuario';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _passwordController,
-                          obscureText: _obscurePassword,
-                          decoration: InputDecoration(
-                            labelText: 'Contraseña',
-                            prefixIcon: const Icon(Icons.lock),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility
-                                    : Icons.visibility_off,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscurePassword = !_obscurePassword;
-                                });
-                              },
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Ingrese su contraseña';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 24),
-                        Consumer<AuthProvider>(
-                          builder: (context, authProvider, child) {
-                            if (authProvider.isLoading) {
-                              return const CircularProgressIndicator();
-                            }
-                            return SizedBox(
-                              width: double.infinity,
-                              height: 50,
-                              child: ElevatedButton(
-                                onPressed: _handleLogin,
-                                style: ElevatedButton.styleFrom(
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                                child: const Text(
-                                  'INICIAR SESIÓN',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
+                child: const Icon(FontAwesomeIcons.gem, size: 70, color: kNeonCyan),
+              ),
+              const SizedBox(height: 40),
+
+              // --- TÍTULOS ---
+              Text(
+                'DIAMANTE PRO',
+                style: theme.textTheme.titleLarge?.copyWith(fontSize: 32, letterSpacing: 3),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Sistema de Cobranza v1.0.3 (Dark Tech)',
+                style: theme.textTheme.bodySmall?.copyWith(fontSize: 16),
+              ),
+              const SizedBox(height: 60),
+
+              // --- CAMPOS DE TEXTO (Se estilizan solos con el tema global) ---
+              TextField(
+                controller: _usuarioController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'Usuario',
+                  prefixIcon: Icon(FontAwesomeIcons.userLarge),
+                  hintText: 'Ingresa tu usuario',
+                ),
+                style: const TextStyle(color: kTextWhite), // Color del texto al escribir
+              ),
+              const SizedBox(height: 25),
+              TextField(
+                controller: _passwordController,
+                obscureText: _obscurePassword,
+                decoration: InputDecoration(
+                  labelText: 'Contraseña',
+                  prefixIcon: const Icon(FontAwesomeIcons.lock),
+                  suffixIcon: IconButton(
+                    icon: Icon(_obscurePassword ? FontAwesomeIcons.eye : FontAwesomeIcons.eyeSlash),
+                    onPressed: () {
+                      setState(() {
+                         _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ), // Ícono para ver contraseña
+                  hintText: 'Ingresa tu contraseña',
+                ),
+                style: const TextStyle(color: kTextWhite),
+              ),
+              const SizedBox(height: 50),
+
+              // --- BOTÓN DE INICIO (Toma el estilo del tema global) ---
+              SizedBox(
+                width: double.infinity, // Ancho completo
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _handleLogin,
+                  child: _isLoading 
+                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: kBgDark, strokeWidth: 2))
+                    : const Text('INICIAR SESIÓN'),
                 ),
               ),
-            ),
+              const SizedBox(height: 30),
+               TextButton(
+                onPressed: (){}, 
+                child: const Text("¿Olvidaste tu contraseña?", style: TextStyle(color: kTextGrey))
+              )
+            ],
           ),
         ),
       ),

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../main.dart'; // Import main.dart for constants
 import '../models/prestamo_model.dart';
 import '../services/sync_service.dart';
 import 'prestamo_detalle_screen.dart';
+import 'clientes_screen.dart';
 
 class PrestamosScreen extends StatefulWidget {
   const PrestamosScreen({super.key});
@@ -65,6 +67,20 @@ class _PrestamosScreenState extends State<PrestamosScreen> {
             onPressed: _loadPrestamos,
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Selecciona un cliente para crear el préstamo')),
+          );
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ClientesScreen()),
+          );
+        },
+        label: const Text('Nuevo Préstamo', style: TextStyle(color: kBgDark)), // Texto oscuro
+        icon: const Icon(Icons.add, color: kBgDark), // Icono oscuro
+        backgroundColor: kNeonGreen, // Color verde neón
       ),
       body: Column(
         children: [

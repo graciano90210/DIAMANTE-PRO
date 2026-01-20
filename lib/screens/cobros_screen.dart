@@ -117,7 +117,23 @@ class _CobrosScreenState extends State<CobrosScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(
+            content: Text('Error al registrar cobro: $e'),
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'DETALLES',
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Error Técnico'),
+                    content: Text(e.toString()),
+                    actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK'))],
+                  ),
+                );
+              },
+            ),
+          ),
         );
       }
     } finally {
