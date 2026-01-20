@@ -85,7 +85,16 @@ def init_routes(app):
             capital_prestado = float(capital_prestado) if capital_prestado else 0
             
             # Por cobrar hoy del cobrador
-            por_cobrar_hoy = sum(float(p.valor_cuota) for p in prestamos_activos if p.frecuencia in ['DIARIO', 'BISEMANAL']) if prestamos_activos else 0
+            por_cobrar_hoy = 0
+            dia_semana_hoy = datetime.now().weekday() # 0=Lunes, 6=Domingo
+            
+            for p in prestamos_activos:
+                if p.frecuencia == 'DIARIO' and dia_semana_hoy != 6: # Todos menos domingo
+                    por_cobrar_hoy += float(p.valor_cuota)
+                elif p.frecuencia == 'DIARIO_LUNES_VIERNES' and dia_semana_hoy < 5: # Solo Lunes(0) a Viernes(4)
+                    por_cobrar_hoy += float(p.valor_cuota)
+                elif p.frecuencia == 'BISEMANAL': # Asumimos se cobra siempre para simplificar, o definir días específicos
+                    por_cobrar_hoy += float(p.valor_cuota)
             
             # Préstamos al día vs atrasados del cobrador
             prestamos_al_dia = sum(1 for p in prestamos_activos if p.cuotas_atrasadas == 0) if prestamos_activos else 0
@@ -165,8 +174,18 @@ def init_routes(app):
                 prestamos_recientes = Prestamo.query.order_by(Prestamo.fecha_inicio.desc()).limit(5).all()
             
             # Por cobrar hoy
-            por_cobrar_hoy = sum(float(p.valor_cuota) for p in prestamos_activos if p.frecuencia in ['DIARIO', 'BISEMANAL']) if prestamos_activos else 0
+            por_cobrar_hoy = 0
+            dia_semana_hoy = datetime.now().weekday()
             
+            if prestamos_activos:
+                for p in prestamos_activos:
+                    if p.frecuencia == 'DIARIO' and dia_semana_hoy != 6:
+                        por_cobrar_hoy += float(p.valor_cuota)
+                    elif p.frecuencia == 'DIARIO_LUNES_VIERNES' and dia_semana_hoy < 5:
+                        por_cobrar_hoy += float(p.valor_cuota)
+                    elif p.frecuencia == 'BISEMANAL':
+                        por_cobrar_hoy += float(p.valor_cuota)
+
             # Préstamos al día vs atrasados
             prestamos_al_dia = sum(1 for p in prestamos_activos if p.cuotas_atrasadas == 0) if prestamos_activos else 0
             prestamos_atrasados = sum(1 for p in prestamos_activos if p.cuotas_atrasadas > 0) if prestamos_activos else 0
@@ -704,8 +723,12 @@ def init_routes(app):
             frecuencia = request.form.get('frecuencia')
             
             if frecuencia == 'DIARIO':
-                # Considerar solo días laborables (lun-sáb)
-                dias_totales = numero_cuotas + (numero_cuotas // 6)  # +1 domingo por cada 6 días
+                # Considerar solo días laborables (lun-sáb) -> 6 días por semana
+                dias_totales = int(numero_cuotas * (7/6)) # Aproximanado domingos
+                fecha_fin = fecha_inicio + timedelta(days=dias_totales)
+            elif frecuencia == 'DIARIO_LUNES_VIERNES':
+                # Considerar solo días laborables (lun-vie) -> 5 días por semana
+                dias_totales = int(numero_cuotas * (7/5)) # Aproximanado sábados y domingos
                 fecha_fin = fecha_inicio + timedelta(days=dias_totales)
             elif frecuencia == 'BISEMANAL':
                 # 2 pagos por semana = cada 3-4 días
