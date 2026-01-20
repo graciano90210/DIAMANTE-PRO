@@ -1,0 +1,576 @@
+/* --- TEMA DARK TECH - DIAMANTE PRO (Igual que la App Móvil) --- */
+
+:root {
+    --bg-dark: #0A0E21;        /* Fondo principal */
+    --bg-darker: #050810;      /* Fondo más oscuro */
+    --card-dark: #1D1E33;      /* Color de las tarjetas */
+    --card-hover: #252744;     /* Card hover */
+    --neon-cyan: #00E5FF;      /* Azul eléctrico */
+    --neon-green: #00FF99;     /* Verde éxito */
+    --neon-red: #FF3366;       /* Rojo error */
+    --neon-yellow: #FFD700;    /* Amarillo/warning */
+    --neon-purple: #BB86FC;    /* Púrpura */
+    --text-white: #ffffff;     /* Texto blanco */
+    --text-grey: #8D8E98;      /* Texto gris */
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --glow-cyan: rgba(0, 229, 255, 0.3);
+    --glow-green: rgba(0, 255, 153, 0.3);
+    --glow-red: rgba(255, 51, 102, 0.3);
+}
+
+/* ==================== BASE ==================== */
+body {
+    background-color: var(--bg-dark) !important;
+    color: var(--text-white) !important;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+}
+
+/* ==================== NAVBAR ==================== */
+.navbar {
+    background: linear-gradient(135deg, #0A0E21 0%, #1D1E33 100%) !important;
+    border-bottom: 1px solid var(--border-subtle);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 30px rgba(0, 229, 255, 0.1);
+}
+
+.navbar-brand, .nav-link {
+    color: var(--text-white) !important;
+}
+
+.nav-link:hover {
+    color: var(--neon-cyan) !important;
+    text-shadow: 0 0 10px var(--glow-cyan);
+}
+
+.navbar .dropdown-menu {
+    background-color: var(--card-dark);
+    border: 1px solid var(--border-subtle);
+}
+
+.navbar .dropdown-item {
+    color: var(--text-white);
+}
+
+.navbar .dropdown-item:hover {
+    background-color: rgba(0, 229, 255, 0.1);
+    color: var(--neon-cyan);
+}
+
+/* ==================== ENCABEZADOS ==================== */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-white) !important;
+    letter-spacing: 1px;
+}
+
+h1, .page-title {
+    color: var(--neon-cyan) !important;
+    text-shadow: 0 0 15px var(--glow-cyan);
+    font-weight: 700;
+}
+
+h2 {
+    color: var(--text-white) !important;
+}
+
+/* ==================== TARJETAS Y CONTENEDORES ==================== */
+.card {
+    background-color: var(--card-dark) !important;
+    border-radius: 15px !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5) !important;
+    border: 1px solid var(--border-subtle) !important;
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 229, 255, 0.1) !important;
+    transform: translateY(-3px);
+}
+
+.card-header {
+    background-color: rgba(0, 0, 0, 0.3) !important;
+    border-bottom: 1px solid var(--border-subtle) !important;
+    color: var(--neon-cyan) !important;
+}
+
+.card-body {
+    background-color: transparent !important;
+}
+
+.card-title {
+    color: var(--text-white) !important;
+}
+
+.card-text, p {
+    color: var(--text-grey) !important;
+}
+
+/* Contenedores */
+.container, .container-fluid {
+    background-color: transparent !important;
+}
+
+/* Login card especial */
+.login-card {
+    background: var(--card-dark) !important;
+    border: 1px solid var(--border-subtle) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 229, 255, 0.15) !important;
+}
+
+/* ==================== STAT CARDS (Dashboard) ==================== */
+.stat-card {
+    border: none !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
+}
+
+.stat-card.primary {
+    background: linear-gradient(135deg, #0A0E21 0%, #1e3c72 100%) !important;
+    border-left: 4px solid var(--neon-cyan) !important;
+}
+
+.stat-card.success {
+    background: linear-gradient(135deg, #0A0E21 0%, #0d4d2a 100%) !important;
+    border-left: 4px solid var(--neon-green) !important;
+}
+
+.stat-card.warning {
+    background: linear-gradient(135deg, #0A0E21 0%, #4d3800 100%) !important;
+    border-left: 4px solid var(--neon-yellow) !important;
+}
+
+.stat-card.info {
+    background: linear-gradient(135deg, #0A0E21 0%, #0d4d5f 100%) !important;
+    border-left: 4px solid var(--neon-cyan) !important;
+}
+
+.stat-card.danger {
+    background: linear-gradient(135deg, #0A0E21 0%, #5f0d1f 100%) !important;
+    border-left: 4px solid var(--neon-red) !important;
+}
+
+.stat-card.purple {
+    background: linear-gradient(135deg, #0A0E21 0%, #4a1d7a 100%) !important;
+    border-left: 4px solid var(--neon-purple) !important;
+}
+
+/* Menu cards */
+.menu-card {
+    background-color: var(--card-dark) !important;
+    border: 1px solid var(--border-subtle) !important;
+}
+
+.menu-card:hover {
+    border-color: var(--neon-cyan) !important;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 229, 255, 0.2) !important;
+}
+
+.menu-icon {
+    color: var(--neon-cyan) !important;
+}
+
+/* ==================== FORMULARIOS ==================== */
+input, select, textarea, .form-control, .form-select {
+    background-color: var(--bg-dark) !important;
+    border: 1px solid #2d2f45 !important;
+    color: var(--text-white) !important;
+    padding: 12px;
+    border-radius: 10px !important;
+}
+
+input::placeholder, textarea::placeholder {
+    color: var(--text-grey) !important;
+}
+
+input:focus, select:focus, textarea:focus, .form-control:focus, .form-select:focus {
+    background-color: var(--bg-dark) !important;
+    border-color: var(--neon-cyan) !important;
+    outline: none !important;
+    box-shadow: 0 0 12px var(--glow-cyan) !important;
+    color: var(--text-white) !important;
+}
+
+.form-label, label {
+    color: var(--text-white) !important;
+    font-weight: 500;
+}
+
+/* ==================== BOTONES ==================== */
+.btn-primary, .btn-login {
+    background: linear-gradient(135deg, var(--neon-cyan), #00b8cc) !important;
+    color: var(--bg-dark) !important;
+    border: none !important;
+    padding: 12px 25px;
+    border-radius: 20px !important;
+    font-weight: bold;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 15px var(--glow-cyan);
+}
+
+.btn-primary:hover, .btn-login:hover {
+    background: linear-gradient(135deg, #00b8cc, var(--neon-cyan)) !important;
+    box-shadow: 0 0 25px rgba(0, 229, 255, 0.6) !important;
+    transform: translateY(-2px);
+    color: var(--bg-dark) !important;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, var(--neon-green), #00cc7a) !important;
+    color: var(--bg-dark) !important;
+    border: none !important;
+    box-shadow: 0 0 15px var(--glow-green);
+}
+
+.btn-success:hover {
+    box-shadow: 0 0 25px rgba(0, 255, 153, 0.6) !important;
+    transform: translateY(-2px);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, var(--neon-red), #cc2952) !important;
+    color: white !important;
+    border: none !important;
+    box-shadow: 0 0 15px var(--glow-red);
+}
+
+.btn-danger:hover {
+    box-shadow: 0 0 25px rgba(255, 51, 102, 0.6) !important;
+    transform: translateY(-2px);
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, var(--neon-yellow), #ccaa00) !important;
+    color: var(--bg-dark) !important;
+    border: none !important;
+}
+
+.btn-secondary {
+    background: var(--card-dark) !important;
+    color: var(--text-white) !important;
+    border: 1px solid var(--border-subtle) !important;
+}
+
+.btn-secondary:hover {
+    background: var(--card-hover) !important;
+    border-color: var(--neon-cyan) !important;
+}
+
+.btn-outline-primary {
+    border-color: var(--neon-cyan) !important;
+    color: var(--neon-cyan) !important;
+    background: transparent !important;
+}
+
+.btn-outline-primary:hover {
+    background: var(--neon-cyan) !important;
+    color: var(--bg-dark) !important;
+}
+
+.btn-outline-success {
+    border-color: var(--neon-green) !important;
+    color: var(--neon-green) !important;
+    background: transparent !important;
+}
+
+.btn-outline-success:hover {
+    background: var(--neon-green) !important;
+    color: var(--bg-dark) !important;
+}
+
+.btn-outline-danger {
+    border-color: var(--neon-red) !important;
+    color: var(--neon-red) !important;
+}
+
+.btn-outline-danger:hover {
+    background: var(--neon-red) !important;
+    color: white !important;
+}
+
+/* ==================== TABLAS ==================== */
+table, .table {
+    background-color: var(--card-dark) !important;
+    color: var(--text-white) !important;
+    border-radius: 15px !important;
+    overflow: hidden;
+}
+
+.table {
+    --bs-table-bg: var(--card-dark) !important;
+    --bs-table-color: var(--text-white) !important;
+}
+
+thead, .table thead {
+    background-color: var(--bg-darker) !important;
+}
+
+th {
+    background-color: var(--bg-darker) !important;
+    color: var(--neon-cyan) !important;
+    padding: 15px !important;
+    text-align: left;
+    border-bottom: 2px solid var(--neon-cyan) !important;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+}
+
+td {
+    padding: 15px !important;
+    border-bottom: 1px solid var(--border-subtle) !important;
+    color: var(--text-grey) !important;
+    vertical-align: middle !important;
+}
+
+tr {
+    background-color: var(--card-dark) !important;
+    transition: all 0.2s ease;
+}
+
+tbody tr:hover {
+    background-color: rgba(0, 229, 255, 0.08) !important;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) {
+    background-color: rgba(0, 0, 0, 0.2) !important;
+}
+
+.table-hover > tbody > tr:hover {
+    background-color: rgba(0, 229, 255, 0.08) !important;
+}
+
+/* ==================== BADGES ==================== */
+.badge {
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.badge.bg-success, .bg-success {
+    background: var(--neon-green) !important;
+    color: var(--bg-dark) !important;
+}
+
+.badge.bg-danger, .bg-danger {
+    background: var(--neon-red) !important;
+}
+
+.badge.bg-warning, .bg-warning {
+    background: var(--neon-yellow) !important;
+    color: var(--bg-dark) !important;
+}
+
+.badge.bg-info, .bg-info {
+    background: var(--neon-cyan) !important;
+    color: var(--bg-dark) !important;
+}
+
+.badge.bg-primary, .bg-primary {
+    background: var(--neon-cyan) !important;
+    color: var(--bg-dark) !important;
+}
+
+.badge.bg-secondary {
+    background: var(--card-dark) !important;
+    color: var(--text-grey) !important;
+}
+
+/* ==================== ALERTAS ==================== */
+.alert {
+    border-radius: 12px !important;
+    border: none !important;
+}
+
+.alert-success {
+    background: rgba(0, 255, 153, 0.15) !important;
+    color: var(--neon-green) !important;
+    border-left: 4px solid var(--neon-green) !important;
+}
+
+.alert-danger {
+    background: rgba(255, 51, 102, 0.15) !important;
+    color: var(--neon-red) !important;
+    border-left: 4px solid var(--neon-red) !important;
+}
+
+.alert-warning {
+    background: rgba(255, 215, 0, 0.15) !important;
+    color: var(--neon-yellow) !important;
+    border-left: 4px solid var(--neon-yellow) !important;
+}
+
+.alert-info {
+    background: rgba(0, 229, 255, 0.15) !important;
+    color: var(--neon-cyan) !important;
+    border-left: 4px solid var(--neon-cyan) !important;
+}
+
+/* ==================== ENLACES ==================== */
+a {
+    color: var(--neon-cyan) !important;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+a:hover {
+    text-shadow: 0 0 8px var(--glow-cyan);
+}
+
+/* ==================== MODALS ==================== */
+.modal-content {
+    background-color: var(--card-dark) !important;
+    border: 1px solid var(--border-subtle) !important;
+    border-radius: 15px !important;
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--border-subtle) !important;
+}
+
+.modal-footer {
+    border-top: 1px solid var(--border-subtle) !important;
+}
+
+.modal-title {
+    color: var(--neon-cyan) !important;
+}
+
+.btn-close {
+    filter: invert(1);
+}
+
+/* ==================== LISTAS ==================== */
+.list-group-item {
+    background-color: var(--card-dark) !important;
+    border: 1px solid var(--border-subtle) !important;
+    color: var(--text-white) !important;
+}
+
+.list-group-item:hover {
+    background-color: rgba(0, 229, 255, 0.08) !important;
+}
+
+/* ==================== PAGINATION ==================== */
+.page-link {
+    background-color: var(--card-dark) !important;
+    border-color: var(--border-subtle) !important;
+    color: var(--neon-cyan) !important;
+}
+
+.page-link:hover {
+    background-color: rgba(0, 229, 255, 0.1) !important;
+}
+
+.page-item.active .page-link {
+    background-color: var(--neon-cyan) !important;
+    border-color: var(--neon-cyan) !important;
+    color: var(--bg-dark) !important;
+}
+
+/* ==================== PROGRESS BAR ==================== */
+.progress {
+    background-color: var(--bg-darker) !important;
+    border-radius: 10px;
+}
+
+.progress-bar {
+    background: linear-gradient(90deg, var(--neon-cyan), var(--neon-green)) !important;
+}
+
+/* ==================== SCROLLBAR PERSONALIZADO ==================== */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-dark);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--card-dark);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--neon-cyan);
+}
+
+/* ==================== UTILIDADES ==================== */
+.text-muted {
+    color: var(--text-grey) !important;
+}
+
+.text-primary {
+    color: var(--neon-cyan) !important;
+}
+
+.text-success {
+    color: var(--neon-green) !important;
+}
+
+.text-danger {
+    color: var(--neon-red) !important;
+}
+
+.text-warning {
+    color: var(--neon-yellow) !important;
+}
+
+.text-brand {
+    color: var(--neon-cyan) !important;
+    text-shadow: 0 0 10px var(--glow-cyan);
+}
+
+.border {
+    border-color: var(--border-subtle) !important;
+}
+
+.shadow, .shadow-lg {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* ==================== ANIMACIONES NEÓN ==================== */
+@keyframes neonPulse {
+    0%, 100% {
+        box-shadow: 0 0 10px var(--glow-cyan);
+    }
+    50% {
+        box-shadow: 0 0 25px var(--glow-cyan), 0 0 35px var(--glow-cyan);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.neon-glow {
+    animation: neonPulse 2s infinite;
+}
+
+/* Diamond Icon */
+.diamond-icon, .diamond-svg {
+    fill: var(--neon-cyan) !important;
+    filter: drop-shadow(0 0 8px var(--glow-cyan));
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 768px) {
+    .card {
+        margin-bottom: 15px;
+    }
+    
+    th, td {
+        padding: 10px !important;
+        font-size: 0.9rem;
+    }
+}

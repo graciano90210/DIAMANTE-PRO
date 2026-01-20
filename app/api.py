@@ -355,14 +355,6 @@ def api_crear_gasto():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
-        'id': pago.id,
-        'monto': float(pago.monto),
-        'fecha_pago': pago.fecha_pago.isoformat(),
-        'observaciones': pago.observaciones,
-        'saldo_anterior': float(pago.saldo_anterior),
-        'saldo_nuevo': float(pago.saldo_nuevo),
-        'cuotas_pagadas': pago.numero_cuotas_pagadas
-    } for pago in pagos]), 200
 
 # ==================== RUTA DE COBRO DIARIA ====================
 @api.route('/cobrador/ruta-cobro', methods=['GET'])
