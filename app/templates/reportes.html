@@ -8,47 +8,34 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
     <style>
-        body {
-            background: #f5f7fa;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        .navbar {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
+        /* Reportes - Tema Dark Tech */
         .stat-card {
             border-radius: 12px;
-            border: none;
-            background: white;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            background: #1D1E33 !important;
             transition: all 0.3s ease;
             height: 100%;
         }
         .stat-card:hover {
             transform: translateY(-3px);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4), 0 0 15px rgba(0, 229, 255, 0.1) !important;
+            border-color: rgba(0, 229, 255, 0.3) !important;
         }
         .chart-container {
-            background: white;
+            background: #1D1E33 !important;
             border-radius: 12px;
             padding: 20px;
             margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
         .filter-card {
-            background: white;
+            background: #1D1E33 !important;
             border-radius: 12px;
             padding: 20px;
             margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-        h2, h4, h5 {
-            color: #1f2937;
-            font-weight: 600;
-        }
-        .badge {
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-weight: 500;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
         .stat-icon {
             width: 50px;
@@ -59,10 +46,10 @@
             justify-content: center;
             font-size: 1.5rem;
         }
-        .icon-primary { background: rgba(30, 60, 114, 0.1); color: #1e3c72; }
-        .icon-success { background: rgba(0, 171, 65, 0.1); color: #00ab41; }
-        .icon-warning { background: rgba(217, 119, 6, 0.1); color: #d97706; }
-        .icon-info { background: rgba(8, 145, 178, 0.1); color: #0891b2; }
+        .icon-primary { background: rgba(0, 229, 255, 0.15); color: #00E5FF; }
+        .icon-success { background: rgba(0, 255, 153, 0.15); color: #00FF99; }
+        .icon-warning { background: rgba(255, 215, 0, 0.15); color: #FFD700; }
+        .icon-info { background: rgba(0, 229, 255, 0.15); color: #00E5FF; }
     </style>
 </head>
 <body>
@@ -490,13 +477,21 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Configuración de colores
+        // Colores Dark Tech
         const colors = {
-            primary: '#1e3c72',
-            success: '#00ab41',
-            warning: '#d97706',
-            info: '#0891b2',
-            danger: '#dc2626'
+            primary: '#00E5FF',
+            success: '#00FF99',
+            warning: '#FFD700',
+            info: '#BB86FC',
+            danger: '#FF3366',
+            cyan: '#00E5FF',
+            text: '#8D8E98',
+            grid: 'rgba(255, 255, 255, 0.08)'
         };
+
+        // Configuración global para tema oscuro
+        Chart.defaults.color = '#8D8E98';
+        Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.08)';
 
         // Gráfico de Pagos Diarios
         const ctxPagos = document.getElementById('chartPagosDiarios');
@@ -507,10 +502,13 @@
                 datasets: [{
                     label: 'Ingresos Diarios',
                     data: [{% for pago in pagos_por_dia %}{{ pago.total }}{% if not loop.last %},{% endif %}{% endfor %}],
-                    borderColor: colors.primary,
-                    backgroundColor: 'rgba(30, 60, 114, 0.1)',
+                    borderColor: colors.cyan,
+                    backgroundColor: 'rgba(0, 229, 255, 0.15)',
                     tension: 0.4,
-                    fill: true
+                    fill: true,
+                    pointBackgroundColor: colors.cyan,
+                    pointBorderColor: '#1D1E33',
+                    pointBorderWidth: 2
                 }]
             },
             options: {
@@ -521,11 +519,17 @@
                 scales: {
                     y: {
                         beginAtZero: true,
+                        grid: { color: colors.grid },
                         ticks: {
+                            color: colors.text,
                             callback: function(value) {
                                 return '$' + value.toLocaleString();
                             }
                         }
+                    },
+                    x: {
+                        grid: { color: colors.grid },
+                        ticks: { color: colors.text }
                     }
                 }
             }
@@ -539,13 +543,18 @@
                 labels: [{% for estado in estados_prestamos %}'{{ estado.estado }}'{% if not loop.last %},{% endif %}{% endfor %}],
                 datasets: [{
                     data: [{% for estado in estados_prestamos %}{{ estado.cantidad }}{% if not loop.last %},{% endif %}{% endfor %}],
-                    backgroundColor: [colors.success, colors.info, colors.warning, colors.danger]
+                    backgroundColor: [colors.success, colors.cyan, colors.warning, colors.danger],
+                    borderColor: '#1D1E33',
+                    borderWidth: 3
                 }]
             },
             options: {
                 responsive: true,
                 plugins: {
-                    legend: { position: 'bottom' }
+                    legend: { 
+                        position: 'bottom',
+                        labels: { color: colors.text }
+                    }
                 }
             }
         });
@@ -559,7 +568,8 @@
                 datasets: [{
                     label: 'Cantidad',
                     data: [{% for freq in prestamos_por_frecuencia %}{{ freq.cantidad }}{% if not loop.last %},{% endif %}{% endfor %}],
-                    backgroundColor: [colors.primary, colors.success, colors.warning, colors.info]
+                    backgroundColor: [colors.cyan, colors.success, colors.warning, colors.info],
+                    borderRadius: 8
                 }]
             },
             options: {
@@ -568,7 +578,15 @@
                     legend: { display: false }
                 },
                 scales: {
-                    y: { beginAtZero: true }
+                    y: { 
+                        beginAtZero: true,
+                        grid: { color: colors.grid },
+                        ticks: { color: colors.text }
+                    },
+                    x: {
+                        grid: { color: colors.grid },
+                        ticks: { color: colors.text }
+                    }
                 }
             }
         });
@@ -582,7 +600,8 @@
                 datasets: [{
                     label: 'Saldo Pendiente',
                     data: [{% for deudor in top_deudores %}{{ deudor.saldo_actual }}{% if not loop.last %},{% endif %}{% endfor %}],
-                    backgroundColor: colors.warning
+                    backgroundColor: colors.warning,
+                    borderRadius: 8
                 }]
             },
             options: {
@@ -594,11 +613,17 @@
                 scales: {
                     x: {
                         beginAtZero: true,
+                        grid: { color: colors.grid },
                         ticks: {
+                            color: colors.text,
                             callback: function(value) {
                                 return '$' + value.toLocaleString();
                             }
                         }
+                    },
+                    y: {
+                        grid: { color: colors.grid },
+                        ticks: { color: colors.text }
                     }
                 }
             }
