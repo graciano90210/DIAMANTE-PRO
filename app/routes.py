@@ -52,218 +52,231 @@ def init_routes(app):
         if 'usuario_id' not in session:
             return redirect(url_for('home'))
         
-        usuario_id = session.get('usuario_id')
-        rol = session.get('rol')
-        
-        # Obtener ruta seleccionada (para dueño y gerente)
-        ruta_seleccionada_id = session.get('ruta_seleccionada_id')
-        ruta_seleccionada = None
-        todas_las_rutas = []
-        
-        if rol in ['dueno', 'gerente']:
-            todas_las_rutas = Ruta.query.filter_by(activo=True).order_by(Ruta.nombre).all()
-            if ruta_seleccionada_id:
-                ruta_seleccionada = Ruta.query.get(ruta_seleccionada_id)
-        
-        # Estadísticas generales (todos ven total de clientes)
-        total_clientes = Cliente.query.count()
-        clientes_vip = Cliente.query.filter_by(es_vip=True).count()
-        
-        # Si es cobrador, filtrar solo sus préstamos
-        if rol == 'cobrador':
-            # Préstamos activos del cobrador
-            prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO', cobrador_id=usuario_id).all()
-            total_prestamos_activos = len(prestamos_activos)
+        try:
+            usuario_id = session.get('usuario_id')
+            rol = session.get('rol')
             
-            # Cartera total del cobrador
-            total_cartera = db.session.query(func.sum(Prestamo.saldo_actual)).filter_by(estado='ACTIVO', cobrador_id=usuario_id).scalar()
-            total_cartera = float(total_cartera) if total_cartera else 0
+            # Obtener ruta seleccionada (para dueño y gerente)
+            ruta_seleccionada_id = session.get('ruta_seleccionada_id')
+            ruta_seleccionada = None
+            todas_las_rutas = []
             
-            # Capital prestado del cobrador
-            capital_prestado = db.session.query(func.sum(Prestamo.monto_prestado)).filter_by(estado='ACTIVO', cobrador_id=usuario_id).scalar()
-            capital_prestado = float(capital_prestado) if capital_prestado else 0
+            if rol in ['dueno', 'gerente']:
+                todas_las_rutas = Ruta.query.filter_by(activo=True).order_by(Ruta.nombre).all()
+                if ruta_seleccionada_id:
+                    ruta_seleccionada = Ruta.query.get(ruta_seleccionada_id)
             
-            # Por cobrar hoy del cobrador
-            por_cobrar_hoy = sum(float(p.valor_cuota) for p in prestamos_activos if p.frecuencia in ['DIARIO', 'BISEMANAL']) if prestamos_activos else 0
+            # Estadísticas generales (todos ven total de clientes)
+            total_clientes = Cliente.query.count()
+            clientes_vip = Cliente.query.filter_by(es_vip=True).count()
             
-            # Préstamos al día vs atrasados del cobrador
-            prestamos_al_dia = sum(1 for p in prestamos_activos if p.cuotas_atrasadas == 0) if prestamos_activos else 0
-            prestamos_atrasados = sum(1 for p in prestamos_activos if p.cuotas_atrasadas > 0) if prestamos_activos else 0
-            prestamos_mora = sum(1 for p in prestamos_activos if p.cuotas_atrasadas > 3) if prestamos_activos else 0
-            
-            # Pagos realizados hoy por el cobrador
-            hoy = datetime.now().date()
-            pagos_hoy = Pago.query.join(Prestamo).filter(
-                func.date(Pago.fecha_pago) == hoy,
-                Prestamo.cobrador_id == usuario_id
-            ).all()
-            total_cobrado_hoy = sum(float(p.monto) for p in pagos_hoy) if pagos_hoy else 0
-            num_pagos_hoy = len(pagos_hoy)
-            
-            # Últimos pagos del cobrador
-            ultimos_pagos = Pago.query.join(Prestamo).filter(
-                Prestamo.cobrador_id == usuario_id
-            ).order_by(Pago.fecha_pago.desc()).limit(10).all()
-            
-            # Préstamos recientes del cobrador
-            prestamos_recientes = Prestamo.query.filter_by(
-                cobrador_id=usuario_id
-            ).order_by(Prestamo.fecha_inicio.desc()).limit(5).all()
-        else:
-            # Dueño, gerente, secretaria ven todas las estadísticas (o filtradas por ruta)
-            if ruta_seleccionada_id:
-                # Filtrar por ruta seleccionada
-                prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO', ruta_id=ruta_seleccionada_id).all()
+            # Si es cobrador, filtrar solo sus préstamos
+            if rol == 'cobrador':
+                # Préstamos activos del cobrador
+                prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO', cobrador_id=usuario_id).all()
                 total_prestamos_activos = len(prestamos_activos)
                 
-                # Cartera total de la ruta
-                total_cartera = db.session.query(func.sum(Prestamo.saldo_actual)).filter_by(estado='ACTIVO', ruta_id=ruta_seleccionada_id).scalar()
+                # Cartera total del cobrador
+                total_cartera = db.session.query(func.sum(Prestamo.saldo_actual)).filter_by(estado='ACTIVO', cobrador_id=usuario_id).scalar()
                 total_cartera = float(total_cartera) if total_cartera else 0
                 
-                # Capital prestado de la ruta
-                capital_prestado = db.session.query(func.sum(Prestamo.monto_prestado)).filter_by(estado='ACTIVO', ruta_id=ruta_seleccionada_id).scalar()
+                # Capital prestado del cobrador
+                capital_prestado = db.session.query(func.sum(Prestamo.monto_prestado)).filter_by(estado='ACTIVO', cobrador_id=usuario_id).scalar()
                 capital_prestado = float(capital_prestado) if capital_prestado else 0
                 
-                # Pagos de la ruta hoy
+                # Por cobrar hoy del cobrador
+                por_cobrar_hoy = sum(float(p.valor_cuota) for p in prestamos_activos if p.frecuencia in ['DIARIO', 'BISEMANAL']) if prestamos_activos else 0
+                
+                # Préstamos al día vs atrasados del cobrador
+                prestamos_al_dia = sum(1 for p in prestamos_activos if p.cuotas_atrasadas == 0) if prestamos_activos else 0
+                prestamos_atrasados = sum(1 for p in prestamos_activos if p.cuotas_atrasadas > 0) if prestamos_activos else 0
+                prestamos_mora = sum(1 for p in prestamos_activos if p.cuotas_atrasadas > 3) if prestamos_activos else 0
+                
+                # Pagos realizados hoy por el cobrador
                 hoy = datetime.now().date()
                 pagos_hoy = Pago.query.join(Prestamo).filter(
                     func.date(Pago.fecha_pago) == hoy,
-                    Prestamo.ruta_id == ruta_seleccionada_id
-                ).all()
-                
-                # Últimos pagos de la ruta
-                ultimos_pagos = Pago.query.join(Prestamo).filter(
-                    Prestamo.ruta_id == ruta_seleccionada_id
-                ).order_by(Pago.fecha_pago.desc()).limit(10).all()
-                
-                # Préstamos recientes de la ruta
-                prestamos_recientes = Prestamo.query.filter_by(
-                    ruta_id=ruta_seleccionada_id
-                ).order_by(Prestamo.fecha_inicio.desc()).limit(5).all()
-            else:
-                # Ver todas las rutas
-                prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO').all()
-                total_prestamos_activos = len(prestamos_activos)
-                
-                # Cartera total
-                total_cartera = db.session.query(func.sum(Prestamo.saldo_actual)).filter_by(estado='ACTIVO').scalar()
-                total_cartera = float(total_cartera) if total_cartera else 0
-                
-                # Capital prestado
-                capital_prestado = db.session.query(func.sum(Prestamo.monto_prestado)).filter_by(estado='ACTIVO').scalar()
-                capital_prestado = float(capital_prestado) if capital_prestado else 0
-                
-                # Total pagos realizados hoy
-                hoy = datetime.now().date()
-                pagos_hoy = Pago.query.filter(func.date(Pago.fecha_pago) == hoy).all()
-                
-                # Últimos pagos generales
-                ultimos_pagos = Pago.query.order_by(Pago.fecha_pago.desc()).limit(10).all()
-                
-                # Préstamos recientes generales
-                prestamos_recientes = Prestamo.query.order_by(Prestamo.fecha_inicio.desc()).limit(5).all()
-            
-            # Por cobrar hoy
-            por_cobrar_hoy = sum(float(p.valor_cuota) for p in prestamos_activos if p.frecuencia in ['DIARIO', 'BISEMANAL']) if prestamos_activos else 0
-            
-            # Préstamos al día vs atrasados
-            prestamos_al_dia = sum(1 for p in prestamos_activos if p.cuotas_atrasadas == 0) if prestamos_activos else 0
-            prestamos_atrasados = sum(1 for p in prestamos_activos if p.cuotas_atrasadas > 0) if prestamos_activos else 0
-            prestamos_mora = sum(1 for p in prestamos_activos if p.cuotas_atrasadas > 3) if prestamos_activos else 0
-            
-            total_cobrado_hoy = sum(float(p.monto) for p in pagos_hoy) if pagos_hoy else 0
-            num_pagos_hoy = len(pagos_hoy)
-        
-        # Calcular estadísticas avanzadas
-        ganancia_esperada = total_cartera - capital_prestado if capital_prestado > 0 else 0
-        porcentaje_ganancia = ((ganancia_esperada / capital_prestado) * 100) if capital_prestado > 0 else 0
-        tasa_cobro_diaria = (total_cobrado_hoy / por_cobrar_hoy * 100) if por_cobrar_hoy > 0 else 0
-        
-        # NUEVO: Calcular Capital Disponible (solo para dueño y gerente)
-        capital_total_aportado = 0
-        capital_invertido_activos = 0
-        capital_disponible = 0
-        
-        # COMENTADO TEMPORALMENTE POR ERRORES EN PRODUCCIÓN
-        # if rol in ['dueno', 'gerente']:
-        #     # Total de aportes de capital
-        #     try:
-        #         capital_total_aportado = db.session.query(func.sum(AporteCapital.monto)).scalar() or 0
-        #         capital_total_aportado = float(capital_total_aportado)
-                
-        #         # Total invertido en activos
-        #         capital_invertido_activos = db.session.query(func.sum(Activo.valor_compra)).scalar() or 0
-        #         capital_invertido_activos = float(capital_invertido_activos)
-                
-        #         # Capital disponible = Aportes - Activos
-        #         capital_disponible = capital_total_aportado - capital_invertido_activos
-        #     except Exception as e:
-        #         print(f"Error calculando capital: {e}")
-        #         capital_disponible = 0
-        
-        # Estadísticas de los últimos 7 días para gráficos
-        fecha_inicio = datetime.now().date() - timedelta(days=6)
-        cobros_ultimos_7_dias = []
-        labels_7_dias = []
-        
-        for i in range(7):
-            fecha = fecha_inicio + timedelta(days=i)
-            if rol == 'cobrador':
-                pagos_dia = Pago.query.join(Prestamo).filter(
-                    func.date(Pago.fecha_pago) == fecha,
                     Prestamo.cobrador_id == usuario_id
                 ).all()
-            elif ruta_seleccionada_id:
-                pagos_dia = Pago.query.join(Prestamo).filter(
-                    func.date(Pago.fecha_pago) == fecha,
-                    Prestamo.ruta_id == ruta_seleccionada_id
-                ).all()
+                total_cobrado_hoy = sum(float(p.monto) for p in pagos_hoy) if pagos_hoy else 0
+                num_pagos_hoy = len(pagos_hoy)
+                
+                # Últimos pagos del cobrador
+                ultimos_pagos = Pago.query.join(Prestamo).filter(
+                    Prestamo.cobrador_id == usuario_id
+                ).order_by(Pago.fecha_pago.desc()).limit(10).all()
+                
+                # Préstamos recientes del cobrador
+                prestamos_recientes = Prestamo.query.filter_by(
+                    cobrador_id=usuario_id
+                ).order_by(Prestamo.fecha_inicio.desc()).limit(5).all()
             else:
-                pagos_dia = Pago.query.filter(func.date(Pago.fecha_pago) == fecha).all()
+                # Dueño, gerente, secretaria ven todas las estadísticas (o filtradas por ruta)
+                if ruta_seleccionada_id:
+                    # Filtrar por ruta seleccionada
+                    prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO', ruta_id=ruta_seleccionada_id).all()
+                    total_prestamos_activos = len(prestamos_activos)
+                    
+                    # Cartera total de la ruta
+                    total_cartera = db.session.query(func.sum(Prestamo.saldo_actual)).filter_by(estado='ACTIVO', ruta_id=ruta_seleccionada_id).scalar()
+                    total_cartera = float(total_cartera) if total_cartera else 0
+                    
+                    # Capital prestado de la ruta
+                    capital_prestado = db.session.query(func.sum(Prestamo.monto_prestado)).filter_by(estado='ACTIVO', ruta_id=ruta_seleccionada_id).scalar()
+                    capital_prestado = float(capital_prestado) if capital_prestado else 0
+                    
+                    # Pagos de la ruta hoy
+                    hoy = datetime.now().date()
+                    pagos_hoy = Pago.query.join(Prestamo).filter(
+                        func.date(Pago.fecha_pago) == hoy,
+                        Prestamo.ruta_id == ruta_seleccionada_id
+                    ).all()
+                    
+                    # Últimos pagos de la ruta
+                    ultimos_pagos = Pago.query.join(Prestamo).filter(
+                        Prestamo.ruta_id == ruta_seleccionada_id
+                    ).order_by(Pago.fecha_pago.desc()).limit(10).all()
+                    
+                    # Préstamos recientes de la ruta
+                    prestamos_recientes = Prestamo.query.filter_by(
+                        ruta_id=ruta_seleccionada_id
+                    ).order_by(Prestamo.fecha_inicio.desc()).limit(5).all()
+                else:
+                    # Ver todas las rutas
+                    prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO').all()
+                    total_prestamos_activos = len(prestamos_activos)
+                    
+                    # Cartera total
+                    total_cartera = db.session.query(func.sum(Prestamo.saldo_actual)).filter_by(estado='ACTIVO').scalar()
+                    total_cartera = float(total_cartera) if total_cartera else 0
+                    
+                    # Capital prestado
+                    capital_prestado = db.session.query(func.sum(Prestamo.monto_prestado)).filter_by(estado='ACTIVO').scalar()
+                    capital_prestado = float(capital_prestado) if capital_prestado else 0
+                    
+                    # Total pagos realizados hoy
+                    hoy = datetime.now().date()
+                    pagos_hoy = Pago.query.filter(func.date(Pago.fecha_pago) == hoy).all()
+                    
+                    # Últimos pagos generales
+                    ultimos_pagos = Pago.query.order_by(Pago.fecha_pago.desc()).limit(10).all()
+                    
+                    # Préstamos recientes generales
+                    prestamos_recientes = Prestamo.query.order_by(Prestamo.fecha_inicio.desc()).limit(5).all()
+                
+                # Por cobrar hoy
+                por_cobrar_hoy = sum(float(p.valor_cuota) for p in prestamos_activos if p.frecuencia in ['DIARIO', 'BISEMANAL']) if prestamos_activos else 0
+                
+                # Préstamos al día vs atrasados
+                prestamos_al_dia = sum(1 for p in prestamos_activos if p.cuotas_atrasadas == 0) if prestamos_activos else 0
+                prestamos_atrasados = sum(1 for p in prestamos_activos if p.cuotas_atrasadas > 0) if prestamos_activos else 0
+                prestamos_mora = sum(1 for p in prestamos_activos if p.cuotas_atrasadas > 3) if prestamos_activos else 0
+                
+                total_cobrado_hoy = sum(float(p.monto) for p in pagos_hoy) if pagos_hoy else 0
+                num_pagos_hoy = len(pagos_hoy)
             
-            total_dia = sum(float(p.monto) for p in pagos_dia) if pagos_dia else 0
-            cobros_ultimos_7_dias.append(total_dia)
-            labels_7_dias.append(fecha.strftime('%d/%m'))
-        
-        # Distribución de préstamos por estado
-        if rol == 'cobrador':
-            prestamos_pagados = Prestamo.query.filter_by(estado='PAGADO', cobrador_id=usuario_id).count()
-            prestamos_cancelados = Prestamo.query.filter_by(estado='CANCELADO', cobrador_id=usuario_id).count()
-        elif ruta_seleccionada_id:
-            prestamos_pagados = Prestamo.query.filter_by(estado='PAGADO', ruta_id=ruta_seleccionada_id).count()
-            prestamos_cancelados = Prestamo.query.filter_by(estado='CANCELADO', ruta_id=ruta_seleccionada_id).count()
-        else:
-            prestamos_pagados = Prestamo.query.filter_by(estado='PAGADO').count()
-            prestamos_cancelados = Prestamo.query.filter_by(estado='CANCELADO').count()
-        
-        return render_template('dashboard.html', 
-                             nombre=session.get('nombre'), 
-                             rol=session.get('rol'),
-                             total_clientes=total_clientes,
-                             clientes_vip=clientes_vip,
-                             total_prestamos_activos=total_prestamos_activos,
-                             total_cartera=total_cartera,
-                             capital_prestado=capital_prestado,
-                             por_cobrar_hoy=por_cobrar_hoy,
-                             prestamos_al_dia=prestamos_al_dia,
-                             prestamos_atrasados=prestamos_atrasados,
-                             prestamos_mora=prestamos_mora,
-                             total_cobrado_hoy=total_cobrado_hoy,
-                             num_pagos_hoy=num_pagos_hoy,
-                             todas_las_rutas=todas_las_rutas,
-                             ruta_seleccionada=ruta_seleccionada,
-                             ganancia_esperada=ganancia_esperada,
-                             porcentaje_ganancia=porcentaje_ganancia,
-                             tasa_cobro_diaria=tasa_cobro_diaria,
-                             ultimos_pagos=ultimos_pagos,
-                             prestamos_recientes=prestamos_recientes,
-                             cobros_ultimos_7_dias=cobros_ultimos_7_dias,
-                             labels_7_dias=labels_7_dias,
-                             prestamos_pagados=prestamos_pagados,
-                             prestamos_cancelados=prestamos_cancelados,
-                             capital_total_aportado=capital_total_aportado,
-                             capital_invertido_activos=capital_invertido_activos,
-                             capital_disponible=capital_disponible)
+            # Calcular estadísticas avanzadas
+            ganancia_esperada = total_cartera - capital_prestado if capital_prestado > 0 else 0
+            porcentaje_ganancia = ((ganancia_esperada / capital_prestado) * 100) if capital_prestado > 0 else 0
+            tasa_cobro_diaria = (total_cobrado_hoy / por_cobrar_hoy * 100) if por_cobrar_hoy > 0 else 0
+            
+            # NUEVO: Calcular Capital Disponible (solo para dueño y gerente)
+            capital_total_aportado = 0
+            capital_invertido_activos = 0
+            capital_disponible = 0
+            
+            # COMENTADO TEMPORALMENTE POR ERRORES EN PRODUCCIÓN
+            # if rol in ['dueno', 'gerente']:
+            #     # Total de aportes de capital
+            #     try:
+            #         capital_total_aportado = db.session.query(func.sum(AporteCapital.monto)).scalar() or 0
+            #         capital_total_aportado = float(capital_total_aportado)
+                    
+            #         # Total invertido en activos
+            #         capital_invertido_activos = db.session.query(func.sum(Activo.valor_compra)).scalar() or 0
+            #         capital_invertido_activos = float(capital_invertido_activos)
+                    
+            #         # Capital disponible = Aportes - Activos
+            #         capital_disponible = capital_total_aportado - capital_invertido_activos
+            #     except Exception as e:
+            #         print(f"Error calculando capital: {e}")
+            #         capital_disponible = 0
+            
+            # Estadísticas de los últimos 7 días para gráficos
+            fecha_inicio = datetime.now().date() - timedelta(days=6)
+            cobros_ultimos_7_dias = []
+            labels_7_dias = []
+            
+            for i in range(7):
+                fecha = fecha_inicio + timedelta(days=i)
+                if rol == 'cobrador':
+                    pagos_dia = Pago.query.join(Prestamo).filter(
+                        func.date(Pago.fecha_pago) == fecha,
+                        Prestamo.cobrador_id == usuario_id
+                    ).all()
+                elif ruta_seleccionada_id:
+                    pagos_dia = Pago.query.join(Prestamo).filter(
+                        func.date(Pago.fecha_pago) == fecha,
+                        Prestamo.ruta_id == ruta_seleccionada_id
+                    ).all()
+                else:
+                    pagos_dia = Pago.query.filter(func.date(Pago.fecha_pago) == fecha).all()
+                
+                total_dia = sum(float(p.monto) for p in pagos_dia) if pagos_dia else 0
+                cobros_ultimos_7_dias.append(total_dia)
+                labels_7_dias.append(fecha.strftime('%d/%m'))
+            
+            # Distribución de préstamos por estado
+            if rol == 'cobrador':
+                prestamos_pagados = Prestamo.query.filter_by(estado='PAGADO', cobrador_id=usuario_id).count()
+                prestamos_cancelados = Prestamo.query.filter_by(estado='CANCELADO', cobrador_id=usuario_id).count()
+            elif ruta_seleccionada_id:
+                prestamos_pagados = Prestamo.query.filter_by(estado='PAGADO', ruta_id=ruta_seleccionada_id).count()
+                prestamos_cancelados = Prestamo.query.filter_by(estado='CANCELADO', ruta_id=ruta_seleccionada_id).count()
+            else:
+                prestamos_pagados = Prestamo.query.filter_by(estado='PAGADO').count()
+                prestamos_cancelados = Prestamo.query.filter_by(estado='CANCELADO').count()
+            
+            return render_template('dashboard.html', 
+                                nombre=session.get('nombre'), 
+                                rol=session.get('rol'),
+                                total_clientes=total_clientes,
+                                clientes_vip=clientes_vip,
+                                total_prestamos_activos=total_prestamos_activos,
+                                total_cartera=total_cartera,
+                                capital_prestado=capital_prestado,
+                                por_cobrar_hoy=por_cobrar_hoy,
+                                prestamos_al_dia=prestamos_al_dia,
+                                prestamos_atrasados=prestamos_atrasados,
+                                prestamos_mora=prestamos_mora,
+                                total_cobrado_hoy=total_cobrado_hoy,
+                                num_pagos_hoy=num_pagos_hoy,
+                                todas_las_rutas=todas_las_rutas,
+                                ruta_seleccionada=ruta_seleccionada,
+                                ganancia_esperada=ganancia_esperada,
+                                porcentaje_ganancia=porcentaje_ganancia,
+                                tasa_cobro_diaria=tasa_cobro_diaria,
+                                ultimos_pagos=ultimos_pagos,
+                                prestamos_recientes=prestamos_recientes,
+                                cobros_ultimos_7_dias=cobros_ultimos_7_dias,
+                                labels_7_dias=labels_7_dias,
+                                prestamos_pagados=prestamos_pagados,
+                                prestamos_cancelados=prestamos_cancelados,
+                                capital_total_aportado=capital_total_aportado,
+                                capital_invertido_activos=capital_invertido_activos,
+                                capital_disponible=capital_disponible)
+        except Exception as e:
+            import traceback
+            error_trace = traceback.format_exc()
+            print(f"Error critico en dashboard: {error_trace}")
+            return f'''
+            <div style="padding: 20px; font-family: monospace; background: #fff0f0; border: 2px solid red;">
+                <h1>⚠️ Error Crítico en Sistema (Debug)</h1>
+                <p>El sistema ha encontrado un error. Por favor envíe este mensaje al soporte técnico.</p>
+                <hr>
+                <pre>{error_trace}</pre>
+            </div>
+            '''
     
     @app.route('/seleccionar-ruta/<int:ruta_id>')
     def seleccionar_ruta(ruta_id):
