@@ -58,6 +58,15 @@ body {
     color: var(--neon-cyan);
 }
 
+/* Override Bootstrap bg-primary */
+.bg-primary {
+    background: linear-gradient(135deg, #0A0E21 0%, #1D1E33 100%) !important;
+}
+
+.navbar.bg-primary {
+    background: linear-gradient(135deg, #0A0E21 0%, #1D1E33 100%) !important;
+}
+
 /* ==================== ENCABEZADOS ==================== */
 h1, h2, h3, h4, h5, h6 {
     color: var(--text-white) !important;
