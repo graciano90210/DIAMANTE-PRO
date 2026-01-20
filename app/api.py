@@ -123,12 +123,28 @@ def api_crear_cliente():
     if Cliente.query.filter_by(documento=data['documento']).first():
         return jsonify({'error': 'Ya existe un cliente con este documento'}), 400
         
+    fecha_nac = None
+    if data.get('fecha_nacimiento'):
+        try:
+            # Espera formato YYYY-MM-DD
+            fecha_nac = datetime.strptime(data['fecha_nacimiento'], '%Y-%m-%d').date()
+        except:
+            pass # Ignorar si la fecha es invalida
+
     nuevo_cliente = Cliente(
         nombre=data['nombre'],
         documento=data['documento'],
+        tipo_documento=data.get('tipo_documento', 'CPF'),
+        fecha_nacimiento=fecha_nac,
+        email=data.get('email'),
         telefono=data['telefono'],
         whatsapp_numero=data.get('whatsapp', data['telefono']), # Por defecto mismo telefono
-        direccion_negocio=data.get('direccion', ''),
+        
+        direccion_negocio=data.get('direccion_negocio', data.get('direccion', '')),
+        cep_negocio=data.get('cep_negocio'),
+        direccion_casa=data.get('direccion_casa'),
+        cep_casa=data.get('cep_casa'),
+        
         gps_latitud=data.get('gps_latitud'),
         gps_longitud=data.get('gps_longitud'),
         es_vip=False
@@ -256,6 +272,7 @@ def api_obtener_prestamos():
         'numero_cuotas': prestamo.numero_cuotas,
         'cuotas_pagadas': prestamo.cuotas_pagadas,
         'cuotas_atrasadas': prestamo.cuotas_atrasadas,
+        'dias_atraso': 0, # TODO: Calcular dias reales si es necesario. Por ahora enviamos 0 para compatibilidad
         'fecha_inicio': prestamo.fecha_inicio.isoformat(),
         'fecha_ultimo_pago': prestamo.fecha_ultimo_pago.isoformat() if prestamo.fecha_ultimo_pago else None,
         'estado': prestamo.estado
@@ -281,6 +298,63 @@ def api_obtener_pagos_prestamo(prestamo_id):
     pagos = Pago.query.filter_by(prestamo_id=prestamo_id).order_by(Pago.fecha_pago.desc()).all()
     
     return jsonify([{
+        'id': pago.id,
+        'monto': float(pago.monto),
+        'fecha': pago.fecha_pago.isoformat(),
+        'metodo': pago.metodo_pago
+    } for pago in pagos]), 200
+
+# ==================== GASTOS ====================
+@api.route('/cobrador/gastos', methods=['POST'])
+@jwt_required()
+def api_crear_gasto():
+    """
+    Registrar nuevo gasto
+    Headers: Authorization: Bearer TOKEN
+    Body: {
+        "concepto": "Gasolina", 
+        "descripcion": "Tanqueo moto", 
+        "monto": 50000, 
+        "fecha": "2023-10-27" (opcional, default hoy)
+    }
+    """
+    usuario_id = int(get_jwt_identity())
+    data = request.get_json()
+    
+    required_fields = ['concepto', 'monto']
+    if not all(k in data for k in required_fields):
+        return jsonify({'error': f'Faltan campos requeridos: {required_fields}'}), 400
+        
+    try:
+        fecha = datetime.now()
+        if data.get('fecha'):
+            try:
+                fecha = datetime.strptime(data['fecha'], '%Y-%m-%d')
+            except:
+                pass # Usar hoy si falla formato
+                
+        nuevo_gasto = Transaccion(
+            naturaleza='EGRESO',
+            tipo_transaccion='GASTO_OPERATIVO', # Opcional si el modelo lo requiere
+            concepto=data['concepto'],
+            descripcion=data.get('descripcion', ''),
+            monto=float(data['monto']),
+            fecha=fecha,
+            usuario_origen_id=usuario_id,
+            transaccion_origen='MOVIL' # Marca de agua para saber que vino de la app
+        )
+        
+        db.session.add(nuevo_gasto)
+        db.session.commit()
+        
+        return jsonify({
+            'id': nuevo_gasto.id,
+            'mensaje': 'Gasto registrado correctamente'
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
         'id': pago.id,
         'monto': float(pago.monto),
         'fecha_pago': pago.fecha_pago.isoformat(),

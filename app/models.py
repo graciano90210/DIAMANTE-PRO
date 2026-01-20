@@ -82,11 +82,20 @@ class Cliente(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
     documento = db.Column(db.String(20), unique=True, nullable=False)
+    tipo_documento = db.Column(db.String(20), default='CPF') # CPF, CNPJ
+    fecha_nacimiento = db.Column(db.Date) # Nueva fecha de nacimiento
     documento_negocio = db.Column(db.String(30)) 
     telefono = db.Column(db.String(20), nullable=False)
+    email = db.Column(db.String(100)) # Email de contacto
     whatsapp_codigo_pais = db.Column(db.String(5), default='57')  # Código de país para WhatsApp
     whatsapp_numero = db.Column(db.String(20))  # Número WhatsApp sin código de país
+    
+    # Direcciones detalladas
     direccion_negocio = db.Column(db.String(200))
+    cep_negocio = db.Column(db.String(20)) # CEP del negocio
+    direccion_casa = db.Column(db.String(200)) # Dirección de casa
+    cep_casa = db.Column(db.String(20)) # CEP de casa
+    
     gps_latitud = db.Column(db.Float)
     gps_longitud = db.Column(db.Float)
     es_vip = db.Column(db.Boolean, default=False)
