@@ -35,7 +35,7 @@
 </head>
 <body>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
+    <nav class="navbar navbar-expand-lg navbar-dark" >
         <div class="container-fluid">
             <a class="navbar-brand" href="/dashboard" style="display: inline-flex; align-items: center; gap: 10px; font-weight: 600;">
                 <svg style="width: 28px; height: 28px; fill: #60a5fa;" viewBox="0 0 24 24">
@@ -46,9 +46,9 @@
             <div class="d-flex align-items-center">
                 <span class="text-white me-3">
                     <i class="bi bi-person-circle"></i> {{ nombre }}
-                    <span class="badge bg-light text-dark">{{ rol }}</span>
+                    <span class="badge bg-secondary text-white">{{ rol }}</span>
                 </span>
-                <a href="/dashboard" class="btn btn-light btn-sm me-2">
+                <a href="/dashboard" class="btn btn-outline-light btn-sm me-2">
                     <i class="bi bi-house"></i> Inicio
                 </a>
                 <a href="/logout" class="btn btn-outline-light btn-sm">
@@ -130,7 +130,7 @@
         <div class="row mb-4">
             <div class="col-md-12">
                 <div class="card">
-                    <div class="card-header bg-primary text-white">
+                    <div class="card-header bg-dark text-white">
                         <h5 class="mb-0"><i class="bi bi-calendar-month"></i> Resumen del Mes</h5>
                     </div>
                     <div class="card-body">
