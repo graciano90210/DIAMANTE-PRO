@@ -70,6 +70,9 @@ def init_routes(app):
         total_clientes = Cliente.query.count()
         clientes_vip = Cliente.query.filter_by(es_vip=True).count()
         
+        # Variables para template
+        lista_monedas = []
+
         # Si es cobrador, filtrar solo sus préstamos
         if rol == 'cobrador':
             # Préstamos activos del cobrador
