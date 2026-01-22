@@ -751,7 +751,7 @@
                             'rgba(0, 171, 65, 1)',
                             'rgba(220, 38, 38, 1)'
                         ],
-                        borderWidth: 2
+                        borderWidth: 0
                     }]
                 },
                 options: {
@@ -809,7 +809,14 @@
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            position: 'right',
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                font: {
+                                    size: 12,
+                                    weight: '500'
+                                }
+                            }
                         }
                     }
                 }
