@@ -299,11 +299,33 @@
                         <div class="row text-center">
                             <div class="col-6 border-end" style="border-color: rgba(255,255,255,0.3) !important;">
                                 <small class="text-white-50">Hoy</small>
-                                <h4 class="mb-0 fw-bold">${{ "{:,.0f}".format(por_cobrar_hoy) }}</h4>
+                                {% if lista_monedas and lista_monedas|length > 1 %}
+                                    <div class="text-start mt-1">
+                                    {% for m in lista_monedas %}
+                                        <div class="d-flex justify-content-between small border-bottom border-light border-opacity-25 pb-1 mb-1">
+                                            <span class="opacity-75">{{ m.moneda }}</span>
+                                            <span class="fw-bold">${{ "{:,.0f}".format(m.por_cobrar_hoy) }}</span>
+                                        </div>
+                                    {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <h4 class="mb-0 fw-bold">${{ "{:,.0f}".format(por_cobrar_hoy) }}</h4>
+                                {% endif %}
                             </div>
                             <div class="col-6">
                                 <small class="text-white-50">Mañana</small>
-                                <h4 class="mb-0 fw-bold">${{ "{:,.0f}".format(proyeccion_manana) }}</h4>
+                                {% if lista_monedas and lista_monedas|length > 1 %}
+                                    <div class="text-start mt-1">
+                                    {% for m in lista_monedas %}
+                                        <div class="d-flex justify-content-between small border-bottom border-light border-opacity-25 pb-1 mb-1">
+                                            <span class="opacity-75">{{ m.moneda }}</span>
+                                            <span class="fw-bold">${{ "{:,.0f}".format(m.proyeccion_manana) }}</span>
+                                        </div>
+                                    {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <h4 class="mb-0 fw-bold">${{ "{:,.0f}".format(proyeccion_manana) }}</h4>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -314,12 +336,25 @@
                 <div class="card stat-card info text-white">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
-                            <div>
+                            <div class="w-100">
                                 <h6 class="card-title">Total en Cartera</h6>
-                                <h2 class="mb-0">${{ "{:,.0f}".format(total_cartera) }}</h2>
-                                <small>Saldo por cobrar</small>
+                                {% if lista_monedas and lista_monedas|length > 1 %}
+                                    <div class="mt-2">
+                                    {% for m in lista_monedas %}
+                                        <div class="d-flex justify-content-between align-items-center mb-1 border-bottom border-light border-opacity-25 pb-1">
+                                            <span class="badge bg-white text-info bg-opacity-25">{{ m.moneda }}</span>
+                                            <h5 class="mb-0 text-end">${{ "{:,.0f}".format(m.total_cartera) }}</h5>
+                                        </div>
+                                    {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <h2 class="mb-0">${{ "{:,.0f}".format(total_cartera) }}</h2>
+                                    <small>Saldo por cobrar</small>
+                                {% endif %}
                             </div>
+                            {% if not (lista_monedas and lista_monedas|length > 1) %}
                             <i class="bi bi-graph-up fs-1"></i>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -347,12 +382,25 @@
                 <div class="card stat-card purple text-white">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
-                            <div>
+                            <div class="w-100">
                                 <h6 class="stat-label">Capital Prestado</h6>
-                                <h2 class="stat-number mb-0">${{ "{:,.0f}".format(capital_prestado/1000) }}K</h2>
-                                <small class="stat-sublabel">Dinero en la calle</small>
+                                {% if lista_monedas and lista_monedas|length > 1 %}
+                                    <div class="mt-2">
+                                    {% for m in lista_monedas %}
+                                        <div class="d-flex justify-content-between align-items-center mb-1 border-bottom border-light border-opacity-25 pb-1">
+                                            <span class="badge bg-white text-info bg-opacity-25">{{ m.moneda }}</span>
+                                            <h5 class="stat-number mb-0 text-end">${{ "{:,.0f}".format(m.capital_prestado) }}</h5>
+                                        </div>
+                                    {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <h2 class="stat-number mb-0">${{ "{:,.0f}".format(capital_prestado/1000) }}K</h2>
+                                    <small class="stat-sublabel">Dinero en la calle</small>
+                                {% endif %}
                             </div>
+                            {% if not (lista_monedas and lista_monedas|length > 1) %}
                             <i class="bi bi-piggy-bank-fill fs-1"></i>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

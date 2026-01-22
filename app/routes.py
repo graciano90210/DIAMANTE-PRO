@@ -177,14 +177,67 @@ def init_routes(app):
             por_cobrar_hoy = 0
             dia_semana_hoy = datetime.now().weekday()
             
+            # --- LOGICA MULTIDIVISA ---
+            desglose_monedas = {}
+            
+            def get_moneda_stats(moneda):
+                m = moneda or 'COP'
+                if m not in desglose_monedas:
+                    desglose_monedas[m] = {
+                        'moneda': m,
+                        'total_cartera': 0,
+                        'capital_prestado': 0,
+                        'por_cobrar_hoy': 0,
+                        'proyeccion_manana': 0,
+                        'cobrado_hoy': 0
+                    }
+                return desglose_monedas[m]
+            
+            # 1. Calcular totales de Cartera, Capital y Proyección Cobro usando Préstamos Activos
             if prestamos_activos:
                 for p in prestamos_activos:
+                    stats = get_moneda_stats(p.moneda)
+                    stats['total_cartera'] += float(p.saldo_actual)
+                    stats['capital_prestado'] += float(p.monto_prestado)
+                    
+                    # Cobro Hoy
+                    cobra_hoy = False
                     if p.frecuencia == 'DIARIO' and dia_semana_hoy != 6:
-                        por_cobrar_hoy += float(p.valor_cuota)
+                        cobra_hoy = True
                     elif p.frecuencia == 'DIARIO_LUNES_VIERNES' and dia_semana_hoy < 5:
-                        por_cobrar_hoy += float(p.valor_cuota)
+                        cobra_hoy = True
                     elif p.frecuencia == 'BISEMANAL':
-                        por_cobrar_hoy += float(p.valor_cuota)
+                        # Simplificación: Asumimos que BISEMANAL cobra hoy si es el día correcto (esto requiere lógica adicional de fechas, pero mantenemos simple)
+                        cobra_hoy = True
+                    
+                    if cobra_hoy:
+                        stats['por_cobrar_hoy'] += float(p.valor_cuota)
+                        por_cobrar_hoy += float(p.valor_cuota) # Mantener suma global por compatibilidad (aunque mezcle monedas)
+
+                    # Cobro Mañana (Proyección simple)
+                    dia_manana = (datetime.now() + timedelta(days=1)).weekday()
+                    cobra_manana = False
+                    if p.frecuencia == 'DIARIO' and dia_manana != 6:
+                        cobra_manana = True
+                    elif p.frecuencia == 'DIARIO_LUNES_VIERNES' and dia_manana < 5:
+                        cobra_manana = True
+                        
+                    if cobra_manana:
+                        stats['proyeccion_manana'] += float(p.valor_cuota)
+
+            # 2. Calcular Cobrado Hoy usando Pagos Hoy
+            if pagos_hoy:
+                for p in pagos_hoy:
+                    # Acceder a moneda a través del préstamo
+                    moneda_pago = p.prestamo.moneda if p.prestamo else 'COP'
+                    stats = get_moneda_stats(moneda_pago)
+                    stats['cobrado_hoy'] += float(p.monto)
+
+            # Convertir a lista para el template
+            lista_monedas = list(desglose_monedas.values())
+            # Ordenar: COP primero si existe, luego otros
+            lista_monedas.sort(key=lambda x: 0 if x['moneda'] == 'COP' else 1)
+            # --------------------------
 
             # Préstamos al día vs atrasados
             prestamos_al_dia = sum(1 for p in prestamos_activos if p.cuotas_atrasadas == 0) if prestamos_activos else 0
@@ -316,7 +369,8 @@ def init_routes(app):
                                 capital_invertido_activos=capital_invertido_activos,
                                 capital_disponible=capital_disponible,
                                 riesgo_labels=riesgo_labels,
-                                riesgo_data=riesgo_data)
+                                riesgo_data=riesgo_data,
+                                lista_monedas=lista_monedas)
     
     @app.route('/seleccionar-ruta/<int:ruta_id>')
     def seleccionar_ruta(ruta_id):
