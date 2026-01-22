@@ -2605,11 +2605,34 @@ Gracias por su pago!"""
         usuario_id = session.get('usuario_id')
         rol = session.get('rol')
         
+        # Filtros de fecha
+        fecha_inicio_str = request.args.get('fecha_inicio')
+        fecha_fin_str = request.args.get('fecha_fin')
+        
+        query = Transaccion.query
+        
         # Filtrar gastos según el rol
         if rol == 'cobrador':
-            gastos = Transaccion.query.filter_by(usuario_origen_id=usuario_id).order_by(Transaccion.fecha.desc()).all()
-        else:
-            gastos = Transaccion.query.order_by(Transaccion.fecha.desc()).all()
+            query = query.filter_by(usuario_origen_id=usuario_id)
+            
+        # Filtrar por fechas si existen
+        if fecha_inicio_str:
+            try:
+                fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d')
+                query = query.filter(Transaccion.fecha >= fecha_inicio)
+            except ValueError:
+                pass
+                
+        if fecha_fin_str:
+            try:
+                fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d')
+                # Incluir hasta el final del día
+                fecha_fin = fecha_fin.replace(hour=23, minute=59, second=59)
+                query = query.filter(Transaccion.fecha <= fecha_fin)
+            except ValueError:
+                pass
+            
+        gastos = query.order_by(Transaccion.fecha.desc()).all()
         
         return render_template('caja_gastos.html',
                              gastos=gastos,
