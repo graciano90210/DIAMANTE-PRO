@@ -75,6 +75,11 @@ def init_routes(app):
 
         # Si es cobrador, filtrar solo sus préstamos
         if rol == 'cobrador':
+            # Filtrar clientes: Solo los que tienen préstamos con este cobrador
+            clientes_ids_cobrador = db.session.query(Prestamo.cliente_id).filter_by(cobrador_id=usuario_id).distinct()
+            total_clientes = clientes_ids_cobrador.count()
+            clientes_vip = Cliente.query.filter(Cliente.id.in_(clientes_ids_cobrador), Cliente.es_vip==True).count()
+
             # Préstamos activos del cobrador
             prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO', cobrador_id=usuario_id).all()
             total_prestamos_activos = len(prestamos_activos)
@@ -125,6 +130,11 @@ def init_routes(app):
         else:
             # Dueño, gerente, secretaria ven todas las estadísticas (o filtradas por ruta)
             if ruta_seleccionada_id:
+                # Filtrar clientes por ruta
+                clientes_ids_ruta = db.session.query(Prestamo.cliente_id).filter_by(ruta_id=ruta_seleccionada_id).distinct()
+                total_clientes = clientes_ids_ruta.count()
+                clientes_vip = Cliente.query.filter(Cliente.id.in_(clientes_ids_ruta), Cliente.es_vip==True).count()
+
                 # Filtrar por ruta seleccionada
                 prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO', ruta_id=ruta_seleccionada_id).all()
                 total_prestamos_activos = len(prestamos_activos)
