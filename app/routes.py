@@ -2031,6 +2031,21 @@ Gracias por su pago!"""
             )
             
             db.session.add(nuevo_aporte)
+            
+            # AUTOMATICAMENTE INGRESAR A LA CAJA DEL DUEÑO (CAJA MAYOR)
+            # Para que luego pueda hacer traslados a las rutas
+            ingreso_caja = Transaccion(
+                naturaleza='INGRESO',
+                concepto='APORTE_CAPITAL',
+                descripcion=f'Aporte Capital: {nombre_aportante} ({sociedad_id}) - {moneda}',
+                monto=monto,
+                fecha=fecha_aporte, # Usar la misma fecha del aporte
+                usuario_origen_id=session.get('usuario_id'), # Entra a la caja del usuario actual (Dueño)
+                usuario_destino_id=session.get('usuario_id'), # Se marca destino a si mismo para ingresos propios
+                prestamo_id=None
+            )
+            db.session.add(ingreso_caja)
+            
             db.session.commit()
             
             return redirect(url_for('capital_lista'))
