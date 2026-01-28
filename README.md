@@ -2,6 +2,21 @@
 
 Sistema completo de gestión de préstamos con API REST para aplicación móvil.
 
+---
+## Diamante Pro
+
+**Sistema de gestión de créditos con predicción de riesgo.**
+
+### Tecnologías principales
+- Python
+- SQL (PostgreSQL, SQLite)
+- Docker
+- Flask
+- Heroku
+- API REST
+
+---
+
 ## 🚀 Despliegue en Heroku
 
 ### Paso 1: Crear cuenta y aplicación en Heroku
