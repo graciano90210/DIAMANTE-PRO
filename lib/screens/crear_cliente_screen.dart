@@ -159,7 +159,7 @@ class _CrearClienteScreenState extends State<CrearClienteScreen> {
                   Expanded(
                     flex: 1,
                     child: DropdownButtonFormField<String>(
-                      value: _tipoDocumento,
+                      initialValue: _tipoDocumento,
                       decoration: const InputDecoration(labelText: 'Tipo', border: OutlineInputBorder()),
                       items: ['CPF', 'CNPJ', 'RG', 'Otro'].map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
                       onChanged: (v) => setState(() => _tipoDocumento = v!),

@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import 'package:path_provider/path_provider.dart';
 import '../models/cliente_model.dart';
 import '../models/prestamo_model.dart';
 // import 'dart:io';
@@ -11,10 +10,10 @@ class DatabaseService {
   static Database? _database;
   
   // Memoria para Web
-  List<Cliente> _clientesMemory = [];
-  List<Prestamo> _prestamosMemory = [];
-  List<Map<String, dynamic>> _pagosPendientesMemory = [];
-  Map<String, String> _configMemory = {};
+  final List<Cliente> _clientesMemory = [];
+  final List<Prestamo> _prestamosMemory = [];
+  final List<Map<String, dynamic>> _pagosPendientesMemory = [];
+  final Map<String, String> _configMemory = {};
 
   DatabaseService._init();
 

@@ -51,7 +51,7 @@ class _CrearPrestamoScreenState extends State<CrearPrestamoScreen> {
         });
       }
     } catch (e) {
-      print("Error cargando rutas: $e");
+      print('Error cargando rutas: $e');
     }
   }
 
@@ -183,7 +183,7 @@ class _CrearPrestamoScreenState extends State<CrearPrestamoScreen> {
                   const SizedBox(width: 16),
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: _frecuencia,
+                      initialValue: _frecuencia,
                       decoration: const InputDecoration(
                         labelText: 'Frecuencia',
                         border: OutlineInputBorder(),
@@ -200,7 +200,7 @@ class _CrearPrestamoScreenState extends State<CrearPrestamoScreen> {
               
               if (_rutas.isNotEmpty)
                 DropdownButtonFormField<int>(
-                  value: _rutaSeleccionadaId,
+                  initialValue: _rutaSeleccionadaId,
                   decoration: const InputDecoration(
                     labelText: 'Asignar a Ruta',
                     border: OutlineInputBorder(),

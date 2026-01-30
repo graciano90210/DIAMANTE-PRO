@@ -29,8 +29,7 @@ final ThemeData kDarkTechTheme = ThemeData.dark().copyWith(
   // Colores base
   scaffoldBackgroundColor: kBgDark,
   primaryColor: kNeonCyan,
-  cardColor: kCardDark,
-  dialogBackgroundColor: kCardDark, // Para alertas y menús
+  cardColor: kCardDark, // Para alertas y menús
 
   // Barra superior (AppBar)
   appBarTheme: const AppBarTheme(
@@ -94,7 +93,7 @@ final ThemeData kDarkTechTheme = ThemeData.dark().copyWith(
     selectedItemColor: kNeonCyan,
     unselectedItemColor: kTextGrey,
     elevation: 0,
-  ),
+  ), dialogTheme: const DialogThemeData(backgroundColor: kCardDark),
 );
 
 void main() {

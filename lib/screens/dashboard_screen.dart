@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'dart:math' as math;
 import '../providers/auth_provider.dart';
 import '../services/sync_service.dart';
 import 'clientes_screen.dart';
@@ -139,7 +138,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               // --- SECCIÓN DE ACCESOS RÁPIDOS FUTURISTAS ---
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.0),
-                child: Text("Accesos Rápidos", style: kHeadingStyle),
+                child: Text('Accesos Rápidos', style: kHeadingStyle),
               ),
               const SizedBox(height: 15),
               SizedBox(
@@ -150,28 +149,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   children: [
                     TechActionCard(
                       icon: FontAwesomeIcons.users, 
-                      label: "Clientes", 
+                      label: 'Clientes', 
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ClientesScreen()))
                     ),
                     TechActionCard(
                       icon: FontAwesomeIcons.handHoldingDollar, 
-                      label: "Créditos", 
+                      label: 'Créditos', 
                       isPrimary: true, 
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PrestamosScreen()))
                     ), // Destacado
                     TechActionCard(
                       icon: FontAwesomeIcons.moneyBillTrendUp, 
-                      label: "Cobrar", 
+                      label: 'Cobrar', 
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CobrosScreen()))
                     ),
                      TechActionCard(
                       icon: FontAwesomeIcons.cartShopping, 
-                      label: "Gastos", 
+                      label: 'Gastos', 
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegistrarGastoScreen()))
                     ),
                     TechActionCard(
                       icon: FontAwesomeIcons.route, 
-                      label: "Ruta", 
+                      label: 'Ruta', 
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RutaDiaScreen()))
                     ),
                   ],
@@ -186,7 +185,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Row(
                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                    children: [
-                     const Text("Resumen de Hoy", style: kHeadingStyle),
+                     const Text('Resumen de Hoy', style: kHeadingStyle),
                       Text(_getFormattedDateShort(), style: const TextStyle(color: kNeonCyan)),
                    ]
                 ),
@@ -204,7 +203,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     children: [
                       // --- TARJETA PRINCIPAL (Cobranza) ---
                       TechDataCard(
-                        title: "Cobranza del Día",
+                        title: 'Cobranza del Día',
                         totalValue: totalCobrar, 
                         currentValue: recaudadoHoy,
                         icon: FontAwesomeIcons.sackDollar,
@@ -217,8 +216,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         children: [
                           Expanded(
                             child: TechDataCardSmall(
-                              title: "Clientes Visitados",
-                              value: "$clientesVisitados/${clientesVisitados + clientesPendientes}",
+                              title: 'Clientes Visitados',
+                              value: '$clientesVisitados/${clientesVisitados + clientesPendientes}',
                               percentage: visitadosPercentage, 
                               icon: FontAwesomeIcons.route,
                             ),
@@ -226,8 +225,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           const SizedBox(width: 15),
                           Expanded(
                             child: TechDataCardSmall(
-                              title: "Efectividad Cobro",
-                              value: "${(efectividadPercentage * 100).toStringAsFixed(1)}%",
+                              title: 'Efectividad Cobro',
+                              value: '${(efectividadPercentage * 100).toStringAsFixed(1)}%',
                               percentage: efectividadPercentage,
                               icon: FontAwesomeIcons.bullseye,
                               colorAccent: Colors.purpleAccent, // Color diferente

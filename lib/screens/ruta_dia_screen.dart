@@ -4,7 +4,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import 'registrar_cobro_screen.dart';
-import 'prestamo_detalle_screen.dart';
 import '../models/prestamo_model.dart';
 import '../config/api_config.dart';
 

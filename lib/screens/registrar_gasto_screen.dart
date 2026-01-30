@@ -121,7 +121,7 @@ class _RegistrarGastoScreenState extends State<RegistrarGastoScreen> {
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.attach_money),
                 ),
-                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 validator: (v) {
                   if (v == null || v.isEmpty) return 'Campo requerido';
                   if (double.tryParse(v) == null) return 'Monto inválido';
