@@ -90,19 +90,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Default values
+    // Valores del endpoint /dashboard_stats
+    final totalClientes = ((_stats?['total_clientes'] ?? 0) as num).toInt();
     final totalCobrar = ((_stats?['total_cobrar'] ?? 0) as num).toDouble();
-    final clientesVisitados = (_stats?['clientes_visitados'] ?? 0) as int;
-    final clientesPendientes = (_stats?['clientes_pendientes'] ?? 0) as int;
-    //final nuevosClientes = _stats?['nuevos_clientes'] ?? 0;
     final recaudadoHoy = ((_stats?['recaudado_hoy'] ?? 0) as num).toDouble();
-    
-    // Calculates
-    final totalCreditos = clientesVisitados + clientesPendientes;
-    // Evitamos NaN si totalCreditos es 0
-    final visitadosPercentage = totalCreditos > 0 ? (clientesVisitados / totalCreditos) : 0.0;
-    
-    // Asumimos meta diaria basada en total a cobrar vs recaudado (ejemplo)
+    final gastosHoy = ((_stats?['gastos_hoy'] ?? 0) as num).toDouble();
+    final netoHoy = ((_stats?['neto_hoy'] ?? 0) as num).toDouble();
+
+    // Calcula efectividad de cobro
     final efectividadPercentage = totalCobrar > 0 ? (recaudadoHoy / totalCobrar) : 0.0;
 
 
@@ -204,13 +199,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       // --- TARJETA PRINCIPAL (Cobranza) ---
                       TechDataCard(
                         title: 'Cobranza del Día',
-                        totalValue: totalCobrar, 
+                        totalValue: totalCobrar,
                         currentValue: recaudadoHoy,
                         icon: FontAwesomeIcons.sackDollar,
-                        isHighlight: true, // Tarjeta destacada
+                        isHighlight: true,
                       ),
                       const SizedBox(height: 15),
-                  
+
+                      // --- NUEVA TARJETA DE GASTOS ---
+                      TechDataCard(
+                        title: 'Gastos del Día',
+                        totalValue: gastosHoy > 0 ? gastosHoy : 1, // Para evitar división por cero
+                        currentValue: gastosHoy,
+                        icon: FontAwesomeIcons.moneyBillWave,
+                        isHighlight: false,
+                      ),
+                      const SizedBox(height: 15),
+
+                      // --- NUEVA TARJETA DE NETO ---
+                      TechDataCard(
+                        title: 'Neto del Día',
+                        totalValue: netoHoy.abs() > 0 ? netoHoy.abs() : 1, // Para evitar división por cero
+                        currentValue: netoHoy,
+                        icon: FontAwesomeIcons.wallet,
+                        isHighlight: false,
+                      ),
+                      const SizedBox(height: 15),
+
                       // --- TARJETAS SECUNDARIAS EN FILA ---
                       Row(
                         children: [
@@ -218,7 +233,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             child: TechDataCardSmall(
                               title: 'Clientes Visitados',
                               value: '$clientesVisitados/${clientesVisitados + clientesPendientes}',
-                              percentage: visitadosPercentage, 
+                              percentage: visitadosPercentage,
                               icon: FontAwesomeIcons.route,
                             ),
                           ),
@@ -229,12 +244,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               value: '${(efectividadPercentage * 100).toStringAsFixed(1)}%',
                               percentage: efectividadPercentage,
                               icon: FontAwesomeIcons.bullseye,
-                              colorAccent: Colors.purpleAccent, // Color diferente
+                              colorAccent: Colors.purpleAccent,
                             ),
                           ),
                         ],
                       ),
-                       const SizedBox(height: 20),
+                      const SizedBox(height: 20),
                     ],
                   ),
                 ),

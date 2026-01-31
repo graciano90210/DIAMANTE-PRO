@@ -325,7 +325,7 @@ class SyncService extends ChangeNotifier {
       try {
         final headers = await _authService.getAuthHeaders();
         final response = await _apiService.get(
-          ApiConfig.estadisticas, // Asegurarse que este endpoint existe en ApiConfig
+          '/dashboard_stats', // Nuevo endpoint
           headers: headers,
         );
         return {

@@ -6,6 +6,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from .models import Usuario, Cliente, Prestamo, Pago, Ruta, Transaccion, db
 from datetime import datetime, timedelta
+import pytz
 from sqlalchemy import func
 
 # Crear blueprint para la API
@@ -489,55 +490,73 @@ def api_registrar_pago():
         return jsonify({'error': str(e)}), 500
 
 # ==================== ESTADÍSTICAS ====================
-@api.route('/cobrador/estadisticas', methods=['GET'])
+
+# Nuevo endpoint de estadísticas dashboard (zona horaria Brasil, datos en tiempo real)
+
+@api.route('/dashboard_stats', methods=['GET'])
 @jwt_required()
-def api_estadisticas_cobrador():
-    """
-    Obtener estadísticas del cobrador
-    Headers: Authorization: Bearer TOKEN
-    Returns: {"total_cartera": 50000, "cobrado_hoy": 1200, ...}
-    """
-    usuario_id = int(get_jwt_identity())
-    
-    # Préstamos activos del cobrador (usando cobrador_id directamente)
-    prestamos_activos = Prestamo.query.filter_by(
-        cobrador_id=usuario_id,
-        estado='ACTIVO'
-    ).all()
-    
-    # Total cartera
-    total_cartera = sum(float(p.saldo_actual) for p in prestamos_activos) if prestamos_activos else 0
-    
-    # Capital prestado
-    capital_prestado = sum(float(p.monto_prestado) for p in prestamos_activos) if prestamos_activos else 0
-    
-    # Cobrado hoy
-    # Cobrado hoy - Usando rango de fechas y ID del cobrador en el PAGO
-    hoy_inicio = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    hoy_fin = datetime.now().replace(hour=23, minute=59, second=59, microsecond=999999)
-    
-    pagos_hoy = Pago.query.filter(
-        Pago.cobrador_id == usuario_id,
-        Pago.fecha_pago >= hoy_inicio,
-        Pago.fecha_pago <= hoy_fin
-    ).all()
-    
-    cobrado_hoy = sum(float(p.monto) for p in pagos_hoy) if pagos_hoy else 0
-    
-    # Por cobrar hoy
-    por_cobrar_hoy = sum(float(p.valor_cuota) for p in prestamos_activos if p.frecuencia in ['DIARIO', 'BISEMANAL']) if prestamos_activos else 0
-    
-    return jsonify({
-        'total_prestamos': len(prestamos_activos),
-        'total_cartera': total_cartera,
-        'capital_prestado': capital_prestado,
-        'cobrado_hoy': cobrado_hoy,
-        'numero_cobros_hoy': len(pagos_hoy),
-        'por_cobrar_hoy': por_cobrar_hoy,
-        'prestamos_al_dia': sum(1 for p in prestamos_activos if p.cuotas_atrasadas == 0),
-        'prestamos_atrasados': sum(1 for p in prestamos_activos if p.cuotas_atrasadas > 0),
-        'prestamos_mora_grave': sum(1 for p in prestamos_activos if p.cuotas_atrasadas > 3)
-    }), 200
+def dashboard_stats():
+    from sqlalchemy import func
+    from datetime import datetime, timedelta
+    import pytz
+    user_id = get_jwt_identity()
+    tz = pytz.timezone('America/Sao_Paulo')
+    now = datetime.now(tz)
+    today_start = datetime.combine(now.date(), datetime.min.time()).astimezone(pytz.utc)
+    today_end = datetime.combine(now.date(), datetime.max.time()).astimezone(pytz.utc)
+
+    print(f"🔍 DEBUG: Calculando para ID {user_id} | Fecha UTC: {today_start} a {today_end}")
+
+    def filtrar_por_usuario(query, modelo):
+        if hasattr(modelo, 'cobrador_id'):
+            return query.filter(modelo.cobrador_id == user_id)
+        elif hasattr(modelo, 'usuario_id'):
+            return query.filter(modelo.usuario_id == user_id)
+        else:
+            print(f"⚠️ El modelo {modelo.__name__} no tiene cobrador_id ni usuario_id")
+            return query.filter(False)
+
+    try:
+        # CLIENTES activos
+        q_clientes = db.session.query(func.count(Cliente.id)).filter(Cliente.activo == True)
+        total_clientes = filtrar_por_usuario(q_clientes, Cliente).scalar() or 0
+
+        # POR COBRAR (suma de saldo_pendiente)
+        q_cobrar = db.session.query(func.sum(Cliente.saldo_pendiente)).filter(Cliente.activo == True)
+        total_cobrar = filtrar_por_usuario(q_cobrar, Cliente).scalar() or 0
+
+        # RECAUDADO HOY (Pagos)
+        q_pagos = db.session.query(func.sum(Pago.monto)).filter(
+            Pago.fecha_pago >= today_start,
+            Pago.fecha_pago <= today_end
+        )
+        recaudado_hoy = filtrar_por_usuario(q_pagos, Pago).scalar() or 0
+
+        # GASTOS HOY (Transacciones tipo GASTO)
+        q_gastos = db.session.query(func.sum(Transaccion.monto)).filter(
+            Transaccion.fecha >= today_start,
+            Transaccion.fecha <= today_end,
+            (getattr(Transaccion, 'naturaleza', None) == 'EGRESO') | (getattr(Transaccion, 'tipo', None) == 'GASTO')
+        )
+        gastos_hoy = filtrar_por_usuario(q_gastos, Transaccion).scalar() or 0
+
+        neto_hoy = float(recaudado_hoy) - float(gastos_hoy)
+
+        print(f"✅ ÉXITO: Clientes={total_clientes} | Cobrado={recaudado_hoy} | Gastado={gastos_hoy}")
+
+        return jsonify({
+            "total_clientes": total_clientes,
+            "total_cobrar": float(total_cobrar),
+            "recaudado_hoy": float(recaudado_hoy),
+            "gastos_hoy": float(gastos_hoy),
+            "neto_hoy": float(neto_hoy)
+        }), 200
+
+    except Exception as e:
+        print(f"❌ ERROR CRÍTICO (500): {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': 'Error calculando estadisticas', 'detalle': str(e)}), 500
 
 # ==================== REGISTRAR PAGO ====================
 @api.route('/cobros', methods=['POST'])
