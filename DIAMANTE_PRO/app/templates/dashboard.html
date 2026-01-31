@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard - Diamante Pro</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark-theme.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        /* Dashboard - Tema Dark Tech */
+        .diamond-svg {
+            width: 28px;
+            height: 28px;
+            fill: #00E5FF !important;
+            filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.5));
+        }
+        .stat-card {
+            border-radius: 15px;
+            border: none;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 229, 255, 0.15) !important;
+        }
+        .stat-card.primary {
+            background: linear-gradient(135deg, #0A0E21 0%, #1e3c72 100%) !important;
+            border-left: 4px solid #00E5FF;
+        }
+        .stat-card.success {
+            background: linear-gradient(135deg, #0A0E21 0%, #0d4d2a 100%) !important;
+            border-left: 4px solid #00FF99;
+        }
+        .stat-card.warning {
+            background: linear-gradient(135deg, #0A0E21 0%, #4d3800 100%) !important;
+            border-left: 4px solid #FFD700;
+        }
+        .stat-card.info {
+            background: linear-gradient(135deg, #0A0E21 0%, #0d4d5f 100%) !important;
+            border-left: 4px solid #00E5FF;
+        }
+        .stat-card.danger {
+            background: linear-gradient(135deg, #0A0E21 0%, #5f0d1f 100%) !important;
+            border-left: 4px solid #FF3366;
+        }
+        .stat-card.purple {
+            background: linear-gradient(135deg, #0A0E21 0%, #4a1d7a 100%) !important;
+            border-left: 4px solid #BB86FC;
+        }
+        .menu-card {
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: #1D1E33 !important;
+        }
+        .menu-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 229, 255, 0.2) !important;
+            border-color: #00E5FF !important;
+        }
+        .menu-card .card-body {
+            padding: 25px;
+        }
+        .menu-icon {
+            font-size: 2.5rem;
+            color: #00E5FF !important;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            background: #1D1E33 !important;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .table-widget {
+            background: #1D1E33 !important;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .kpi-badge {
+            font-size: 0.85rem;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .progress-ring {
+            width: 120px;
+            height: 120px;
+        }
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.95;
+            font-weight: 500;
+        }
+        .stat-sublabel {
+            font-size: 0.8rem;
+            opacity: 0.85;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand brand-logo" href="/dashboard" style="display: inline-flex; align-items: center; gap: 10px;">
+                <svg style="width: 32px; height: 32px; filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.6));" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="navDiamondGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#00E5FF"/>
+                            <stop offset="50%" style="stop-color:#00FFD4"/>
+                            <stop offset="100%" style="stop-color:#00E5FF"/>
+                        </linearGradient>
+                    </defs>
+                    <polygon points="50,5 95,50 50,95 5,50" fill="url(#navDiamondGradient)" opacity="0.9"/>
+                    <polygon points="50,15 80,50 50,85 20,50" fill="#0A0E21" opacity="0.4"/>
+                    <polygon points="50,5 50,95 5,50" fill="rgba(255,255,255,0.2)"/>
+                </svg>
+                <span style="color: #00E5FF; text-shadow: 0 0 10px rgba(0, 229, 255, 0.5); font-weight: 600; letter-spacing: 0.5px;">DIAMANTE PRO</span>
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="text-white me-3">
+                    <i class="bi bi-person-circle" style="color: #00E5FF;"></i> {{ nombre }} 
+                    <span class="badge" style="background: rgba(0, 229, 255, 0.15); color: #00E5FF; border: 1px solid rgba(0, 229, 255, 0.3);">{{ rol }}</span>
+                </span>
+                <a href="/logout" class="btn btn-sm" style="background: transparent; border: 1px solid #FF3366; color: #FF3366;">
+                    <i class="bi bi-box-arrow-right"></i> Salir
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container-fluid mt-4">
+        <!-- Selector de Ruta (solo para dueño y gerente) -->
+        {% if rol in ['dueno', 'gerente'] %}
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #1D1E33 0%, #0A0E21 100%); color: white; border: 1px solid rgba(0, 229, 255, 0.2) !important;">
+                    <div class="card-body p-3">
+                        <div class="row align-items-center">
+                            <div class="col-auto">
+                                <i class="bi bi-map" style="font-size: 1.5rem; color: #00E5FF;"></i>
+                            </div>
+                            <div class="col">
+                                <label class="form-label fw-bold mb-1" style="color: #00E5FF;">Filtrar Dashboard por Ruta:</label>
+                                {% if todas_las_rutas and todas_las_rutas|length > 0 %}
+                                <select class="form-select" onchange="window.location.href=this.value" style="background: #0A0E21; color: white; border: 1px solid #2d2f45;">
+                                    <option value="/ver-todas-rutas" {% if not ruta_seleccionada %}selected{% endif %}>
+                                        📊 Ver Todas las Rutas
+                                    </option>
+                                    {% for ruta in todas_las_rutas %}
+                                    <option value="/seleccionar-ruta/{{ ruta.id }}" 
+                                            {% if ruta_seleccionada and ruta_seleccionada.id == ruta.id %}selected{% endif %}>
+                                        {% if ruta.sociedad %}
+                                            🤝 {{ ruta.nombre }} ({{ ruta.sociedad.nombre }})
+                                        {% else %}
+                                            🏢 {{ ruta.nombre }} (PROPIO)
+                                        {% endif %}
+                                        {% if ruta.cobrador %} - {{ ruta.cobrador.nombre }}{% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                {% else %}
+                                <div class="alert alert-warning mb-0">
+                                    <i class="bi bi-exclamation-triangle"></i> No hay rutas creadas. 
+                                    <a href="/rutas/nueva" class="alert-link" style="color: white; text-decoration: underline;">Crear primera ruta</a>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="row">
+            <div class="col-12">
+                <h4 class="mb-3 fw-bold">🚀 Acciones Rápidas</h4>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+             <div class="col-6 col-md-2">
+                <div class="card menu-card h-100 border-0 shadow-sm text-center py-3" style="cursor: pointer;" onclick="window.location.href='/clientes/nuevo'">
+                     <i class="bi bi-person-plus-fill fs-2 text-primary mb-2"></i>
+                     <h6 class="fw-bold mb-0 text-white">Nuevo Cliente</h6>
+                </div>
+             </div>
+             
+             <div class="col-6 col-md-2">
+                <div class="card menu-card h-100 border-0 shadow-sm text-center py-3" style="cursor: pointer;" onclick="window.location.href='/prestamos/nuevo'">
+                     <i class="bi bi-cash-stack fs-2 text-success mb-2"></i>
+                     <h6 class="fw-bold mb-0 text-white">Nuevo Préstamo</h6>
+                </div>
+             </div>
+
+             <div class="col-6 col-md-2">
+                <div class="card menu-card h-100 border-0 shadow-sm text-center py-3" style="cursor: pointer;" onclick="window.location.href='/cobro/lista'">
+                     <i class="bi bi-wallet2 fs-2 text-warning mb-2"></i>
+                     <h6 class="fw-bold mb-0 text-white">Ir a Cobrar</h6>
+                </div>
+             </div>
+             
+             <div class="col-6 col-md-2">
+                <div class="card menu-card h-100 border-0 shadow-sm text-center py-3" style="cursor: pointer;" onclick="alert('Funcionalidad de Mapa GPS próximamente')">
+                     <i class="bi bi-geo-alt-fill fs-2 text-danger mb-2"></i>
+                     <h6 class="fw-bold mb-0 text-white">Mapa GPS</h6>
+                </div>
+             </div>
+
+             <div class="col-6 col-md-2">
+                <div class="card menu-card h-100 border-0 shadow-sm text-center py-3" style="cursor: pointer;" onclick="window.location.href='/reportes'">
+                     <i class="bi bi-graph-up fs-2 text-info mb-2"></i>
+                     <h6 class="fw-bold mb-0 text-white">Reportes</h6>
+                </div>
+             </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <h2 class="mb-4">Panel de Control</h2>
+            </div>
+        </div>
+
+        {% if ruta_seleccionada %}
+        <div class="alert alert-info d-flex justify-content-between align-items-center mb-4" role="alert">
+            <div>
+                <i class="bi bi-info-circle"></i>
+                <strong>Vista Filtrada:</strong> Mostrando información de 
+                <strong>{{ ruta_seleccionada.nombre }}</strong>
+                {% if ruta_seleccionada.cobrador %}
+                    (Cobrador: {{ ruta_seleccionada.cobrador.nombre }})
+                {% endif %}
+                {% if ruta_seleccionada.sociedad %}
+                    - <span class="badge bg-primary">{{ ruta_seleccionada.sociedad.nombre }}</span>
+                {% else %}
+                    - <span class="badge bg-success">PROPIO</span>
+                {% endif %}
+            </div>
+            <a href="/ver-todas-rutas" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-x-circle"></i> Ver Todas
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- Stats Cards -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-3">
+                <div class="card stat-card primary text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title">Préstamos Activos</h6>
+                                <h2 class="mb-0">{{ total_prestamos_activos }}</h2>
+                                <small>{{ prestamos_al_dia }} al día | {{ prestamos_atrasados }} atrasados</small>
+                            </div>
+                            <i class="bi bi-cash-stack fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card success text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title">Clientes</h6>
+                                <h2 class="mb-0">{{ total_clientes }}</h2>
+                                <small>{% if clientes_vip > 0 %}{{ clientes_vip }} VIP{% else %}Todos regulares{% endif %}</small>
+                            </div>
+                            <i class="bi bi-people fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card warning text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="card-title mb-0">Flujo de Cobro</h6>
+                            <i class="bi bi-calendar-check fs-2"></i>
+                        </div>
+                        <div class="row text-center">
+                            <div class="col-6 border-end" style="border-color: rgba(255,255,255,0.3) !important;">
+                                <small class="text-white-50">Hoy</small>
+                                {% if lista_monedas and lista_monedas|length > 1 %}
+                                    <div class="text-start mt-1">
+                                    {% for m in lista_monedas %}
+                                        <div class="d-flex justify-content-between small border-bottom border-light border-opacity-25 pb-1 mb-1">
+                                            <span class="opacity-75">{{ m.moneda }}</span>
+                                            <span class="fw-bold">${{ "{:,.0f}".format(m.por_cobrar_hoy) }}</span>
+                                        </div>
+                                    {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <h4 class="mb-0 fw-bold">${{ "{:,.0f}".format(por_cobrar_hoy) }}</h4>
+                                {% endif %}
+                            </div>
+                            <div class="col-6">
+                                <small class="text-white-50">Mañana</small>
+                                {% if lista_monedas and lista_monedas|length > 1 %}
+                                    <div class="text-start mt-1">
+                                    {% for m in lista_monedas %}
+                                        <div class="d-flex justify-content-between small border-bottom border-light border-opacity-25 pb-1 mb-1">
+                                            <span class="opacity-75">{{ m.moneda }}</span>
+                                            <span class="fw-bold">${{ "{:,.0f}".format(m.proyeccion_manana) }}</span>
+                                        </div>
+                                    {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <h4 class="mb-0 fw-bold">${{ "{:,.0f}".format(proyeccion_manana) }}</h4>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% if rol in ['dueno', 'gerente', 'supervisor', 'secretaria'] %}
+            <div class="col-md-3">
+                <div class="card stat-card info text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="w-100">
+                                <h6 class="card-title">Total en Cartera</h6>
+                                {% if lista_monedas and lista_monedas|length > 1 %}
+                                    <div class="mt-2">
+                                    {% for m in lista_monedas %}
+                                        <div class="d-flex justify-content-between align-items-center mb-1 border-bottom border-light border-opacity-25 pb-1">
+                                            <span class="badge bg-white text-info bg-opacity-25">{{ m.moneda }}</span>
+                                            <h5 class="mb-0 text-end">${{ "{:,.0f}".format(m.total_cartera) }}</h5>
+                                        </div>
+                                    {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <h2 class="mb-0">${{ "{:,.0f}".format(total_cartera) }}</h2>
+                                    <small>Saldo por cobrar</small>
+                                {% endif %}
+                            </div>
+                            {% if not (lista_monedas and lista_monedas|length > 1) %}
+                            <i class="bi bi-graph-up fs-1"></i>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Additional Stats -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-3">
+                <div class="card stat-card danger text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="stat-label">En Mora</h6>
+                                <h2 class="stat-number mb-0">{{ prestamos_mora }}</h2>
+                                <small class="stat-sublabel">Más de 3 cuotas</small>
+                            </div>
+                            <i class="bi bi-exclamation-triangle-fill fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card purple text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="w-100">
+                                <h6 class="stat-label">Capital Prestado</h6>
+                                {% if lista_monedas and lista_monedas|length > 1 %}
+                                    <div class="mt-2">
+                                    {% for m in lista_monedas %}
+                                        <div class="d-flex justify-content-between align-items-center mb-1 border-bottom border-light border-opacity-25 pb-1">
+                                            <span class="badge bg-white text-info bg-opacity-25">{{ m.moneda }}</span>
+                                            <h5 class="stat-number mb-0 text-end">${{ "{:,.0f}".format(m.capital_prestado) }}</h5>
+                                        </div>
+                                    {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <h2 class="stat-number mb-0">${{ "{:,.0f}".format(capital_prestado/1000) }}K</h2>
+                                    <small class="stat-sublabel">Dinero en la calle</small>
+                                {% endif %}
+                            </div>
+                            {% if not (lista_monedas and lista_monedas|length > 1) %}
+                            <i class="bi bi-piggy-bank-fill fs-1"></i>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card menu-card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="card-title fw-bold mb-3"><i class="bi bi-graph-up text-success"></i> Ganancia Esperada</h6>
+                        <h3 class="mb-1 fw-bold text-success">${{ "{:,.0f}".format(ganancia_esperada) }}</h3>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="kpi-badge bg-success text-white">+{{ "{:.1f}".format(porcentaje_ganancia) }}%</span>
+                            <small class="text-muted">ROI estimado</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card menu-card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="card-title fw-bold mb-3"><i class="bi bi-speedometer2 text-primary"></i> Tasa de Cobro</h6>
+                        <h3 class="mb-1 fw-bold text-primary">{{ "{:.1f}".format(tasa_cobro_diaria) }}%</h3>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: {{ tasa_cobro_diaria }}%"></div>
+                        </div>
+                        <small class="text-muted mt-1 d-block">${{ "{:,.0f}".format(total_cobrado_hoy) }} de ${{ "{:,.0f}".format(por_cobrar_hoy) }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- NUEVO: Capital Disponible (solo para dueño y gerente) -->
+        {% if rol in ['dueno', 'gerente'] and capital_total_aportado > 0 %}
+        <div class="row g-4 mb-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="card-body text-white">
+                        <div class="row align-items-center">
+                            <div class="col-md-4 text-center border-end border-light">
+                                <i class="bi bi-cash-stack fs-1 mb-2"></i>
+                                <h6 class="opacity-75">Capital Total Aportado</h6>
+                                <h2 class="fw-bold mb-0">${{ "{:,.0f}".format(capital_total_aportado) }}</h2>
+                                <small class="opacity-75">Inversión de socios</small>
+                            </div>
+                            <div class="col-md-4 text-center border-end border-light">
+                                <i class="bi bi-box-seam fs-1 mb-2"></i>
+                                <h6 class="opacity-75">Capital Invertido en Activos</h6>
+                                <h2 class="fw-bold mb-0">${{ "{:,.0f}".format(capital_invertido_activos) }}</h2>
+                                <small class="opacity-75">Motos, equipos, etc.</small>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <i class="bi bi-wallet2 fs-1 mb-2"></i>
+                                <h6 class="opacity-75">💰 Capital Disponible</h6>
+                                <h2 class="fw-bold mb-0" style="font-size: 2.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
+                                    ${{ "{:,.0f}".format(capital_disponible) }}
+                                </h2>
+                                <small class="opacity-75">
+                                    {% if capital_disponible > 0 %}
+                                        ✓ Disponible para prestar
+                                    {% elif capital_disponible == 0 %}
+                                        ⚠️ Todo el capital está invertido
+                                    {% else %}
+                                        ⚠️ Déficit: revisar inversiones
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="mt-3 text-center">
+                            <a href="/capital/aportes" class="btn btn-outline-light btn-sm me-2">
+                                <i class="bi bi-cash-stack"></i> Ver Aportes
+                            </a>
+                            <a href="/activos" class="btn btn-outline-light btn-sm">
+                                <i class="bi bi-box-seam"></i> Ver Activos
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Gráficos y Widgets -->
+        <div class="row g-4 mb-4">
+            <!-- Gráfico de Cobros Últimos 7 Días (Full Width) -->
+            <div class="col-12">
+                <div class="chart-container">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-graph-up text-primary"></i> Cobros Últimos 7 Días</h5>
+                    <canvas id="cobrosChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <!-- Gráfico de Estado de Préstamos -->
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-pie-chart text-success"></i> Estado Préstamos</h5>
+                    <canvas id="estadoChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Gráfico de Riesgo (NUEVO) -->
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-shield-check text-warning"></i> Distribución de Riesgo</h5>
+                    {% if riesgo_data and riesgo_data|sum > 0 %}
+                        <canvas id="riesgoChart"></canvas>
+                    {% else %}
+                        <div class="d-flex flex-column align-items-center justify-content-center h-100 text-muted">
+                            <i class="bi bi-inbox fs-1 mb-2"></i>
+                            <p>No hay datos de riesgo suficientes</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Tablas de Últimas Transacciones -->
+        <div class="row g-4 mb-4">
+            <!-- Últimos Pagos -->
+            <div class="col-md-6">
+                <div class="table-widget">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-clock-history text-success"></i> Últimos Pagos Recibidos</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>Monto</th>
+                                    <th>Fecha</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if ultimos_pagos %}
+                                    {% for pago in ultimos_pagos %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ pago.prestamo.cliente.nombre }}</strong>
+                                            <br><small class="text-muted">Préstamo #{{ pago.prestamo.id }}</small>
+                                        </td>
+                                        <td><span class="badge bg-success">${{ "{:,.0f}".format(pago.monto) }}</span></td>
+                                        <td><small>{{ pago.fecha_pago.strftime('%d/%m %H:%M') }}</small></td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted">No hay pagos registrados</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Préstamos Recientes -->
+            <div class="col-md-6">
+                <div class="table-widget">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-cash-stack text-primary"></i> Préstamos Recientes</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>Monto</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if prestamos_recientes %}
+                                    {% for prestamo in prestamos_recientes %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ prestamo.cliente.nombre }}</strong>
+                                            <br><small class="text-muted">{{ prestamo.fecha_inicio.strftime('%d/%m/%Y') }}</small>
+                                        </td>
+                                        <td>
+                                            <strong>${{ "{:,.0f}".format(prestamo.monto_prestado) }}</strong>
+                                            <br><small class="text-muted">Saldo: ${{ "{:,.0f}".format(prestamo.saldo_actual) }}</small>
+                                        </td>
+                                        <td>
+                                            {% if prestamo.estado == 'ACTIVO' %}
+                                                {% if prestamo.cuotas_atrasadas == 0 %}
+                                                    <span class="badge bg-success">Al día</span>
+                                                {% elif prestamo.cuotas_atrasadas <= 3 %}
+                                                    <span class="badge bg-warning">{{ prestamo.cuotas_atrasadas }} atraso(s)</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">Mora</span>
+                                                {% endif %}
+                                            {% elif prestamo.estado == 'PAGADO' %}
+                                                <span class="badge bg-success">Pagado</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ prestamo.estado }}</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted">No hay préstamos registrados</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions Moved to Top -->
+
+        <!-- Módulo de Caja -->
+        <div class="row g-4 mt-2">
+            <div class="col-12">
+                <h4 class="mb-3 fw-bold">💰 Control de Caja</h4>
+            </div>
+            
+            {% if rol in ['dueno', 'gerente', 'supervisor'] %}
+            <div class="col-md-3">
+                <div class="card menu-card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="menu-icon mb-3"><i class="bi bi-arrow-left-right"></i></div>
+                        <h5 class="fw-bold" style="color: #1f2937;">Traslados</h5>
+                        <p class="text-muted small">Movimientos entre rutas</p>
+                        <a href="/traslados" class="btn px-4" style="background: #7c3aed; border: none; color: white;">Gestionar</a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            <div class="col-md-4">
+                <div class="card menu-card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="menu-icon mb-3"><i class="bi bi-calculator"></i></div>
+                        <h5 class="fw-bold" style="color: #1f2937;">Módulo de Caja</h5>
+                        <p class="text-muted small">Control de ingresos y gastos</p>
+                        <a href="/caja" class="btn btn-danger px-4">Ver Caja</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Administración (solo para dueños y gerentes) -->
+        {% if rol in ['dueno', 'gerente'] %}
+        <div class="row g-4 mt-2">
+            <div class="col-12">
+                <h4 class="mb-3 fw-bold">Administración</h4>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="card menu-card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="menu-icon mb-3"><i class="bi bi-people-fill"></i></div>
+                        <h5 class="fw-bold" style="color: #1f2937;">Usuarios</h5>
+                        <p class="text-muted small">Gestionar cobradores</p>
+                        <a href="/usuarios" class="btn px-4" style="background: #6b7280; border: none; color: white;">Administrar</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="card menu-card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="menu-icon mb-3"><i class="bi bi-map"></i></div>
+                        <h5 class="fw-bold" style="color: #1f2937;">Rutas</h5>
+                        <p class="text-muted small">Gestionar rutas de cobro</p>
+                        <a href="/rutas" class="btn px-4" style="background: #0891b2; border: none; color: white;">Ver Rutas</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="card menu-card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="menu-icon mb-3"><i class="bi bi-diagram-3-fill"></i></div>
+                        <h5 class="fw-bold" style="color: #1f2937;">Sociedades</h5>
+                        <p class="text-muted small">Gestionar socios</p>
+                        <a href="/sociedades" class="btn px-4" style="background: #7c3aed; border: none; color: white;">Ver Sociedades</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="card menu-card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="menu-icon mb-3"><i class="bi bi-file-pdf"></i></div>
+                        <h5 class="fw-bold" style="color: #1f2937;">Cuadre PDF</h5>
+                        <p class="text-muted small">Descargar informe</p>
+                        <a href="/reporte/seleccionar-cobrador" class="btn px-4" style="background: #dc2626; border: none; color: white;">Seleccionar Ruta</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Finanzas (solo para dueños y gerentes) -->
+        <div class="row g-4 mt-2">
+            <div class="col-12">
+                <h4 class="mb-3 fw-bold">Finanzas</h4>
+            </div>
+            <div class="col-md-6">
+                <div class="card menu-card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="menu-icon mb-3"><i class="bi bi-cash-stack text-success"></i></div>
+                        <h5 class="fw-bold" style="color: #1f2937;">Aportes de Capital</h5>
+                        <p class="text-muted small">Registro de inversiones y capital</p>
+                        <a href="/capital/aportes" class="btn px-4" style="background: #10b981; border: none; color: white;">Ver Aportes</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card menu-card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="menu-icon mb-3"><i class="bi bi-box-seam text-warning"></i></div>
+                        <h5 class="fw-bold" style="color: #1f2937;">Activos Fijos</h5>
+                        <p class="text-muted small">Inventario de equipos y vehículos</p>
+                        <a href="/activos" class="btn px-4" style="background: #f59e0b; border: none; color: white;">Ver Activos</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Gráfico de Cobros Últimos 7 Días
+        const cobrosCtx = document.getElementById('cobrosChart');
+        if (cobrosCtx) {
+            new Chart(cobrosCtx, {
+                type: 'line',
+                data: {
+                    labels: {{ labels_7_dias | tojson }},
+                    datasets: [{
+                        label: 'Cobros Diarios',
+                        data: {{ cobros_ultimos_7_dias | tojson }},
+                        backgroundColor: 'rgba(30, 60, 114, 0.1)',
+                        borderColor: 'rgba(30, 60, 114, 1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: 'rgba(30, 60, 114, 1)',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return '$' + context.parsed.y.toLocaleString('es-CO');
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + (value/1000).toFixed(0) + 'K';
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Gráfico de Estado de Préstamos
+        const estadoCtx = document.getElementById('estadoChart');
+        if (estadoCtx) {
+            new Chart(estadoCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Activos', 'Pagados', 'Cancelados'],
+                    datasets: [{
+                        data: [{{ total_prestamos_activos }}, {{ prestamos_pagados }}, {{ prestamos_cancelados }}],
+                        backgroundColor: [
+                            'rgba(30, 60, 114, 0.8)',
+                            'rgba(0, 171, 65, 0.8)',
+                            'rgba(220, 38, 38, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(30, 60, 114, 1)',
+                            'rgba(0, 171, 65, 1)',
+                            'rgba(220, 38, 38, 1)'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                font: {
+                                    size: 12,
+                                    weight: '500'
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    let value = context.parsed || 0;
+                                    let total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    let percentage = ((value / total) * 100).toFixed(1);
+                                    return label + ': ' + value + ' (' + percentage + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Gráfico de Riesgo
+        const riesgoCtx = document.getElementById('riesgoChart');
+        if (riesgoCtx) {
+            new Chart(riesgoCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: {{ riesgo_labels | tojson }},
+                    datasets: [{
+                        data: {{ riesgo_data | tojson }},
+                        backgroundColor: [
+                            '#10b981', // EXCELENTE - Verde
+                            '#3b82f6', // BUENO - Azul
+                            '#f59e0b', // REGULAR - Amarillo
+                            '#ef4444', // ALTO - Rojo
+                            '#1f2937', // CRITICO - Gris Oscuro
+                            '#6b7280'  // NUEVO - Gris Claro
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                font: {
+                                    size: 12,
+                                    weight: '500'
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Animación de números al cargar
+        document.addEventListener('DOMContentLoaded', function() {
+            const statNumbers = document.querySelectorAll('.stat-number');
+            statNumbers.forEach(stat => {
+                const finalValue = stat.textContent;
+                stat.style.opacity = '0';
+                setTimeout(() => {
+                    stat.style.transition = 'opacity 0.5s ease';
+                    stat.style.opacity = '1';
+                }, 100);
+            });
+        });
+    </script>
+</body>
+</html>

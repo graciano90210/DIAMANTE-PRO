@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Traslados - Diamante Pro</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark-theme.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/dashboard" style="display: inline-flex; align-items: center; gap: 10px; font-weight: 600;">
+                <svg style="width: 28px; height: 28px; fill: #60a5fa;" viewBox="0 0 24 24">
+                    <path d="M12 2L3 7v10l9 5 9-5V7l-9-5zm0 2.18L18.18 7 12 10.82 5.82 7 12 4.18zM5 8.82l6 3.5v7.86l-6-3.33V8.82zm8 11.36v-7.86l6-3.5v8.03l-6 3.33z"/>
+                </svg>
+                <span>DIAMANTE PRO</span>
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="text-white me-3">
+                    <i class="bi bi-person-circle"></i> {{ nombre }}
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h2><i class="bi bi-arrow-left-right"></i> Traslados entre Rutas</h2>
+                <p class="text-muted">Movimientos de dinero entre caja general y rutas de cobradores</p>
+            </div>
+            <div class="col-md-6 text-end">
+                <a href="/traslados/nuevo" class="btn btn-success">
+                    <i class="bi bi-plus-circle"></i> Nuevo Traslado
+                </a>
+                <a href="/dashboard" class="btn btn-outline-secondary">
+                    <i class="bi bi-house"></i> Dashboard
+                </a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                {% if traslados %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Fecha</th>
+                                <th>Tipo</th>
+                                <th>Origen</th>
+                                <th>Destino</th>
+                                <th>Monto</th>
+                                <th>Descripción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for traslado in traslados %}
+                            <tr>
+                                <td><strong>#{{ traslado.id }}</strong></td>
+                                <td>{{ traslado.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
+                                <td>
+                                    {% if traslado.concepto == 'TRASLADO A RUTA' %}
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-arrow-down"></i> General → Ruta
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-danger">
+                                        <i class="bi bi-arrow-up"></i> Ruta → General
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <i class="bi bi-person"></i> {{ traslado.usuario_origen.nombre }}
+                                </td>
+                                <td>
+                                    <i class="bi bi-person-check"></i> {{ traslado.usuario_destino.nombre }}
+                                </td>
+                                <td>
+                                    <strong class="text-primary">${{ "{:,.2f}".format(traslado.monto) }}</strong>
+                                </td>
+                                <td>
+                                    <small>{{ traslado.descripcion[:50] }}{% if traslado.descripcion and traslado.descripcion|length > 50 %}...{% endif %}</small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info text-center">
+                    <i class="bi bi-info-circle"></i>
+                    No hay traslados registrados. <a href="/traslados/nuevo">Registra el primero aquí</a>.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if traslados %}
+        <div class="card mt-3">
+            <div class="card-body">
+                <p class="text-muted mb-0">
+                    <i class="bi bi-info-circle"></i>
+                    Mostrando los últimos 50 traslados. Los traslados quedan registrados permanentemente en el sistema.
+                </p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

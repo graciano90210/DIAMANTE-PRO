@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Registrar Pago - Diamante Pro</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark-theme.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        .info-destacada {
+            background: linear-gradient(135deg, #0A0E21 0%, #1D1E33 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(0, 229, 255, 0.2);
+        }
+        .btn-monto-rapido {
+            margin: 5px;
+        }
+        .card-header.cliente-header {
+            background: linear-gradient(135deg, #0A0E21 0%, #1D1E33 100%) !important;
+            color: #00E5FF !important;
+            border-bottom: 1px solid rgba(0, 229, 255, 0.3);
+        }
+        .card-header.pago-header {
+            background: linear-gradient(135deg, #0A0E21 0%, #0d4d2a 100%) !important;
+            color: #00FF99 !important;
+            border-bottom: 1px solid rgba(0, 255, 153, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/dashboard" style="display: inline-flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: 0.5px;">
+                <svg style="width: 32px; height: 32px; filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.6));" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="navDiamondGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#00E5FF"/>
+                            <stop offset="50%" style="stop-color:#00FFD4"/>
+                            <stop offset="100%" style="stop-color:#00E5FF"/>
+                        </linearGradient>
+                    </defs>
+                    <polygon points="50,5 95,50 50,95 5,50" fill="url(#navDiamondGradient)" opacity="0.9"/>
+                    <polygon points="50,15 80,50 50,85 20,50" fill="#0A0E21" opacity="0.4"/>
+                    <polygon points="50,5 50,95 5,50" fill="rgba(255,255,255,0.2)"/>
+                </svg>
+                <span style="color: #00E5FF; text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);">DIAMANTE PRO</span>
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="text-white me-3">
+                    <i class="bi bi-person-circle" style="color: #00E5FF;"></i> {{ nombre }}
+                </span>
+                <a href="/cobro/lista" class="btn btn-sm" style="background: transparent; border: 1px solid #00E5FF; color: #00E5FF;">
+                    <i class="bi bi-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <div class="row">
+            <!-- Columna información -->
+            <div class="col-md-4">
+                <!-- Info del cliente -->
+                <div class="card mb-3">
+                    <div class="card-header cliente-header">
+                        <h5 class="mb-0"><i class="bi bi-person"></i> Cliente</h5>
+                    </div>
+                    <div class="card-body">
+                        <h4>{{ prestamo.cliente.nombre }}</h4>
+                        <p class="mb-1">
+                            <i class="bi bi-card-text"></i> {{ prestamo.cliente.documento }}
+                        </p>
+                        <p class="mb-1">
+                            <i class="bi bi-telephone"></i> 
+                            <a href="tel:{{ prestamo.cliente.telefono }}">{{ prestamo.cliente.telefono }}</a>
+                        </p>
+                        <p class="mb-0">
+                            <i class="bi bi-geo-alt"></i> {{ prestamo.cliente.direccion_negocio or 'Sin dirección' }}
+                        </p>
+                        <a href="https://wa.me/57{{ prestamo.cliente.telefono }}" 
+                           target="_blank" class="btn btn-success btn-sm mt-2 w-100">
+                            <i class="bi bi-whatsapp"></i> Abrir WhatsApp
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Info del préstamo -->
+                <div class="card info-destacada">
+                    <h6>Resumen del Crédito #{{ prestamo.id }}</h6>
+                    <hr class="bg-white">
+                    <div class="row mb-2">
+                        <div class="col-6">
+                            <small>Prestado</small>
+                            <h5>{{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.monto_prestado) }}</h5>
+                        </div>
+                        <div class="col-6">
+                            <small>Total a Pagar</small>
+                            <h5>{{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.monto_a_pagar) }}</h5>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <small>Saldo Actual</small>
+                        <h3>{{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.saldo_actual) }}</h3>
+                    </div>
+                    <div class="mb-2">
+                        <small>Valor Cuota</small>
+                        <h4>{{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.valor_cuota) }}</h4>
+                    </div>
+                    <div class="row">
+                        <div class="col-6">
+                            <small>Cuotas Pagadas</small>
+                            <h5>{{ prestamo.cuotas_pagadas }}</h5>
+                        </div>
+                        <div class="col-6">
+                            <small>Cuotas Pendientes</small>
+                            <h5>{{ prestamo.numero_cuotas - prestamo.cuotas_pagadas }}</h5>
+                        </div>
+                    </div>
+                    {% if prestamo.cuotas_atrasadas > 0 %}
+                    <div class="alert alert-warning mt-3 mb-0">
+                        <strong>⚠️ Cuotas Atrasadas: {{ prestamo.cuotas_atrasadas }}</strong>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Columna formulario -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header pago-header">
+                        <h4 class="mb-0"><i class="bi bi-cash-coin"></i> Registrar Pago</h4>
+                    </div>
+                    <div class="card-body">
+                        {% if error %}
+                        <div class="alert alert-warning">
+                            {{ error }}
+                            <div class="mt-3">
+                                <button type="button" class="btn btn-warning" onclick="document.getElementById('forzar_pago').value='1'; document.getElementById('formPago').submit();">
+                                    <i class="bi bi-check-circle"></i> Sí, Confirmar Pago
+                                </button>
+                                <a href="/cobro/lista" class="btn btn-secondary">
+                                    <i class="bi bi-x-circle"></i> Cancelar
+                                </a>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <form method="POST" action="/cobro/guardar" id="formPago">
+                            <input type="hidden" name="prestamo_id" value="{{ prestamo.id }}">
+                            <input type="hidden" name="saldo_anterior" value="{{ prestamo.saldo_actual }}">
+                            <input type="hidden" name="forzar_pago" id="forzar_pago" value="0">
+
+                            <!-- Tipo de pago -->
+                            <div class="mb-3">
+                                <label class="form-label">Tipo de Pago *</label>
+                                <select name="tipo_pago" class="form-select" id="tipoPago">
+                                    <option value="NORMAL">Pago Normal (1 cuota)</option>
+                                    <option value="ABONO">Abono Parcial</option>
+                                    <option value="MULTIPLE">Pagar Múltiples Cuotas</option>
+                                    <option value="COMPLETO">Pago Completo (Liquidar)</option>
+                                </select>
+                            </div>
+
+                            <!-- Número de cuotas (solo para MULTIPLE) -->
+                            <div class="mb-3" id="divNumeroCuotas" style="display: none;">
+                                <label class="form-label">Número de Cuotas a Pagar *</label>
+                                <input type="number" name="numero_cuotas_pagadas" class="form-control" 
+                                       id="numeroCuotas" min="1" max="{{ prestamo.numero_cuotas - prestamo.cuotas_pagadas }}" 
+                                       value="1">
+                            </div>
+
+                            <!-- Monto -->
+                            <div class="mb-3">
+                                <label class="form-label">Monto Recibido *</label>
+                                <input type="number" name="monto" class="form-control form-control-lg" 
+                                       id="montoPago" required min="1" step="1" 
+                                       value="{{ prestamo.valor_cuota }}">
+                                
+                                <!-- Botones rápidos -->
+                                <div class="mt-2">
+                                    <button type="button" class="btn btn-outline-primary btn-sm btn-monto-rapido" 
+                                            onclick="setMonto({{ prestamo.valor_cuota }})">
+                                        1 Cuota ({{ "{:,.0f}".format(prestamo.valor_cuota) }})
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm btn-monto-rapido" 
+                                            onclick="setMonto({{ prestamo.valor_cuota * 2 }})">
+                                        2 Cuotas ({{ "{:,.0f}".format(prestamo.valor_cuota * 2) }})
+                                    </button>
+                                    <button type="button" class="btn btn-outline-success btn-sm btn-monto-rapido" 
+                                            onclick="setMonto({{ prestamo.saldo_actual }})">
+                                        Todo ({{ "{:,.0f}".format(prestamo.saldo_actual) }})
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Observaciones -->
+                            <div class="mb-3">
+                                <label class="form-label">Observaciones</label>
+                                <textarea name="observaciones" class="form-control" rows="3" 
+                                          placeholder="Ej: Cliente pagó con atraso, prometió ponerse al día..."></textarea>
+                            </div>
+
+                            <!-- Cálculo automático -->
+                            <div class="alert alert-info">
+                                <h6>Cálculo Automático:</h6>
+                                <p class="mb-1">
+                                    <strong>Saldo Anterior:</strong> {{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.saldo_actual) }}
+                                </p>
+                                <p class="mb-1">
+                                    <strong>Monto a Pagar:</strong> <span id="montoDisplay">{{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.valor_cuota) }}</span>
+                                </p>
+                                <hr>
+                                <p class="mb-0">
+                                    <strong>Nuevo Saldo:</strong> <span id="nuevoSaldo" class="text-primary">{{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.saldo_actual - prestamo.valor_cuota) }}</span>
+                                </p>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="bi bi-check-circle"></i> Confirmar Pago
+                                </button>
+                                <a href="/cobro/lista" class="btn btn-secondary">
+                                    <i class="bi bi-x-circle"></i> Cancelar
+                                </a>
+                                <button type="button" class="btn btn-outline-warning" onclick="registrarVisita()">
+                                    <i class="bi bi-clipboard-check"></i> Registrar Visita (No Pagó)
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const saldoActual = {{ prestamo.saldo_actual }};
+        const moneda = "{{ prestamo.moneda }}";
+        const valorCuota = {{ prestamo.valor_cuota }};
+
+        // Mostrar/ocultar número de cuotas
+        document.getElementById('tipoPago').addEventListener('change', function() {
+            const tipo = this.value;
+            const divNumeroCuotas = document.getElementById('divNumeroCuotas');
+            const montoPago = document.getElementById('montoPago');
+
+            if (tipo === 'MULTIPLE') {
+                divNumeroCuotas.style.display = 'block';
+                montoPago.value = valorCuota;
+            } else if (tipo === 'COMPLETO') {
+                divNumeroCuotas.style.display = 'none';
+                montoPago.value = saldoActual;
+            } else if (tipo === 'NORMAL') {
+                divNumeroCuotas.style.display = 'none';
+                montoPago.value = valorCuota;
+            } else {
+                divNumeroCuotas.style.display = 'none';
+            }
+            actualizarCalculo();
+        });
+
+        // Actualizar cálculo en tiempo real
+        document.getElementById('montoPago').addEventListener('input', actualizarCalculo);
+        document.getElementById('numeroCuotas').addEventListener('input', function() {
+            const numCuotas = parseInt(this.value) || 1;
+            document.getElementById('montoPago').value = valorCuota * numCuotas;
+            actualizarCalculo();
+        });
+
+        function actualizarCalculo() {
+            const monto = parseFloat(document.getElementById('montoPago').value) || 0;
+            const nuevoSaldo = Math.max(0, saldoActual - monto);
+            
+            document.getElementById('montoDisplay').textContent = moneda + ' ' + monto.toLocaleString();
+            document.getElementById('nuevoSaldo').textContent = moneda + ' ' + nuevoSaldo.toLocaleString();
+        }
+
+        function setMonto(valor) {
+            document.getElementById('montoPago').value = valor;
+            actualizarCalculo();
+        }
+
+        function registrarVisita() {
+            if (confirm('¿Confirmar que visitaste al cliente pero no pagó?')) {
+                window.location.href = '/cobro/registrar-visita/{{ prestamo.id }}';
+            }
+        }
+    </script>
+</body>
+</html>
