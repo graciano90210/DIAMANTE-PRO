@@ -1,8 +1,11 @@
+
 from flask import Flask
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from .models import db
+from .extensions import cache
 import os
+from dotenv import load_dotenv
 try:
     import sentry_sdk
     from sentry_sdk.integrations.flask import FlaskIntegration
@@ -15,6 +18,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def create_app():
+    # Cargar variables de entorno desde .env si existe
+    load_dotenv()
     app = Flask(__name__)
     
     # Inicializar Sentry para monitoreo de errores (GitHub Student Pack)
@@ -50,13 +55,19 @@ def create_app():
     
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'diamante-pro-secret-2025')
-    
+
     # Configuración JWT para API móvil
-    app.config['JWT_SECRET_KEY'] = 'diamante-jwt-secret-2025-mobile'
+    app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'diamante-jwt-secret-2025-mobile')
     app.config['JWT_TOKEN_LOCATION'] = ['headers']
     app.config['JWT_HEADER_NAME'] = 'Authorization'
     app.config['JWT_HEADER_TYPE'] = 'Bearer'
-    
+
+    # Configuración de cache con Redis
+    redis_url = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+    app.config['CACHE_TYPE'] = 'RedisCache'
+    app.config['CACHE_REDIS_URL'] = redis_url
+    cache.init_app(app)
+
     # Inicializar extensiones
     db.init_app(app)
     jwt = JWTManager(app)
