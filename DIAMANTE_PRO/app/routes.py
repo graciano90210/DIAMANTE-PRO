@@ -1,5 +1,6 @@
 from flask import render_template, request, redirect, url_for, session, flash, make_response, send_file
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
 from .models import Usuario, Cliente, Prestamo, Pago, Transaccion, Sociedad, Ruta, AporteCapital, Activo, db
 from datetime import datetime, timedelta
 from sqlalchemy import func
@@ -39,7 +40,7 @@ def init_routes(app):
         
         user = Usuario.query.filter_by(usuario=usuario).first()
         
-        if user and user.password == password and user.activo:
+        if user and check_password_hash(user.password, password) and user.activo:
             session['usuario_id'] = user.id
             session['nombre'] = user.nombre
             session['rol'] = user.rol
@@ -419,28 +420,28 @@ def init_routes(app):
         
         rol = session.get('rol')
         usuario_id = session.get('usuario_id')
+        page = request.args.get('page', 1, type=int)
+        
+        query = Cliente.query
         
         # Si es cobrador, solo ver sus clientes (que tienen préstamos asignados a él)
         if rol == 'cobrador':
             # Obtener IDs de clientes que tienen préstamos del cobrador
-            clientes_ids = db.session.query(Prestamo.cliente_id).filter_by(cobrador_id=usuario_id).distinct().all()
-            clientes_ids = [c[0] for c in clientes_ids]
-            clientes = Cliente.query.filter(Cliente.id.in_(clientes_ids)).order_by(Cliente.fecha_registro.desc()).all()
+            clientes_ids = db.session.query(Prestamo.cliente_id).filter_by(cobrador_id=usuario_id).distinct()
+            query = query.filter(Cliente.id.in_(clientes_ids))
         else:
             # Dueño, gerente y secretaria ven todos los clientes (o filtrados por ruta)
             ruta_seleccionada_id = session.get('ruta_seleccionada_id')
             
             if ruta_seleccionada_id:
                 # Obtener clientes de la ruta seleccionada
-                clientes_ids = db.session.query(Prestamo.cliente_id).filter_by(ruta_id=ruta_seleccionada_id).distinct().all()
-                clientes_ids = [c[0] for c in clientes_ids]
-                clientes = Cliente.query.filter(Cliente.id.in_(clientes_ids)).order_by(Cliente.fecha_registro.desc()).all()
-            else:
-                # Ver todos los clientes
-                clientes = Cliente.query.order_by(Cliente.fecha_registro.desc()).all()
+                clientes_ids = db.session.query(Prestamo.cliente_id).filter_by(ruta_id=ruta_seleccionada_id).distinct()
+                query = query.filter(Cliente.id.in_(clientes_ids))
+        
+        clientes_paginados = query.order_by(Cliente.fecha_registro.desc()).paginate(page=page, per_page=20, error_out=False)
         
         return render_template('clientes_lista.html', 
-                             clientes=clientes,
+                             clientes=clientes_paginados,
                              nombre=session.get('nombre'), 
                              rol=session.get('rol'),
                              mensaje=request.args.get('mensaje'))
@@ -639,10 +640,13 @@ def init_routes(app):
         
         usuario_id = session.get('usuario_id')
         rol = session.get('rol')
+        page = request.args.get('page', 1, type=int)
+        
+        prestamos_paginados = None
         
         # Si es cobrador, solo ver sus préstamos asignados
         if rol == 'cobrador':
-            prestamos = Prestamo.query.filter_by(cobrador_id=usuario_id).order_by(Prestamo.fecha_inicio.desc()).all()
+            prestamos_paginados = Prestamo.query.filter_by(cobrador_id=usuario_id).order_by(Prestamo.fecha_inicio.desc()).paginate(page=page, per_page=20, error_out=False)
             
             # Estadísticas solo de sus préstamos
             total_prestado = db.session.query(func.sum(Prestamo.monto_prestado)).filter(
@@ -664,46 +668,24 @@ def init_routes(app):
             # Dueño, gerente y secretaria ven todos los préstamos (o filtrados por ruta)
             ruta_seleccionada_id = session.get('ruta_seleccionada_id')
             
+            base_query = Prestamo.query
+            stats_filter = Prestamo.estado == 'ACTIVO'
+
             if ruta_seleccionada_id:
                 # Filtrar por ruta seleccionada
-                prestamos = Prestamo.query.filter_by(ruta_id=ruta_seleccionada_id).order_by(Prestamo.fecha_inicio.desc()).all()
-                
-                total_prestado = db.session.query(func.sum(Prestamo.monto_prestado)).filter(
-                    Prestamo.estado == 'ACTIVO',
-                    Prestamo.ruta_id == ruta_seleccionada_id
-                ).scalar() or 0
-                
-                total_cartera = db.session.query(func.sum(Prestamo.saldo_actual)).filter(
-                    Prestamo.estado == 'ACTIVO',
-                    Prestamo.ruta_id == ruta_seleccionada_id
-                ).scalar() or 0
-                
-                prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO', ruta_id=ruta_seleccionada_id).count()
-                
-                ganancia_esperada = db.session.query(
-                    func.sum(Prestamo.monto_a_pagar - Prestamo.monto_prestado)
-                ).filter(Prestamo.estado == 'ACTIVO', Prestamo.ruta_id == ruta_seleccionada_id).scalar() or 0
-            else:
-                # Ver todos los préstamos
-                prestamos = Prestamo.query.order_by(Prestamo.fecha_inicio.desc()).all()
-                
-                # Estadísticas generales
-                total_prestado = db.session.query(func.sum(Prestamo.monto_prestado)).filter(
-                    Prestamo.estado == 'ACTIVO'
-                ).scalar() or 0
-                
-                total_cartera = db.session.query(func.sum(Prestamo.saldo_actual)).filter(
-                    Prestamo.estado == 'ACTIVO'
-                ).scalar() or 0
-                
-                prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO').count()
-                
-                ganancia_esperada = db.session.query(
-                func.sum(Prestamo.monto_a_pagar - Prestamo.monto_prestado)
-            ).filter(Prestamo.estado == 'ACTIVO').scalar() or 0
+                base_query = base_query.filter_by(ruta_id=ruta_seleccionada_id)
+                stats_filter = (Prestamo.estado == 'ACTIVO') & (Prestamo.ruta_id == ruta_seleccionada_id)
+            
+            prestamos_paginados = base_query.order_by(Prestamo.fecha_inicio.desc()).paginate(page=page, per_page=20, error_out=False)
+            
+            # Estadísticas generales o por ruta
+            total_prestado = db.session.query(func.sum(Prestamo.monto_prestado)).filter(stats_filter).scalar() or 0
+            total_cartera = db.session.query(func.sum(Prestamo.saldo_actual)).filter(stats_filter).scalar() or 0
+            prestamos_activos = Prestamo.query.filter(stats_filter).count()
+            ganancia_esperada = db.session.query(func.sum(Prestamo.monto_a_pagar - Prestamo.monto_prestado)).filter(stats_filter).scalar() or 0
         
         return render_template('prestamos_lista.html',
-                             prestamos=prestamos,
+                             prestamos=prestamos_paginados,
                              total_prestado=total_prestado,
                              total_cartera=total_cartera,
                              prestamos_activos=prestamos_activos,
@@ -1059,29 +1041,31 @@ def init_routes(app):
         # Obtener fecha de hoy
         hoy = datetime.now().date()
         
+        # Query base para préstamos activos
+        query = Prestamo.query.filter_by(estado='ACTIVO')
+        
         # Si es cobrador, solo ver sus préstamos asignados
         if rol == 'cobrador':
-            prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO', cobrador_id=usuario_id).order_by(
-                Prestamo.cuotas_atrasadas.desc()
-            ).all()
-        else:
-            # Lista de préstamos activos (todos)
-            prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO').order_by(
-                Prestamo.cuotas_atrasadas.desc()
-            ).all()
-        
-        # Filtrar préstamos que NO han pagado hoy
-        prestamos = []
-        for prestamo in prestamos_activos:
-            # Verificar si hay un pago registrado hoy para este préstamo
-            pago_hoy = Pago.query.filter(
-                Pago.prestamo_id == prestamo.id,
-                func.date(Pago.fecha_pago) == hoy
-            ).first()
+            query = query.filter_by(cobrador_id=usuario_id)
             
-            # Si NO pagó hoy, agregarlo a la lista
-            if not pago_hoy:
-                prestamos.append(prestamo)
+        prestamos_activos = query.order_by(Prestamo.cuotas_atrasadas.desc()).all()
+        
+        # --- OPTIMIZACIÓN N+1 ---
+        # 1. Obtener IDs de préstamos que SÍ pagaron hoy en una sola consulta
+        ids_con_pago_hoy = set()
+        if prestamos_activos:
+            prestamo_ids = [p.id for p in prestamos_activos]
+            
+            ids_pagados_query = db.session.query(Pago.prestamo_id).filter(
+                Pago.prestamo_id.in_(prestamo_ids),
+                func.date(Pago.fecha_pago) == hoy
+            ).distinct()
+            
+            ids_con_pago_hoy = {row[0] for row in ids_pagados_query}
+
+        # 2. Filtrar la lista en memoria (mucho más rápido que N queries)
+        prestamos = [p for p in prestamos_activos if p.id not in ids_con_pago_hoy]
+        # --- FIN OPTIMIZACIÓN ---
         
         # Estadísticas
         total_a_cobrar = sum(p.valor_cuota for p in prestamos)
@@ -1715,7 +1699,7 @@ Gracias por su pago!"""
             nuevo_usuario = Usuario(
                 nombre=nombre,
                 usuario=usuario,
-                password=password,
+                password=generate_password_hash(password),
                 rol=rol,
                 activo=True
             )
@@ -1764,7 +1748,7 @@ Gracias por su pago!"""
             # Solo actualizar contraseña si se proporciona una nueva
             nueva_password = request.form.get('password')
             if nueva_password:
-                usuario.password = nueva_password
+                usuario.password = generate_password_hash(nueva_password)
             
             activo = request.form.get('activo')
             usuario.activo = (activo == 'on')
