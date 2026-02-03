@@ -32,10 +32,13 @@ def dashboard():
     
     # Variables base
     capital_total_aportado = db.session.query(func.sum(AporteCapital.monto)).scalar() or 0
+    capital_invertido_activos = db.session.query(func.sum(Activo.valor_compra)).scalar() or 0
+    capital_disponible = capital_total_aportado - capital_invertido_activos
     notificaciones = []
     mensajes_sin_leer = 0
     total_clientes = Cliente.query.count()
     clientes_vip = 0
+    solicitudes_pendientes = 0  # Para futuras solicitudes de préstamos pendientes
     
     # Cargar todas las rutas para el filtro
     todas_las_rutas = Ruta.query.order_by(Ruta.nombre).all()
@@ -150,7 +153,7 @@ def dashboard():
     riesgo_labels = [r[0] if r[0] else 'NUEVO' for r in riesgo_stats]
     riesgo_data = [r[1] for r in riesgo_stats]
     
-    return render_template('dashboard.html',
+    return render_template('dashboard_new.html',
         nombre=session.get('nombre'),
         rol=session.get('rol'),
         total_prestamos_activos=total_prestamos_activos,
@@ -178,6 +181,9 @@ def dashboard():
         riesgo_data=riesgo_data,
         clientes_vip=clientes_vip,
         capital_total_aportado=capital_total_aportado,
+        capital_invertido_activos=capital_invertido_activos,
+        capital_disponible=capital_disponible,
+        solicitudes_pendientes=solicitudes_pendientes,
         notificaciones=notificaciones,
         mensajes_sin_leer=mensajes_sin_leer,
         total_clientes=total_clientes

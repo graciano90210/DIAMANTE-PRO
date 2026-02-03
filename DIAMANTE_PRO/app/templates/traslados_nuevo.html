@@ -1,309 +1,350 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Nuevo Traslado - Diamante Pro</title>
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark-theme.css') }}">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <style>
-        .tipo-traslado-card {
-            cursor: pointer;
-            transition: all 0.3s;
-            border: 3px solid transparent;
-        }
-        .tipo-traslado-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-        }
-        .tipo-traslado-card.selected {
-            border-color: #0d6efd;
-            background-color: #e7f3ff;
-        }
-        .formulario-traslado {
-            display: none;
-        }
-        .formulario-traslado.active {
-            display: block;
-        }
-    </style>
-</head>
-<body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/dashboard" style="display: inline-flex; align-items: center; gap: 10px; font-weight: 600;">
-                <svg style="width: 28px; height: 28px; fill: #60a5fa;" viewBox="0 0 24 24">
-                    <path d="M12 2L3 7v10l9 5 9-5V7l-9-5zm0 2.18L18.18 7 12 10.82 5.82 7 12 4.18zM5 8.82l6 3.5v7.86l-6-3.33V8.82zm8 11.36v-7.86l6-3.5v8.03l-6 3.33z"/>
-                </svg>
-                <span>DIAMANTE PRO</span>
-            </a>
-            <div class="d-flex align-items-center">
-                <span class="text-white me-3">
-                    <i class="bi bi-person-circle"></i> {{ nombre }}
-                </span>
+{% extends "base.html" %}
+
+{% block title %}Nuevo Traslado - Diamante PRO{% endblock %}
+
+{% block page_title %}
+<i class="fas fa-exchange-alt me-2"></i>Nuevo Traslado de Efectivo
+{% endblock %}
+
+{% block page_actions %}
+<a href="{{ url_for('finanzas.traslados_lista') }}" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-left me-1"></i> Volver
+</a>
+{% endblock %}
+
+{% block content %}
+<style>
+    .tipo-traslado-card {
+        cursor: pointer;
+        transition: all 0.3s;
+        border: 3px solid transparent;
+    }
+    .tipo-traslado-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    }
+    .tipo-traslado-card.selected {
+        border-color: #0d6efd;
+        background-color: #e7f3ff;
+    }
+    .formulario-traslado {
+        display: none;
+    }
+    .formulario-traslado.active {
+        display: block;
+    }
+</style>
+
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white py-3">
+                <h5 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>Registrar Traslado de Dinero</h5>
             </div>
-        </div>
-    </nav>
+            <div class="card-body p-4">
+                {% if error %}
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i>{{ error }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endif %}
 
-    <div class="container mt-4">
-        <div class="row mb-3">
-            <div class="col">
-                <a href="/traslados" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left"></i> Volver a Traslados
-                </a>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-10 offset-md-1">
-                <div class="card">
-                    <div class="card-header bg-dark text-white">
-                        <h4 class="mb-0"><i class="bi bi-arrow-left-right"></i> Registrar Traslado de Dinero</h4>
-                    </div>
-                    <div class="card-body">
-                        {% if error %}
-                        <div class="alert alert-danger">{{ error }}</div>
-                        {% endif %}
-
-                        <!-- Paso 1: Seleccionar Tipo de Traslado -->
-                        <h5 class="mb-3">1. Selecciona el Tipo de Traslado</h5>
-                        <div class="row mb-4">
-                            <div class="col-md-4">
-                                <div class="card tipo-traslado-card" onclick="seleccionarTipo('general_a_ruta')">
-                                    <div class="card-body text-center">
-                                        <i class="bi bi-arrow-down-circle text-success" style="font-size: 3rem;"></i>
-                                        <h5 class="mt-3">Caja General → Ruta</h5>
-                                        <p class="text-muted">Enviar dinero a un cobrador para préstamos</p>
-                                    </div>
-                                </div>
+                <!-- Paso 1: Seleccionar Tipo de Traslado -->
+                <h5 class="mb-3"><span class="badge bg-primary me-2">1</span>Selecciona el Tipo de Traslado</h5>
+                <div class="row mb-4 g-3">
+                    <div class="col-md-4">
+                        <div class="card tipo-traslado-card h-100" onclick="seleccionarTipo('caja_a_ruta')">
+                            <div class="card-body text-center py-4">
+                                <i class="fas fa-arrow-circle-down text-success" style="font-size: 3rem;"></i>
+                                <h5 class="mt-3">Caja Mayor → Ruta</h5>
+                                <p class="text-muted mb-0">Enviar dinero a un cobrador para préstamos</p>
                             </div>
-                            <div class="col-md-4">
-                                <div class="card tipo-traslado-card" onclick="seleccionarTipo('ruta_a_general')">
-                                    <div class="card-body text-center">
-                                        <i class="bi bi-arrow-up-circle text-danger" style="font-size: 3rem;"></i>
-                                        <h5 class="mt-3">Ruta → Caja General</h5>
-                                        <p class="text-muted">Recibir dinero de un cobrador al final del día</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="card tipo-traslado-card" onclick="seleccionarTipo('ruta_a_ruta')">
-                                    <div class="card-body text-center">
-                                        <i class="bi bi-arrow-left-right text-info" style="font-size: 3rem;"></i>
-                                        <h5 class="mt-3">Ruta → Ruta</h5>
-                                        <p class="text-muted">Transferir dinero entre cobradores</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Paso 2: Formulario -->
-                        <div id="formulario-general-ruta" class="formulario-traslado">
-                            <h5 class="mb-3">2. Datos del Traslado (Caja General → Ruta)</h5>
-                            <form method="POST" action="/traslados/guardar">
-                                <input type="hidden" name="tipo_traslado" value="general_a_ruta">
-                                
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Fecha del Traslado *</label>
-                                        <input type="date" name="fecha" class="form-control" required value="{{ fecha_hoy }}">
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Monto a Trasladar *</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">$</span>
-                                            <input type="number" name="monto" class="form-control" required min="1" step="0.01">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label">Cobrador que Recibe el Dinero *</label>
-                                    <select name="cobrador_id" class="form-select" required>
-                                        <option value="">-- Seleccione un cobrador --</option>
-                                        {% for cobrador in cobradores %}
-                                        <option value="{{ cobrador.id }}">{{ cobrador.nombre }} - {{ cobrador.rol|capitalize }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label">Descripción / Observaciones</label>
-                                    <textarea name="descripcion" class="form-control" rows="3" placeholder="Ej: Dinero para préstamos de la semana"></textarea>
-                                </div>
-
-                                <div class="alert alert-info">
-                                    <i class="bi bi-info-circle"></i>
-                                    <strong>Nota:</strong> Este traslado registrará una salida de la caja general y una entrada en la ruta del cobrador seleccionado.
-                                </div>
-
-                                <div class="d-grid gap-2">
-                                    <button type="submit" class="btn btn-success btn-lg">
-                                        <i class="bi bi-check-circle"></i> Registrar Traslado
-                                    </button>
-                                    <button type="button" class="btn btn-secondary" onclick="cancelarSeleccion()">
-                                        Cancelar
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-
-                        <div id="formulario-ruta-general" class="formulario-traslado">
-                            <h5 class="mb-3">2. Datos del Traslado (Ruta → Caja General)</h5>
-                            <form method="POST" action="/traslados/guardar">
-                                <input type="hidden" name="tipo_traslado" value="ruta_a_general">
-                                
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Fecha del Traslado *</label>
-                                        <input type="date" name="fecha" class="form-control" required value="{{ fecha_hoy }}">
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Monto a Trasladar *</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">$</span>
-                                            <input type="number" name="monto" class="form-control" required min="1" step="0.01">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label">Cobrador que Entrega el Dinero *</label>
-                                    <select name="cobrador_id" class="form-select" required>
-                                        <option value="">-- Seleccione un cobrador --</option>
-                                        {% for cobrador in cobradores %}
-                                        <option value="{{ cobrador.id }}">{{ cobrador.nombre }} - {{ cobrador.rol|capitalize }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label">Descripción / Observaciones</label>
-                                    <textarea name="descripcion" class="form-control" rows="3" placeholder="Ej: Devolución de dinero sobrante del día"></textarea>
-                                </div>
-
-                                <div class="alert alert-warning">
-                                    <i class="bi bi-exclamation-triangle"></i>
-                                    <strong>Nota:</strong> Este traslado registrará una salida de la ruta del cobrador y una entrada en la caja general.
-                                </div>
-
-                                <div class="d-grid gap-2">
-                                    <button type="submit" class="btn btn-danger btn-lg">
-                                        <i class="bi bi-check-circle"></i> Registrar Traslado
-                                    </button>
-                                    <button type="button" class="btn btn-secondary" onclick="cancelarSeleccion()">
-                                        Cancelar
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-
-                        <div id="formulario-ruta-ruta" class="formulario-traslado">
-                            <h5 class="mb-3">2. Datos del Traslado (Ruta → Ruta)</h5>
-                            <form method="POST" action="/traslados/guardar">
-                                <input type="hidden" name="tipo_traslado" value="ruta_a_ruta">
-                                
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Fecha del Traslado *</label>
-                                        <input type="date" name="fecha" class="form-control" required value="{{ fecha_hoy }}">
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Monto a Trasladar *</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">$</span>
-                                            <input type="number" name="monto" class="form-control" required min="1" step="0.01">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Cobrador Origen (Entrega el Dinero) *</label>
-                                        <select name="cobrador_origen_id" class="form-select" required>
-                                            <option value="">-- Seleccione un cobrador --</option>
-                                            {% for cobrador in cobradores %}
-                                            <option value="{{ cobrador.id }}">{{ cobrador.nombre }} - {{ cobrador.rol|capitalize }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Cobrador Destino (Recibe el Dinero) *</label>
-                                        <select name="cobrador_destino_id" class="form-select" required>
-                                            <option value="">-- Seleccione un cobrador --</option>
-                                            {% for cobrador in cobradores %}
-                                            <option value="{{ cobrador.id }}">{{ cobrador.nombre }} - {{ cobrador.rol|capitalize }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label">Descripción / Observaciones</label>
-                                    <textarea name="descripcion" class="form-control" rows="3" placeholder="Ej: Traslado de dinero entre rutas"></textarea>
-                                </div>
-
-                                <div class="alert alert-info">
-                                    <i class="bi bi-info-circle"></i>
-                                    <strong>Nota:</strong> Este traslado registrará una salida de la ruta del cobrador origen y una entrada en la ruta del cobrador destino.
-                                </div>
-
-                                <div class="d-grid gap-2">
-                                    <button type="submit" class="btn btn-info btn-lg">
-                                        <i class="bi bi-check-circle"></i> Registrar Traslado
-                                    </button>
-                                    <button type="button" class="btn btn-secondary" onclick="cancelarSeleccion()">
-                                        Cancelar
-                                    </button>
-                                </div>
-                            </form>
                         </div>
                     </div>
+                    <div class="col-md-4">
+                        <div class="card tipo-traslado-card h-100" onclick="seleccionarTipo('ruta_a_caja')">
+                            <div class="card-body text-center py-4">
+                                <i class="fas fa-arrow-circle-up text-danger" style="font-size: 3rem;"></i>
+                                <h5 class="mt-3">Ruta → Caja Mayor</h5>
+                                <p class="text-muted mb-0">Recibir dinero de un cobrador al final del día</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card tipo-traslado-card h-100" onclick="seleccionarTipo('ruta_a_ruta')">
+                            <div class="card-body text-center py-4">
+                                <i class="fas fa-exchange-alt text-info" style="font-size: 3rem;"></i>
+                                <h5 class="mt-3">Ruta ↔ Ruta</h5>
+                                <p class="text-muted mb-0">Transferir dinero entre cobradores</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Formulario Caja Mayor → Ruta -->
+                <div id="formulario-caja-ruta" class="formulario-traslado">
+                    <hr>
+                    <h5 class="mb-3"><span class="badge bg-success me-2">2</span>Datos del Traslado (Caja Mayor → Ruta)</h5>
+                    <form method="POST" action="{{ url_for('finanzas.traslados_guardar') }}">
+                        <input type="hidden" name="tipo_traslado" value="caja_a_ruta">
+                        
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Fecha *</label>
+                                <input type="date" name="fecha" class="form-control form-control-lg" required value="{{ fecha_hoy }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Monto *</label>
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text bg-success text-white">$</span>
+                                    <input type="number" name="monto" class="form-control" required min="1" step="1">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Ruta Destino</label>
+                                <select name="ruta_destino_id" class="form-select form-select-lg">
+                                    <option value="">-- Seleccionar Ruta --</option>
+                                    {% for ruta in rutas %}
+                                    <option value="{{ ruta.id }}">{{ ruta.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mt-1">
+                            <div class="col-md-6">
+                                <label class="form-label">O Cobrador que Recibe *</label>
+                                <select name="cobrador_destino_id" class="form-select">
+                                    <option value="">-- Seleccionar Cobrador --</option>
+                                    {% for cobrador in cobradores %}
+                                    <option value="{{ cobrador.id }}">{{ cobrador.nombre }} - {{ cobrador.rol|capitalize }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Descripción</label>
+                                <input type="text" name="descripcion" class="form-control" placeholder="Ej: Dinero para préstamos de la semana">
+                            </div>
+                        </div>
+
+                        <div class="alert alert-success mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Este traslado registrará una <strong>salida</strong> de la Caja Mayor y una <strong>entrada</strong> en la ruta del cobrador.
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="button" class="btn btn-outline-secondary" onclick="cancelarSeleccion()">
+                                <i class="fas fa-times me-1"></i> Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-check me-1"></i> Registrar Traslado
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Formulario Ruta → Caja Mayor -->
+                <div id="formulario-ruta-caja" class="formulario-traslado">
+                    <hr>
+                    <h5 class="mb-3"><span class="badge bg-danger me-2">2</span>Datos del Traslado (Ruta → Caja Mayor)</h5>
+                    <form method="POST" action="{{ url_for('finanzas.traslados_guardar') }}">
+                        <input type="hidden" name="tipo_traslado" value="ruta_a_caja">
+                        
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Fecha *</label>
+                                <input type="date" name="fecha" class="form-control form-control-lg" required value="{{ fecha_hoy }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Monto *</label>
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text bg-danger text-white">$</span>
+                                    <input type="number" name="monto" class="form-control" required min="1" step="1">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Ruta Origen</label>
+                                <select name="ruta_origen_id" class="form-select form-select-lg">
+                                    <option value="">-- Seleccionar Ruta --</option>
+                                    {% for ruta in rutas %}
+                                    <option value="{{ ruta.id }}">{{ ruta.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mt-1">
+                            <div class="col-md-6">
+                                <label class="form-label">O Cobrador que Entrega *</label>
+                                <select name="cobrador_origen_id" class="form-select">
+                                    <option value="">-- Seleccionar Cobrador --</option>
+                                    {% for cobrador in cobradores %}
+                                    <option value="{{ cobrador.id }}">{{ cobrador.nombre }} - {{ cobrador.rol|capitalize }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Descripción</label>
+                                <input type="text" name="descripcion" class="form-control" placeholder="Ej: Devolución de dinero sobrante del día">
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning mt-3">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Este traslado registrará una <strong>salida</strong> de la ruta del cobrador y una <strong>entrada</strong> en la Caja Mayor.
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="button" class="btn btn-outline-secondary" onclick="cancelarSeleccion()">
+                                <i class="fas fa-times me-1"></i> Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-danger btn-lg">
+                                <i class="fas fa-check me-1"></i> Registrar Traslado
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Formulario Ruta → Ruta -->
+                <div id="formulario-ruta-ruta" class="formulario-traslado">
+                    <hr>
+                    <h5 class="mb-3"><span class="badge bg-info me-2">2</span>Datos del Traslado (Ruta ↔ Ruta)</h5>
+                    <form method="POST" action="{{ url_for('finanzas.traslados_guardar') }}">
+                        <input type="hidden" name="tipo_traslado" value="ruta_a_ruta">
+                        
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Fecha *</label>
+                                <input type="date" name="fecha" class="form-control form-control-lg" required value="{{ fecha_hoy }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Monto *</label>
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text bg-info text-white">$</span>
+                                    <input type="number" name="monto" class="form-control" required min="1" step="1">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mt-3">
+                            <div class="col-md-6">
+                                <div class="card border-danger">
+                                    <div class="card-header bg-danger text-white">
+                                        <i class="fas fa-arrow-circle-up me-2"></i>ORIGEN (Entrega)
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">Ruta Origen</label>
+                                            <select name="ruta_origen_id" class="form-select">
+                                                <option value="">-- Seleccionar Ruta --</option>
+                                                {% for ruta in rutas %}
+                                                <option value="{{ ruta.id }}">{{ ruta.nombre }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="form-label">O Cobrador Origen</label>
+                                            <select name="cobrador_origen_id" class="form-select">
+                                                <option value="">-- Opcional --</option>
+                                                {% for cobrador in cobradores %}
+                                                <option value="{{ cobrador.id }}">{{ cobrador.nombre }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card border-success">
+                                    <div class="card-header bg-success text-white">
+                                        <i class="fas fa-arrow-circle-down me-2"></i>DESTINO (Recibe)
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">Ruta Destino</label>
+                                            <select name="ruta_destino_id" class="form-select">
+                                                <option value="">-- Seleccionar Ruta --</option>
+                                                {% for ruta in rutas %}
+                                                <option value="{{ ruta.id }}">{{ ruta.nombre }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="form-label">O Cobrador Destino</label>
+                                            <select name="cobrador_destino_id" class="form-select">
+                                                <option value="">-- Opcional --</option>
+                                                {% for cobrador in cobradores %}
+                                                <option value="{{ cobrador.id }}">{{ cobrador.nombre }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            <label class="form-label">Descripción</label>
+                            <input type="text" name="descripcion" class="form-control" placeholder="Ej: Traslado de dinero entre rutas">
+                        </div>
+
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Este traslado registrará una <strong>salida</strong> de la ruta origen y una <strong>entrada</strong> en la ruta destino.
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="button" class="btn btn-outline-secondary" onclick="cancelarSeleccion()">
+                                <i class="fas fa-times me-1"></i> Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-info btn-lg text-white">
+                                <i class="fas fa-check me-1"></i> Registrar Traslado
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        function seleccionarTipo(tipo) {
-            // Remover selección anterior
-            document.querySelectorAll('.tipo-traslado-card').forEach(card => {
-                card.classList.remove('selected');
-            });
-            
-            // Ocultar todos los formularios
-            document.querySelectorAll('.formulario-traslado').forEach(form => {
-                form.classList.remove('active');
-            });
-            
-            // Marcar el tipo seleccionado
-            event.currentTarget.classList.add('selected');
-            
-            // Mostrar el formulario correspondiente
-            if (tipo === 'general_a_ruta') {
-                document.getElementById('formulario-general-ruta').classList.add('active');
-            } else if (tipo === 'ruta_a_general') {
-                document.getElementById('formulario-ruta-general').classList.add('active');
-            } else if (tipo === 'ruta_a_ruta') {
-                document.getElementById('formulario-ruta-ruta').classList.add('active');
-            }
-            
-            // Scroll al formulario
-            setTimeout(() => {
-                document.querySelector('.formulario-traslado.active').scrollIntoView({ behavior: 'smooth' });
-            }, 100);
+<script>
+    function seleccionarTipo(tipo) {
+        // Remover selección anterior
+        document.querySelectorAll('.tipo-traslado-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        
+        // Ocultar todos los formularios
+        document.querySelectorAll('.formulario-traslado').forEach(form => {
+            form.classList.remove('active');
+        });
+        
+        // Marcar el tipo seleccionado
+        event.currentTarget.classList.add('selected');
+        
+        // Mostrar el formulario correspondiente
+        if (tipo === 'caja_a_ruta') {
+            document.getElementById('formulario-caja-ruta').classList.add('active');
+        } else if (tipo === 'ruta_a_caja') {
+            document.getElementById('formulario-ruta-caja').classList.add('active');
+        } else if (tipo === 'ruta_a_ruta') {
+            document.getElementById('formulario-ruta-ruta').classList.add('active');
         }
         
-        function cancelarSeleccion() {
-            document.querySelectorAll('.tipo-traslado-card').forEach(card => {
-                card.classList.remove('selected');
-            });
-            document.querySelectorAll('.formulario-traslado').forEach(form => {
-                form.classList.remove('active');
-            });
-        }
-    </script>
-</body>
-</html>
+        // Scroll al formulario
+        setTimeout(() => {
+            document.querySelector('.formulario-traslado.active').scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+    }
+    
+    function cancelarSeleccion() {
+        document.querySelectorAll('.tipo-traslado-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        document.querySelectorAll('.formulario-traslado').forEach(form => {
+            form.classList.remove('active');
+        });
+    }
+</script>
+{% endblock %}

@@ -119,7 +119,7 @@ def create_app():
     app.register_blueprint(sociedades_bp)
     
     from .blueprints.finanzas import finanzas_bp
-    app.register_blueprint(finanzas_bp)
+    app.register_blueprint(finanzas_bp, url_prefix='/finanzas')
     
     from .blueprints.reportes import reportes_bp
     app.register_blueprint(reportes_bp)

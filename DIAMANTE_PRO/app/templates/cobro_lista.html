@@ -1,281 +1,277 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Ruta de Cobro - Diamante Pro</title>
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark-theme.css') }}">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <style>
-        .credito-card {
-            border-left: 5px solid;
-            margin-bottom: 15px;
-            transition: transform 0.2s;
-        }
-        .credito-card:hover {
-            transform: translateX(5px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-        .credito-verde { border-left-color: #28a745; background: #f8fff9; }
-        .credito-amarillo { border-left-color: #ffc107; background: #fffef8; }
-        .credito-rojo { border-left-color: #dc3545; background: #fff8f8; }
-        .icono-estado {
-            font-size: 3rem;
-            opacity: 0.3;
-        }
-        .badge-cuotas { font-size: 0.9rem; }
-    </style>
-</head>
-<body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/dashboard" style="display: inline-flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: 0.5px;">
-                <svg style="width: 28px; height: 28px; fill: #60a5fa;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2L3 7v10l9 5 9-5V7l-9-5zm0 2.18L18.18 7 12 10.82 5.82 7 12 4.18zM5 8.82l6 3.5v7.86l-6-3.33V8.82zm8 11.36v-7.86l6-3.5v8.03l-6 3.33z"/>
-                </svg>
-                <span>DIAMANTE PRO</span>
-            </a>
-            <div class="d-flex align-items-center">
-                <span class="text-white me-3">
-                    <i class="bi bi-person-circle"></i> {{ nombre }} 
-                    <span class="badge bg-secondary text-white">{{ rol }}</span>
-                </span>
-                <a href="/logout" class="btn btn-outline-light btn-sm">
-                    <i class="bi bi-box-arrow-right"></i> Salir
-                </a>
-            </div>
-        </div>
-    </nav>
+{% extends "base.html" %}
 
-    <!-- Main Content -->
-    <div class="container-fluid mt-4">
-        <div class="row mb-4">
-            <div class="col-md-8">
-                <h2><i class="bi bi-list-check"></i> Ruta de Cobro del Día</h2>
-                <p class="text-muted">{{ fecha_hoy }}</p>
-            </div>
-            <div class="col-md-4 text-end">
-                <button class="btn btn-success" onclick="location.reload()">
-                    <i class="bi bi-arrow-clockwise"></i> Actualizar
-                </button>
-            </div>
-        </div>
+{% block title %}Ruta de Cobro - Diamante Pro{% endblock %}
 
-        <!-- Resumen del día -->
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card bg-dark text-white">
-                    <div class="card-body">
-                        <h6>Total a Cobrar Hoy</h6>
-                        <h3>${{ "{:,.0f}".format(total_a_cobrar) }}</h3>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card bg-success text-white">
-                    <div class="card-body">
-                        <h6>Al Día</h6>
-                        <h3>{{ creditos_al_dia }}</h3>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card bg-warning text-dark">
-                    <div class="card-body">
-                        <h6>Con Atraso</h6>
-                        <h3>{{ creditos_atrasados }}</h3>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card bg-danger text-white">
-                    <div class="card-body">
-                        <h6>Mora Grave</h6>
-                        <h3>{{ creditos_mora }}</h3>
-                    </div>
-                </div>
-            </div>
-        </div>
+{% block extra_css %}
+<style>
+    .credito-card {
+        border-left: 5px solid;
+        margin-bottom: 15px;
+        transition: transform 0.2s;
+        border-radius: 8px;
+    }
+    .credito-card:hover {
+        transform: translateX(5px);
+    }
+    .credito-verde { border-left-color: var(--neon-green); }
+    .credito-amarillo { border-left-color: var(--neon-yellow); }
+    .credito-rojo { border-left-color: var(--neon-red); }
+    .icono-estado {
+        font-size: 2.5rem;
+        opacity: 0.5;
+    }
+    .badge-cuotas { font-size: 0.85rem; }
+</style>
+{% endblock %}
 
-        <!-- Búsqueda -->
-        <div class="card mb-3">
+{% block page_title %}
+<i class="bi bi-list-check me-2"></i>Ruta de Cobro del Día
+{% endblock %}
+
+{% block page_actions %}
+<span class="text-muted me-3">{{ fecha_hoy }}</span>
+<button class="btn btn-success" onclick="location.reload()">
+    <i class="bi bi-arrow-clockwise me-1"></i> Actualizar
+</button>
+{% endblock %}
+
+{% block content %}
+<!-- Resumen del día -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card h-100">
             <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <input type="text" class="form-control" id="buscar" placeholder="🔍 Buscar por nombre, documento o dirección...">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1">Total a Cobrar</p>
+                        <h3 class="mb-0">${{ "{:,.0f}".format(total_a_cobrar) }}</h3>
                     </div>
-                    <div class="col-md-3">
-                        <select class="form-select" id="filtroEstado">
-                            <option value="">Todos los estados</option>
-                            <option value="verde">Al día (Verde)</option>
-                            <option value="amarillo">Con atraso (Amarillo)</option>
-                            <option value="rojo">Mora grave (Rojo)</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <select class="form-select" id="ordenar">
-                            <option value="atraso">Ordenar por: Más atrasados</option>
-                            <option value="nombre">Ordenar por: Nombre</option>
-                            <option value="monto">Ordenar por: Monto mayor</option>
-                        </select>
+                    <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                        <i class="bi bi-cash"></i>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Lista de créditos -->
-        {% if prestamos %}
-            {% for prestamo in prestamos %}
-            {% set dias_atraso = prestamo.cuotas_atrasadas %}
-            {% if dias_atraso == 0 %}
-                {% set clase_color = 'credito-verde' %}
-                {% set icono = 'bi-hand-thumbs-up-fill text-success' %}
-                {% set badge_estado = 'success' %}
-                {% set texto_estado = 'Al día' %}
-            {% elif dias_atraso <= 3 %}
-                {% set clase_color = 'credito-amarillo' %}
-                {% set icono = 'bi-exclamation-triangle-fill text-warning' %}
-                {% set badge_estado = 'warning' %}
-                {% set texto_estado = 'Atraso leve' %}
-            {% else %}
-                {% set clase_color = 'credito-rojo' %}
-                {% set icono = 'bi-bell-fill text-danger' %}
-                {% set badge_estado = 'danger' %}
-                {% set texto_estado = 'MORA' %}
-            {% endif %}
-
-            <div class="card credito-card {{ clase_color }}" data-nombre="{{ prestamo.cliente.nombre }}" data-estado="{{ clase_color }}">
-                <div class="card-body">
-                    <div class="row">
-                        <!-- Icono de estado -->
-                        <div class="col-md-1 text-center">
-                            <i class="bi {{ icono }} icono-estado"></i>
-                            <div class="mt-2">
-                                <strong>#{{ prestamo.id }}</strong>
-                            </div>
-                        </div>
-
-                        <!-- Información del cliente -->
-                        <div class="col-md-5">
-                            <h5 class="mb-1">
-                                <strong>{{ prestamo.cliente.nombre }}</strong>
-                                {% if prestamo.cliente.es_vip %}
-                                <span class="badge bg-warning text-dark">⭐ VIP</span>
-                                {% endif %}
-                            </h5>
-                            <p class="mb-1 text-muted">
-                                <i class="bi bi-card-text"></i> {{ prestamo.cliente.documento }}
-                            </p>
-                            <p class="mb-1">
-                                <i class="bi bi-geo-alt"></i> {{ prestamo.cliente.direccion_negocio or 'Sin dirección' }}
-                            </p>
-                            <p class="mb-0">
-                                <i class="bi bi-telephone"></i> 
-                                <a href="tel:{{ prestamo.cliente.telefono }}">{{ prestamo.cliente.telefono }}</a>
-                            </p>
-                        </div>
-
-                        <!-- Información del préstamo -->
-                        <div class="col-md-4">
-                            <div class="row mb-2">
-                                <div class="col-6">
-                                    <small class="text-muted">Valor Cuota</small>
-                                    <h4>{{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.valor_cuota) }}</h4>
-                                </div>
-                                <div class="col-6">
-                                    <small class="text-muted">Saldo Total</small>
-                                    <h5 class="text-primary">{{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.saldo_actual) }}</h5>
-                                </div>
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-12">
-                                    <span class="badge badge-cuotas bg-secondary">
-                                        Cuotas: {{ prestamo.cuotas_pagadas }}/{{ prestamo.numero_cuotas }}
-                                    </span>
-                                    {% if dias_atraso > 0 %}
-                                    <span class="badge badge-cuotas bg-{{ badge_estado }}">
-                                        Atrasadas: {{ prestamo.cuotas_atrasadas }}
-                                    </span>
-                                    {% endif %}
-                                    <span class="badge badge-cuotas bg-info">
-                                        {{ prestamo.frecuencia }}
-                                    </span>
-                                </div>
-                            </div>
-                            
-                            {% if prestamo.fecha_ultimo_pago %}
-                            <p class="mb-0 mt-2 small text-muted">
-                                <i class="bi bi-clock-history"></i> 
-                                Último pago: {{ prestamo.fecha_ultimo_pago.strftime('%d/%m/%Y') }}
-                            </p>
-                            {% endif %}
-                        </div>
-
-                        <!-- Acciones -->
-                        <div class="col-md-2 text-end">
-                            <div class="d-grid gap-2">
-                                <a href="/cobro/registrar/{{ prestamo.id }}" class="btn btn-success">
-                                    <i class="bi bi-cash-coin"></i> Cobrar
-                                </a>
-                                <a href="/prestamos/ver/{{ prestamo.id }}" class="btn btn-outline-primary btn-sm">
-                                    <i class="bi bi-eye"></i> Ver
-                                </a>
-                                <a href="https://wa.me/57{{ prestamo.cliente.telefono }}" 
-                                   target="_blank" class="btn btn-outline-success btn-sm">
-                                    <i class="bi bi-whatsapp"></i> WhatsApp
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        {% else %}
-        <div class="text-center py-5">
-            <i class="bi bi-check-circle fs-1 text-success"></i>
-            <h4 class="mt-3">¡No hay créditos activos para cobrar hoy!</h4>
-            <p class="text-muted">Todos los pagos están al día o no hay préstamos activos.</p>
-        </div>
-        {% endif %}
     </div>
+    <div class="col-md-3">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1">Al Día</p>
+                        <h3 class="mb-0 text-success">{{ creditos_al_dia }}</h3>
+                    </div>
+                    <div class="stat-icon bg-success bg-opacity-10 text-success">
+                        <i class="bi bi-check-circle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1">Con Atraso</p>
+                        <h3 class="mb-0 text-warning">{{ creditos_atrasados }}</h3>
+                    </div>
+                    <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1">Mora Grave</p>
+                        <h3 class="mb-0 text-danger">{{ creditos_mora }}</h3>
+                    </div>
+                    <div class="stat-icon bg-danger bg-opacity-10 text-danger">
+                        <i class="bi bi-bell"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Búsqueda en tiempo real
-        document.getElementById('buscar').addEventListener('input', function(e) {
-            const busqueda = e.target.value.toLowerCase();
-            const cards = document.querySelectorAll('.credito-card');
-            
-            cards.forEach(card => {
-                const texto = card.textContent.toLowerCase();
-                if (texto.includes(busqueda)) {
-                    card.style.display = '';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-        });
+<!-- Búsqueda y filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control" id="buscar" placeholder="Buscar por nombre, documento o dirección...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="filtroEstado">
+                    <option value="">Todos los estados</option>
+                    <option value="verde">Al día (Verde)</option>
+                    <option value="amarillo">Con atraso (Amarillo)</option>
+                    <option value="rojo">Mora grave (Rojo)</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <select class="form-select" id="ordenar">
+                    <option value="atraso">Ordenar por: Más atrasados</option>
+                    <option value="nombre">Ordenar por: Nombre</option>
+                    <option value="monto">Ordenar por: Monto mayor</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
 
-        // Filtro por estado
-        document.getElementById('filtroEstado').addEventListener('change', function(e) {
-            const filtro = e.target.value;
-            const cards = document.querySelectorAll('.credito-card');
-            
-            cards.forEach(card => {
-                if (filtro === '') {
-                    card.style.display = '';
-                } else {
-                    const estado = card.dataset.estado;
-                    if (estado.includes(filtro)) {
-                        card.style.display = '';
-                    } else {
-                        card.style.display = 'none';
-                    }
-                }
-            });
-        });
-    </script>
-</body>
-</html>
+<!-- Lista de créditos -->
+{% if prestamos %}
+    {% for prestamo in prestamos %}
+    {% set dias_atraso = prestamo.cuotas_atrasadas %}
+    {% if dias_atraso == 0 %}
+        {% set clase_color = 'credito-verde' %}
+        {% set icono = 'bi-hand-thumbs-up-fill text-success' %}
+        {% set badge_estado = 'success' %}
+        {% set texto_estado = 'Al día' %}
+    {% elif dias_atraso <= 3 %}
+        {% set clase_color = 'credito-amarillo' %}
+        {% set icono = 'bi-exclamation-triangle-fill text-warning' %}
+        {% set badge_estado = 'warning' %}
+        {% set texto_estado = 'Atraso leve' %}
+    {% else %}
+        {% set clase_color = 'credito-rojo' %}
+        {% set icono = 'bi-bell-fill text-danger' %}
+        {% set badge_estado = 'danger' %}
+        {% set texto_estado = 'MORA' %}
+    {% endif %}
+
+    <div class="card credito-card {{ clase_color }}" data-nombre="{{ prestamo.cliente.nombre }}" data-estado="{{ clase_color }}">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <!-- Icono de estado -->
+                <div class="col-md-1 text-center">
+                    <i class="bi {{ icono }} icono-estado"></i>
+                    <div class="mt-2">
+                        <span class="badge bg-secondary">#{{ prestamo.id }}</span>
+                    </div>
+                </div>
+
+                <!-- Información del cliente -->
+                <div class="col-md-4">
+                    <h5 class="mb-1">
+                        <strong>{{ prestamo.cliente.nombre }}</strong>
+                        {% if prestamo.cliente.es_vip %}
+                        <span class="badge bg-warning text-dark"><i class="bi bi-star-fill"></i> VIP</span>
+                        {% endif %}
+                    </h5>
+                    <p class="mb-1 text-muted small">
+                        <i class="bi bi-card-text"></i> {{ prestamo.cliente.documento }}
+                    </p>
+                    <p class="mb-1 small">
+                        <i class="bi bi-geo-alt"></i> {{ prestamo.cliente.direccion_negocio or 'Sin dirección' }}
+                    </p>
+                    <p class="mb-0 small">
+                        <i class="bi bi-telephone"></i> 
+                        <a href="tel:{{ prestamo.cliente.telefono }}" class="text-decoration-none">{{ prestamo.cliente.telefono }}</a>
+                    </p>
+                </div>
+
+                <!-- Información del préstamo -->
+                <div class="col-md-4">
+                    <div class="row mb-2">
+                        <div class="col-6">
+                            <small class="text-muted">Valor Cuota</small>
+                            <h4 class="mb-0">{{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.valor_cuota) }}</h4>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Saldo Total</small>
+                            <h5 class="mb-0 text-primary">{{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.saldo_actual) }}</h5>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <span class="badge badge-cuotas bg-secondary">
+                            Cuotas: {{ prestamo.cuotas_pagadas }}/{{ prestamo.numero_cuotas }}
+                        </span>
+                        {% if dias_atraso > 0 %}
+                        <span class="badge badge-cuotas bg-{{ badge_estado }}">
+                            Atrasadas: {{ prestamo.cuotas_atrasadas }}
+                        </span>
+                        {% endif %}
+                        <span class="badge badge-cuotas bg-info">{{ prestamo.frecuencia }}</span>
+                    </div>
+                    
+                    {% if prestamo.fecha_ultimo_pago %}
+                    <p class="mb-0 mt-2 small text-muted">
+                        <i class="bi bi-clock-history"></i> 
+                        Último pago: {{ prestamo.fecha_ultimo_pago.strftime('%d/%m/%Y') }}
+                    </p>
+                    {% endif %}
+                </div>
+
+                <!-- Acciones -->
+                <div class="col-md-3 text-end">
+                    <div class="d-flex flex-column gap-2">
+                        <a href="{{ url_for('cobros.registrar', prestamo_id=prestamo.id) }}" class="btn btn-success">
+                            <i class="bi bi-cash-coin me-1"></i> Cobrar
+                        </a>
+                        <div class="btn-group">
+                            <a href="{{ url_for('prestamos.ver', id=prestamo.id) }}" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-eye"></i> Ver
+                            </a>
+                            <a href="https://wa.me/57{{ prestamo.cliente.telefono }}" 
+                               target="_blank" class="btn btn-outline-success btn-sm">
+                                <i class="bi bi-whatsapp"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="bi bi-check-circle fs-1 text-success"></i>
+        <h4 class="mt-3">¡No hay créditos activos para cobrar hoy!</h4>
+        <p class="text-muted">Todos los pagos están al día o no hay préstamos activos.</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Búsqueda en tiempo real
+document.getElementById('buscar').addEventListener('input', function(e) {
+    const busqueda = e.target.value.toLowerCase();
+    const cards = document.querySelectorAll('.credito-card');
+    
+    cards.forEach(card => {
+        const texto = card.textContent.toLowerCase();
+        card.style.display = texto.includes(busqueda) ? '' : 'none';
+    });
+});
+
+// Filtro por estado
+document.getElementById('filtroEstado').addEventListener('change', function(e) {
+    const filtro = e.target.value;
+    const cards = document.querySelectorAll('.credito-card');
+    
+    cards.forEach(card => {
+        if (!filtro) {
+            card.style.display = '';
+        } else {
+            const estado = card.dataset.estado;
+            card.style.display = estado.includes(filtro) ? '' : 'none';
+        }
+    });
+});
+</script>
+{% endblock %}

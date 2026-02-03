@@ -1,103 +1,123 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Traslado Exitoso - Diamante Pro</title>
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark-theme.css') }}">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-</head>
-<body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/dashboard" style="display: inline-flex; align-items: center; gap: 10px; font-weight: 600;">
-                <svg style="width: 28px; height: 28px; fill: #60a5fa;" viewBox="0 0 24 24">
-                    <path d="M12 2L3 7v10l9 5 9-5V7l-9-5zm0 2.18L18.18 7 12 10.82 5.82 7 12 4.18zM5 8.82l6 3.5v7.86l-6-3.33V8.82zm8 11.36v-7.86l6-3.5v8.03l-6 3.33z"/>
-                </svg>
-                <span>DIAMANTE PRO</span>
-            </a>
-            <div class="d-flex align-items-center">
-                <span class="text-white me-3">
-                    <i class="bi bi-person-circle"></i> {{ nombre }}
-                </span>
-            </div>
-        </div>
-    </nav>
+{% extends "base.html" %}
 
-    <div class="container mt-5">
-        <div class="row">
-            <div class="col-md-8 offset-md-2">
-                <div class="card shadow-lg">
-                    <div class="card-body text-center py-5">
-                        <i class="bi bi-check-circle-fill text-success" style="font-size: 5rem;"></i>
-                        <h2 class="mt-3">¡Traslado Registrado Exitosamente!</h2>
-                        <p class="text-muted">El movimiento de dinero ha sido registrado en el sistema</p>
+{% block title %}Traslado Exitoso - Diamante PRO{% endblock %}
+
+{% block page_title %}
+<i class="fas fa-check-circle text-success me-2"></i>Traslado Registrado
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card shadow-lg border-0">
+            <div class="card-body text-center p-5">
+                <div class="mb-4">
+                    <div style="width: 100px; height: 100px; margin: 0 auto; border-radius: 50%; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-check fa-3x text-white"></i>
+                    </div>
+                </div>
+                
+                <h2 class="text-success mb-3">¡Traslado Registrado!</h2>
+                <p class="text-muted mb-4">El movimiento de dinero se ha registrado correctamente</p>
+
+                <!-- Comprobante -->
+                <div class="card mb-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <div class="card-body">
+                        <h5 class="text-center mb-4">
+                            <i class="fas fa-receipt me-2"></i>COMPROBANTE #{{ traslado.id }}
+                        </h5>
                         
-                        <!-- Comprobante -->
-                        <div class="card mt-4 text-start" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-                            <div class="card-body">
-                                <h5 class="text-center mb-4">
-                                    <i class="bi bi-receipt"></i> COMPROBANTE DE TRASLADO #{{ traslado.id }}
-                                </h5>
-                                
-                                <div class="row mb-2">
-                                    <div class="col-6"><strong>Fecha:</strong></div>
-                                    <div class="col-6">{{ traslado.fecha.strftime('%d/%m/%Y %H:%M') }}</div>
+                        <div class="row text-start">
+                            <div class="col-6 mb-2">
+                                <small class="text-white-50">Tipo:</small>
+                                <div class="fw-bold">
+                                    {% if traslado.concepto == 'CAJA_MAYOR_A_RUTA' %}
+                                        Caja Mayor → Ruta
+                                    {% elif traslado.concepto == 'RUTA_A_CAJA_MAYOR' %}
+                                        Ruta → Caja Mayor
+                                    {% elif traslado.concepto == 'RUTA_A_RUTA' %}
+                                        Ruta ↔ Ruta
+                                    {% else %}
+                                        {{ traslado.concepto }}
+                                    {% endif %}
                                 </div>
-                                
-                                <div class="row mb-2">
-                                    <div class="col-6"><strong>Tipo:</strong></div>
-                                    <div class="col-6">{{ traslado.concepto }}</div>
-                                </div>
-                                
-                                <hr style="border-color: rgba(255,255,255,0.3);">
-                                
-                                <div class="row mb-2">
-                                    <div class="col-6"><strong>Origen:</strong></div>
-                                    <div class="col-6">{{ traslado.usuario_origen.nombre }}</div>
-                                </div>
-                                
-                                <div class="row mb-2">
-                                    <div class="col-6"><strong>Destino:</strong></div>
-                                    <div class="col-6">{{ traslado.usuario_destino.nombre }}</div>
-                                </div>
-                                
-                                <hr style="border-color: rgba(255,255,255,0.3);">
-                                
-                                <div class="row mb-2">
-                                    <div class="col-6"><strong>Monto:</strong></div>
-                                    <div class="col-6"><h4 class="mb-0">${{ "{:,.2f}".format(traslado.monto) }}</h4></div>
-                                </div>
-                                
-                                {% if traslado.descripcion %}
-                                <hr style="border-color: rgba(255,255,255,0.3);">
-                                <div class="row">
-                                    <div class="col-12"><strong>Descripción:</strong></div>
-                                    <div class="col-12"><em>{{ traslado.descripcion }}</em></div>
-                                </div>
-                                {% endif %}
+                            </div>
+                            <div class="col-6 mb-2">
+                                <small class="text-white-50">Fecha:</small>
+                                <div class="fw-bold">{{ traslado.fecha.strftime('%d/%m/%Y %H:%M') }}</div>
                             </div>
                         </div>
-
-                        <!-- Acciones -->
-                        <div class="d-grid gap-2 mt-4">
-                            <a href="/traslados/nuevo" class="btn btn-primary btn-lg">
-                                <i class="bi bi-plus-circle"></i> Registrar Otro Traslado
-                            </a>
-                            <a href="/traslados" class="btn btn-info">
-                                <i class="bi bi-list-ul"></i> Ver Todos los Traslados
-                            </a>
-                            <a href="/dashboard" class="btn btn-outline-secondary">
-                                <i class="bi bi-house"></i> Volver al Inicio
-                            </a>
+                        
+                        <hr style="border-color: rgba(255,255,255,0.3);">
+                        
+                        <div class="row text-start">
+                            <div class="col-6 mb-2">
+                                <small class="text-white-50">Origen:</small>
+                                <div class="fw-bold">
+                                    {% if traslado.usuario_origen %}
+                                        {{ traslado.usuario_origen.nombre }}
+                                    {% elif traslado.concepto == 'CAJA_MAYOR_A_RUTA' %}
+                                        Caja Mayor
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-6 mb-2">
+                                <small class="text-white-50">Destino:</small>
+                                <div class="fw-bold">
+                                    {% if traslado.usuario_destino %}
+                                        {{ traslado.usuario_destino.nombre }}
+                                    {% elif traslado.concepto == 'RUTA_A_CAJA_MAYOR' %}
+                                        Caja Mayor
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </div>
+                            </div>
                         </div>
+                        
+                        <hr style="border-color: rgba(255,255,255,0.3);">
+                        
+                        <div class="text-center">
+                            <small class="text-white-50">Monto:</small>
+                            <h2 class="mb-0">${{ "{:,.0f}".format(traslado.monto) }}</h2>
+                        </div>
+                        
+                        {% if traslado.descripcion %}
+                        <hr style="border-color: rgba(255,255,255,0.3);">
+                        <div class="text-start">
+                            <small class="text-white-50">Nota:</small>
+                            <div><em>{{ traslado.descripcion }}</em></div>
+                        </div>
+                        {% endif %}
                     </div>
+                </div>
+
+                <!-- Acciones -->
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('finanzas.traslados_nuevo') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-plus me-2"></i>Nuevo Traslado
+                    </a>
+                    <a href="{{ url_for('finanzas.traslados_lista') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-list me-2"></i>Ver Todos los Traslados
+                    </a>
+                    <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-home me-2"></i>Volver al Inicio
+                    </a>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+<style>
+    @keyframes scaleIn {
+        0% { transform: scale(0); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    .card-body > div:first-child > div:first-child {
+        animation: scaleIn 0.5s ease-out forwards;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Traslado Entre Rutas - Diamante PRO{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{{ url_for('finanzas.traslados_lista') }}">Traslados</a></li>
+                    <li class="breadcrumb-item active">Entre Rutas</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white py-3">
+                    <h5 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>Traslado Entre Rutas</h5>
+                </div>
+                <div class="card-body p-4">
+                    {% if error %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-circle me-2"></i>{{ error }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endif %}
+
+                    <form method="POST" action="{{ url_for('finanzas.traslados_guardar') }}">
+                        <input type="hidden" name="tipo_traslado" value="ruta_a_ruta">
+
+                        <!-- Visualización del flujo -->
+                        <div class="text-center mb-4 py-3 bg-light rounded">
+                            <div class="d-flex align-items-center justify-content-center">
+                                <div class="text-center px-4">
+                                    <i class="fas fa-route fa-3x text-danger mb-2"></i>
+                                    <div class="fw-bold">Ruta Origen</div>
+                                    <small class="text-muted">Envía dinero</small>
+                                </div>
+                                <div class="px-4">
+                                    <i class="fas fa-arrow-right fa-2x text-muted"></i>
+                                    <div class="mt-2">
+                                        <span id="monto_preview" class="badge bg-success fs-6">$0</span>
+                                    </div>
+                                </div>
+                                <div class="text-center px-4">
+                                    <i class="fas fa-route fa-3x text-success mb-2"></i>
+                                    <div class="fw-bold">Ruta Destino</div>
+                                    <small class="text-muted">Recibe dinero</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-4">
+                            <!-- Columna Origen -->
+                            <div class="col-md-6">
+                                <div class="card border-danger h-100">
+                                    <div class="card-header bg-danger text-white">
+                                        <i class="fas fa-arrow-circle-up me-2"></i>ORIGEN
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label for="ruta_origen_id" class="form-label">Seleccionar Ruta</label>
+                                            <select class="form-select form-select-lg" id="ruta_origen_id" name="ruta_origen_id" required>
+                                                <option value="">-- Seleccionar --</option>
+                                                {% for ruta in rutas %}
+                                                <option value="{{ ruta.id }}">{{ ruta.nombre }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="mb-0">
+                                            <label for="cobrador_origen_id" class="form-label text-muted">O Cobrador específico</label>
+                                            <select class="form-select" id="cobrador_origen_id" name="cobrador_origen_id">
+                                                <option value="">-- Opcional --</option>
+                                                {% for cobrador in cobradores %}
+                                                <option value="{{ cobrador.id }}">{{ cobrador.nombre }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Columna Destino -->
+                            <div class="col-md-6">
+                                <div class="card border-success h-100">
+                                    <div class="card-header bg-success text-white">
+                                        <i class="fas fa-arrow-circle-down me-2"></i>DESTINO
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label for="ruta_destino_id" class="form-label">Seleccionar Ruta</label>
+                                            <select class="form-select form-select-lg" id="ruta_destino_id" name="ruta_destino_id" required>
+                                                <option value="">-- Seleccionar --</option>
+                                                {% for ruta in rutas %}
+                                                <option value="{{ ruta.id }}">{{ ruta.nombre }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="mb-0">
+                                            <label for="cobrador_destino_id" class="form-label text-muted">O Cobrador específico</label>
+                                            <select class="form-select" id="cobrador_destino_id" name="cobrador_destino_id">
+                                                <option value="">-- Opcional --</option>
+                                                {% for cobrador in cobradores %}
+                                                <option value="{{ cobrador.id }}">{{ cobrador.nombre }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Monto y Detalles -->
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label for="monto" class="form-label fw-bold">Monto a Transferir</label>
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text bg-success text-white">$</span>
+                                    <input type="number" class="form-control" id="monto" name="monto" min="1" step="1" required placeholder="0">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="fecha" class="form-label fw-bold">Fecha</label>
+                                <input type="date" class="form-control form-control-lg" id="fecha" name="fecha" value="{{ fecha_hoy }}" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="descripcion" class="form-label fw-bold">Nota</label>
+                                <input type="text" class="form-control form-control-lg" id="descripcion" name="descripcion" placeholder="Motivo del traslado...">
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('finanzas.traslados_lista') }}" class="btn btn-outline-secondary btn-lg">
+                                <i class="fas fa-arrow-left me-1"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-info btn-lg text-white">
+                                <i class="fas fa-exchange-alt me-1"></i> Realizar Traslado
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const montoInput = document.getElementById('monto');
+    const montoPreview = document.getElementById('monto_preview');
+    const rutaOrigen = document.getElementById('ruta_origen_id');
+    const rutaDestino = document.getElementById('ruta_destino_id');
+
+    montoInput.addEventListener('input', function() {
+        const monto = parseFloat(this.value) || 0;
+        montoPreview.textContent = '$' + monto.toLocaleString('es-CO', {maximumFractionDigits: 0});
+    });
+
+    // Validar que origen y destino sean diferentes
+    document.querySelector('form').addEventListener('submit', function(e) {
+        if (rutaOrigen.value && rutaDestino.value && rutaOrigen.value === rutaDestino.value) {
+            e.preventDefault();
+            alert('La ruta de origen y destino no pueden ser la misma');
+        }
+    });
+});
+</script>
+{% endblock %}

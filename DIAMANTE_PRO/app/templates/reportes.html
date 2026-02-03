@@ -1,642 +1,526 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Reportes y Estadísticas - Diamante Pro</title>
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark-theme.css') }}">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
-    <style>
-        /* Reportes - Tema Dark Tech */
-        .stat-card {
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.08) !important;
-            background: #1D1E33 !important;
-            transition: all 0.3s ease;
-            height: 100%;
-        }
-        .stat-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4), 0 0 15px rgba(0, 229, 255, 0.1) !important;
-            border-color: rgba(0, 229, 255, 0.3) !important;
-        }
-        .chart-container {
-            background: #1D1E33 !important;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-        .filter-card {
-            background: #1D1E33 !important;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-        .stat-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-        }
-        .icon-primary { background: rgba(0, 229, 255, 0.15); color: #00E5FF; }
-        .icon-success { background: rgba(0, 255, 153, 0.15); color: #00FF99; }
-        .icon-warning { background: rgba(255, 215, 0, 0.15); color: #FFD700; }
-        .icon-info { background: rgba(0, 229, 255, 0.15); color: #00E5FF; }
-    </style>
-</head>
-<body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/dashboard" style="display: inline-flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: 0.5px;">
-                <svg style="width: 32px; height: 32px; filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.6));" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <linearGradient id="navDiamondGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" style="stop-color:#00E5FF"/>
-                            <stop offset="50%" style="stop-color:#00FFD4"/>
-                            <stop offset="100%" style="stop-color:#00E5FF"/>
-                        </linearGradient>
-                    </defs>
-                    <polygon points="50,5 95,50 50,95 5,50" fill="url(#navDiamondGradient)" opacity="0.9"/>
-                    <polygon points="50,15 80,50 50,85 20,50" fill="#0A0E21" opacity="0.4"/>
-                    <polygon points="50,5 50,95 5,50" fill="rgba(255,255,255,0.2)"/>
-                </svg>
-                <span style="color: #00E5FF; text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);">DIAMANTE PRO</span>
-            </a>
-            <div class="d-flex align-items-center">
-                <span class="text-white me-3">
-                    <i class="bi bi-person-circle" style="color: #00E5FF;"></i> {{ nombre }}
-                    <span class="badge" style="background: rgba(0, 229, 255, 0.15); color: #00E5FF; border: 1px solid rgba(0, 229, 255, 0.3);">{{ rol }}</span>
-                </span>
-                <a href="/dashboard" class="btn btn-sm me-2" style="background: transparent; border: 1px solid #00E5FF; color: #00E5FF;">
-                    <i class="bi bi-house"></i> Inicio
-                </a>
-                <a href="/logout" class="btn btn-sm" style="background: transparent; border: 1px solid #FF3366; color: #FF3366;">
-                    <i class="bi bi-box-arrow-right"></i> Salir
-                </a>
+{% extends "base.html" %}
+
+{% block title %}Reportes y Estadísticas - Diamante Pro{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chart-container {
+        background: var(--bg-card);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .filter-card {
+        background: var(--bg-card);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+</style>
+{% endblock %}
+
+{% block page_title %}
+<i class="bi bi-graph-up me-2"></i>Reportes y Estadísticas
+{% endblock %}
+
+{% block page_actions %}
+{% if rol in ['secretaria', 'gerente', 'dueno'] %}
+<a href="/reporte/cuadre-pdf?fecha={{ fecha_fin }}" class="btn btn-danger" target="_blank">
+    <i class="bi bi-file-pdf me-1"></i> Descargar PDF
+</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<!-- Filtros -->
+<div class="filter-card">
+    <form method="GET" action="{{ url_for('reportes.reportes') }}">
+        <div class="row align-items-end g-3">
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Fecha Inicio</label>
+                <input type="date" name="fecha_inicio" class="form-control" value="{{ fecha_inicio }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Fecha Fin</label>
+                <input type="date" name="fecha_fin" class="form-control" value="{{ fecha_fin }}">
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-filter me-1"></i> Filtrar
+                </button>
             </div>
         </div>
-    </nav>
+    </form>
+</div>
 
-    <!-- Main Content -->
-    <div class="container-fluid mt-4 mb-5">
-        <div class="row mb-4">
-            <div class="col-md-8">
-                <h2><i class="bi bi-graph-up"></i> Reportes y Estadísticas</h2>
-            </div>
-            <div class="col-md-4 text-end">
-                {% if rol in ['secretaria', 'gerente', 'dueno'] %}
-                <a href="/reporte/cuadre-pdf?fecha={{ fecha_fin }}" class="btn btn-danger" target="_blank">
-                    <i class="bi bi-file-pdf"></i> Descargar PDF
-                </a>
-                {% endif %}
-            </div>
-        </div>
-
-        <!-- Filtros -->
-        <div class="filter-card">
-            <form method="GET" action="/reportes">
-                <div class="row align-items-end">
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold">Fecha Inicio</label>
-                        <input type="date" name="fecha_inicio" class="form-control" value="{{ fecha_inicio }}">
+<!-- Estadísticas Principales -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1 small">Prestado en Período</p>
+                        <h4 class="mb-0">${{ "{:,.0f}".format(total_prestado_periodo) }}</h4>
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold">Fecha Fin</label>
-                        <input type="date" name="fecha_fin" class="form-control" value="{{ fecha_fin }}">
-                    </div>
-                    <div class="col-md-4">
-                        <button type="submit" class="btn btn-primary w-100" style="background: #1e3c72; border: none;">
-                            <i class="bi bi-filter"></i> Filtrar
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>
-
-        <!-- Estadísticas Principales -->
-        <div class="row g-3 mb-4">
-            <div class="col-md-3">
-                <div class="card stat-card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <p class="text-muted mb-1 small">Prestado en Período</p>
-                                <h4 class="mb-0">${{ "{:,.0f}".format(total_prestado_periodo) }}</h4>
-                            </div>
-                            <div class="stat-icon icon-primary">
-                                <i class="bi bi-cash-stack"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stat-card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <p class="text-muted mb-1 small">Cobrado en Período</p>
-                                <h4 class="mb-0">${{ "{:,.0f}".format(total_cobrado_periodo) }}</h4>
-                                <small class="text-success">{{ num_pagos_periodo }} pagos</small>
-                            </div>
-                            <div class="stat-icon icon-success">
-                                <i class="bi bi-wallet2"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% if rol in ['dueno', 'gerente', 'secretaria'] %}
-            <div class="col-md-3">
-                <div class="card stat-card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <p class="text-muted mb-1 small">Cartera Actual</p>
-                                <h4 class="mb-0">${{ "{:,.0f}".format(cartera_actual) }}</h4>
-                                <small class="text-muted">Por cobrar</small>
-                            </div>
-                            <div class="stat-icon icon-warning">
-                                <i class="bi bi-graph-up"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stat-card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <p class="text-muted mb-1 small">Capital en Circulación</p>
-                                <h4 class="mb-0">${{ "{:,.0f}".format(capital_circulacion) }}</h4>
-                                <small class="text-muted">Activos</small>
-                            </div>
-                            <div class="stat-icon icon-info">
-                                <i class="bi bi-piggy-bank"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-        </div>
-
-        <!-- Gráficos -->
-        <div class="row">
-            <!-- Gráfico de Pagos por Día -->
-            <div class="col-md-8 mb-4">
-                <div class="chart-container">
-                    <h5 class="mb-3"><i class="bi bi-bar-chart-line"></i> Ingresos Diarios</h5>
-                    <canvas id="chartPagosDiarios" height="80"></canvas>
-                </div>
-            </div>
-
-            <!-- Gráfico de Estado de Préstamos -->
-            <div class="col-md-4 mb-4">
-                <div class="chart-container">
-                    <h5 class="mb-3"><i class="bi bi-pie-chart"></i> Estado de Préstamos</h5>
-                    <canvas id="chartEstadoPrestamos"></canvas>
-                </div>
-            </div>
-
-            <!-- Gráfico de Préstamos por Frecuencia -->
-            <div class="col-md-6 mb-4">
-                <div class="chart-container">
-                    <h5 class="mb-3"><i class="bi bi-calendar3"></i> Préstamos por Frecuencia</h5>
-                    <canvas id="chartFrecuencia"></canvas>
-                </div>
-            </div>
-
-            <!-- Top Deudores -->
-            <div class="col-md-6 mb-4">
-                <div class="chart-container">
-                    <h5 class="mb-3"><i class="bi bi-people"></i> Top 5 Mayores Deudores</h5>
-                    <canvas id="chartTopDeudores"></canvas>
-                </div>
-            </div>
-
-            <!-- Cobros por Cobrador -->
-            <div class="col-md-12 mb-4">
-                <div class="chart-container">
-                    <h5 class="mb-3"><i class="bi bi-person-badge"></i> Desempeño por Cobrador</h5>
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Cobrador</th>
-                                    <th>Número de Pagos</th>
-                                    <th>Total Cobrado</th>
-                                    <th>Promedio por Pago</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for cobrador in cobros_por_cobrador %}
-                                <tr>
-                                    <td><i class="bi bi-person-circle text-primary"></i> {{ cobrador.nombre }}</td>
-                                    <td><span class="badge bg-primary">{{ cobrador.num_pagos }}</span></td>
-                                    <td class="fw-bold text-success">${{ "{:,.0f}".format(cobrador.total_cobrado) }}</td>
-                                    <td>${{ "{:,.0f}".format(cobrador.total_cobrado / cobrador.num_pagos) }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                    <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                        <i class="bi bi-cash-stack"></i>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Resumen General -->
-        <div class="row">
-            <div class="col-md-12">
-                <div class="chart-container">
-                    <h5 class="mb-3"><i class="bi bi-clipboard-data"></i> Resumen General</h5>
-                    <div class="row">
-                        <div class="col-md-3 text-center mb-3">
-                            <h2 class="text-primary">{{ total_clientes }}</h2>
-                            <p class="text-muted mb-0">Total Clientes</p>
-                        </div>
-                        <div class="col-md-3 text-center mb-3">
-                            <h2 class="text-success">{{ prestamos_activos }}</h2>
-                            <p class="text-muted mb-0">Préstamos Activos</p>
-                        </div>
-                        <div class="col-md-3 text-center mb-3">
-                            <h2 class="text-info">{{ prestamos_cancelados }}</h2>
-                            <p class="text-muted mb-0">Préstamos Cancelados</p>
-                        </div>
-                        <div class="col-md-3 text-center mb-3">
-                            <h2 class="text-warning">{{ total_prestamos }}</h2>
-                            <p class="text-muted mb-0">Total Préstamos</p>
-                        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1 small">Cobrado en Período</p>
+                        <h4 class="mb-0">${{ "{:,.0f}".format(total_cobrado_periodo) }}</h4>
+                        <small class="text-success">{{ num_pagos_periodo }} pagos</small>
+                    </div>
+                    <div class="stat-icon bg-success bg-opacity-10 text-success">
+                        <i class="bi bi-wallet2"></i>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Secciones Detalladas para Cobradores -->
-        {% if rol == 'cobrador' %}
-        <div class="row mt-4">
-            <div class="col-md-12">
-                <h4 class="mb-3"><i class="bi bi-journal-text"></i> Detalles de Actividad</h4>
-            </div>
-        </div>
-
-        <!-- Lista de Clientes que Pagaron -->
-        <div class="row mb-4">
-            <div class="col-md-12">
-                <div class="chart-container">
-                    <h5 class="mb-3"><i class="bi bi-people-fill text-success"></i> Clientes que Pagaron ({{ lista_pagos|length }})</h5>
-                    {% if lista_pagos %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Cliente</th>
-                                    <th>Crédito #</th>
-                                    <th>Monto</th>
-                                    <th>Saldo Anterior</th>
-                                    <th>Saldo Nuevo</th>
-                                    <th>Observaciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for pago in lista_pagos %}
-                                <tr>
-                                    <td>{{ pago.fecha_pago.strftime('%d/%m/%Y %H:%M') }}</td>
-                                    <td><strong>{{ pago.prestamo.cliente.nombre }}</strong></td>
-                                    <td><span class="badge bg-primary">#{{ pago.prestamo_id }}</span></td>
-                                    <td><span class="text-success fw-bold">{{ pago.prestamo.moneda }} {{ "{:,.0f}".format(pago.monto) }}</span></td>
-                                    <td>{{ pago.prestamo.moneda }} {{ "{:,.0f}".format(pago.saldo_anterior) }}</td>
-                                    <td>{{ pago.prestamo.moneda }} {{ "{:,.0f}".format(pago.saldo_nuevo) }}</td>
-                                    <td><small>{{ pago.observaciones or '-' }}</small></td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                            <tfoot class="table-light">
-                                <tr>
-                                    <th colspan="3" class="text-end">TOTAL COBRADO:</th>
-                                    <th><span class="text-success">${{ "{:,.0f}".format(lista_pagos|sum(attribute='monto')) }}</span></th>
-                                    <th colspan="3"></th>
-                                </tr>
-                            </tfoot>
-                        </table>
+    </div>
+    {% if rol in ['dueno', 'gerente', 'secretaria'] %}
+    <div class="col-md-3">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1 small">Cartera Actual</p>
+                        <h4 class="mb-0">${{ "{:,.0f}".format(cartera_actual) }}</h4>
+                        <small class="text-muted">Por cobrar</small>
                     </div>
-                    {% else %}
-                    <p class="text-muted text-center py-4">No hay pagos registrados en este período</p>
-                    {% endif %}
+                    <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                        <i class="bi bi-graph-up"></i>
+                    </div>
                 </div>
             </div>
         </div>
-
-        <!-- Lista de Créditos Creados -->
-        <div class="row mb-4">
-            <div class="col-md-12">
-                <div class="chart-container">
-                    <h5 class="mb-3"><i class="bi bi-cash-stack text-primary"></i> Créditos Creados ({{ lista_creditos|length }})</h5>
-                    {% if lista_creditos %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Cliente</th>
-                                    <th>Crédito #</th>
-                                    <th>Monto Prestado</th>
-                                    <th>A Pagar</th>
-                                    <th>Frecuencia</th>
-                                    <th>Cuotas</th>
-                                    <th>Estado</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for credito in lista_creditos %}
-                                <tr>
-                                    <td>{{ credito.fecha_inicio.strftime('%d/%m/%Y') }}</td>
-                                    <td><strong>{{ credito.cliente.nombre }}</strong></td>
-                                    <td><span class="badge bg-primary">#{{ credito.id }}</span></td>
-                                    <td>{{ credito.moneda }} {{ "{:,.0f}".format(credito.monto_prestado) }}</td>
-                                    <td>{{ credito.moneda }} {{ "{:,.0f}".format(credito.monto_a_pagar) }}</td>
-                                    <td><span class="badge bg-info">{{ credito.frecuencia }}</span></td>
-                                    <td>{{ credito.numero_cuotas }}</td>
-                                    <td>
-                                        {% if credito.estado == 'ACTIVO' %}
-                                        <span class="badge bg-success">ACTIVO</span>
-                                        {% elif credito.estado == 'CANCELADO' %}
-                                        <span class="badge bg-secondary">CANCELADO</span>
-                                        {% else %}
-                                        <span class="badge bg-warning">{{ credito.estado }}</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                            <tfoot class="table-light">
-                                <tr>
-                                    <th colspan="3" class="text-end">TOTAL PRESTADO:</th>
-                                    <th><span class="text-primary">${{ "{:,.0f}".format(lista_creditos|sum(attribute='monto_prestado')) }}</span></th>
-                                    <th colspan="4"></th>
-                                </tr>
-                            </tfoot>
-                        </table>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1 small">Capital en Circulación</p>
+                        <h4 class="mb-0">${{ "{:,.0f}".format(capital_circulacion) }}</h4>
+                        <small class="text-muted">Activos</small>
                     </div>
-                    {% else %}
-                    <p class="text-muted text-center py-4">No hay créditos creados en este período</p>
-                    {% endif %}
+                    <div class="stat-icon bg-info bg-opacity-10 text-info">
+                        <i class="bi bi-piggy-bank"></i>
+                    </div>
                 </div>
             </div>
         </div>
+    </div>
+    {% endif %}
+</div>
 
-        <!-- Lista de Gastos -->
-        <div class="row mb-4">
-            <div class="col-md-12">
-                <div class="chart-container">
-                    <h5 class="mb-3"><i class="bi bi-receipt text-danger"></i> Gastos Registrados ({{ lista_gastos|length }})</h5>
-                    {% if lista_gastos %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Concepto</th>
-                                    <th>Descripción</th>
-                                    <th>Monto</th>
-                                    <th>Naturaleza</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for gasto in lista_gastos %}
-                                <tr>
-                                    <td>{{ gasto.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
-                                    <td><strong>{{ gasto.concepto }}</strong></td>
-                                    <td>{{ gasto.descripcion or '-' }}</td>
-                                    <td><span class="text-danger fw-bold">${{ "{:,.0f}".format(gasto.monto) }}</span></td>
-                                    <td><span class="badge bg-secondary">{{ gasto.naturaleza }}</span></td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                            <tfoot class="table-light">
-                                <tr>
-                                    <th colspan="3" class="text-end">TOTAL GASTOS:</th>
-                                    <th><span class="text-danger">${{ "{:,.0f}".format(lista_gastos|sum(attribute='monto')) }}</span></th>
-                                    <th></th>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                    {% else %}
-                    <p class="text-muted text-center py-4">No hay gastos registrados en este período</p>
-                    {% endif %}
-                </div>
-            </div>
+<!-- Gráficos -->
+<div class="row">
+    <!-- Gráfico de Pagos por Día -->
+    <div class="col-md-8 mb-4">
+        <div class="chart-container">
+            <h5 class="mb-3"><i class="bi bi-bar-chart-line me-2"></i>Ingresos Diarios</h5>
+            <canvas id="chartPagosDiarios" height="80"></canvas>
         </div>
-
-        <!-- Resumen de Movimientos -->
-        <div class="row mb-4">
-            <div class="col-md-12">
-                <div class="chart-container">
-                    <h5 class="mb-3"><i class="bi bi-list-ul text-info"></i> Resumen de Todos los Movimientos ({{ lista_movimientos|length }})</h5>
-                    {% if lista_movimientos %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="width: 50px;"></th>
-                                    <th>Fecha y Hora</th>
-                                    <th>Tipo</th>
-                                    <th>Descripción</th>
-                                    <th>Monto</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for mov in lista_movimientos %}
-                                <tr>
-                                    <td><i class="bi {{ mov.icono }} text-{{ mov.color }} fs-4"></i></td>
-                                    <td>{{ mov.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
-                                    <td><span class="badge bg-{{ mov.color }}">{{ mov.tipo }}</span></td>
-                                    <td>{{ mov.descripcion }}</td>
-                                    <td>
-                                        <span class="text-{{ mov.color }} fw-bold">
-                                            {% if mov.tipo == 'GASTO' %}-{% endif %}${{ "{:,.0f}".format(mov.monto) }}
-                                        </span>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <p class="text-muted text-center py-4">No hay movimientos en este período</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        {% endif %}
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Configuración de colores
-        // Colores Dark Tech
-        const colors = {
-            primary: '#00E5FF',
-            success: '#00FF99',
-            warning: '#FFD700',
-            info: '#BB86FC',
-            danger: '#FF3366',
-            cyan: '#00E5FF',
-            text: '#8D8E98',
-            grid: 'rgba(255, 255, 255, 0.08)'
-        };
+    <!-- Gráfico de Estado de Préstamos -->
+    <div class="col-md-4 mb-4">
+        <div class="chart-container">
+            <h5 class="mb-3"><i class="bi bi-pie-chart me-2"></i>Estado de Préstamos</h5>
+            <canvas id="chartEstadoPrestamos"></canvas>
+        </div>
+    </div>
 
-        // Configuración global para tema oscuro
-        Chart.defaults.color = '#8D8E98';
-        Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.08)';
+    <!-- Gráfico de Préstamos por Frecuencia -->
+    <div class="col-md-6 mb-4">
+        <div class="chart-container">
+            <h5 class="mb-3"><i class="bi bi-calendar3 me-2"></i>Préstamos por Frecuencia</h5>
+            <canvas id="chartFrecuencia"></canvas>
+        </div>
+    </div>
 
-        // Gráfico de Pagos Diarios
-        const ctxPagos = document.getElementById('chartPagosDiarios');
-        new Chart(ctxPagos, {
-            type: 'line',
-            data: {
-                labels: [{% for pago in pagos_por_dia %}'{{ pago.fecha }}'{% if not loop.last %},{% endif %}{% endfor %}],
-                datasets: [{
-                    label: 'Ingresos Diarios',
-                    data: [{% for pago in pagos_por_dia %}{{ pago.total }}{% if not loop.last %},{% endif %}{% endfor %}],
-                    borderColor: colors.cyan,
-                    backgroundColor: 'rgba(0, 229, 255, 0.15)',
-                    tension: 0.4,
-                    fill: true,
-                    pointBackgroundColor: colors.cyan,
-                    pointBorderColor: '#1D1E33',
-                    pointBorderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { display: false }
+    <!-- Top Deudores -->
+    <div class="col-md-6 mb-4">
+        <div class="chart-container">
+            <h5 class="mb-3"><i class="bi bi-people me-2"></i>Top 5 Mayores Deudores</h5>
+            <canvas id="chartTopDeudores"></canvas>
+        </div>
+    </div>
+
+    <!-- Cobros por Cobrador -->
+    <div class="col-md-12 mb-4">
+        <div class="chart-container">
+            <h5 class="mb-3"><i class="bi bi-person-badge me-2"></i>Desempeño por Cobrador</h5>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Cobrador</th>
+                            <th>Número de Pagos</th>
+                            <th>Total Cobrado</th>
+                            <th>Promedio por Pago</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cobrador in cobros_por_cobrador %}
+                        <tr>
+                            <td><i class="bi bi-person-circle text-primary me-2"></i>{{ cobrador.nombre }}</td>
+                            <td><span class="badge bg-primary">{{ cobrador.num_pagos }}</span></td>
+                            <td class="fw-bold text-success">${{ "{:,.0f}".format(cobrador.total_cobrado) }}</td>
+                            <td>${{ "{:,.0f}".format(cobrador.total_cobrado / cobrador.num_pagos) if cobrador.num_pagos > 0 else 0 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Resumen General -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="chart-container">
+            <h5 class="mb-3"><i class="bi bi-clipboard-data me-2"></i>Resumen General</h5>
+            <div class="row text-center">
+                <div class="col-md-3 mb-3">
+                    <h2 class="text-primary">{{ total_clientes }}</h2>
+                    <p class="text-muted mb-0">Total Clientes</p>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <h2 class="text-success">{{ prestamos_activos }}</h2>
+                    <p class="text-muted mb-0">Préstamos Activos</p>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <h2 class="text-info">{{ prestamos_cancelados }}</h2>
+                    <p class="text-muted mb-0">Préstamos Cancelados</p>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <h2 class="text-warning">{{ total_prestamos }}</h2>
+                    <p class="text-muted mb-0">Total Préstamos</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Secciones Detalladas para Cobradores -->
+{% if rol == 'cobrador' %}
+<h4 class="mb-3"><i class="bi bi-journal-text me-2"></i>Detalles de Actividad</h4>
+
+<!-- Lista de Clientes que Pagaron -->
+<div class="chart-container mb-4">
+    <h5 class="mb-3"><i class="bi bi-people-fill text-success me-2"></i>Clientes que Pagaron ({{ lista_pagos|length }})</h5>
+    {% if lista_pagos %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Cliente</th>
+                    <th>Crédito #</th>
+                    <th>Monto</th>
+                    <th>Saldo Anterior</th>
+                    <th>Saldo Nuevo</th>
+                    <th>Observaciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pago in lista_pagos %}
+                <tr>
+                    <td>{{ pago.fecha_pago.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td><strong>{{ pago.prestamo.cliente.nombre }}</strong></td>
+                    <td><span class="badge bg-primary">#{{ pago.prestamo_id }}</span></td>
+                    <td><span class="text-success fw-bold">{{ pago.prestamo.moneda }} {{ "{:,.0f}".format(pago.monto) }}</span></td>
+                    <td>{{ pago.prestamo.moneda }} {{ "{:,.0f}".format(pago.saldo_anterior) }}</td>
+                    <td>{{ pago.prestamo.moneda }} {{ "{:,.0f}".format(pago.saldo_nuevo) }}</td>
+                    <td><small>{{ pago.observaciones or '-' }}</small></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="3" class="text-end">TOTAL COBRADO:</th>
+                    <th><span class="text-success">${{ "{:,.0f}".format(lista_pagos|sum(attribute='monto')) }}</span></th>
+                    <th colspan="3"></th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-muted text-center py-4">No hay pagos registrados en este período</p>
+    {% endif %}
+</div>
+
+<!-- Lista de Créditos Creados -->
+<div class="chart-container mb-4">
+    <h5 class="mb-3"><i class="bi bi-cash-stack text-primary me-2"></i>Créditos Creados ({{ lista_creditos|length }})</h5>
+    {% if lista_creditos %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Cliente</th>
+                    <th>Crédito #</th>
+                    <th>Monto Prestado</th>
+                    <th>A Pagar</th>
+                    <th>Frecuencia</th>
+                    <th>Cuotas</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for credito in lista_creditos %}
+                <tr>
+                    <td>{{ credito.fecha_inicio.strftime('%d/%m/%Y') }}</td>
+                    <td><strong>{{ credito.cliente.nombre }}</strong></td>
+                    <td><span class="badge bg-primary">#{{ credito.id }}</span></td>
+                    <td>{{ credito.moneda }} {{ "{:,.0f}".format(credito.monto_prestado) }}</td>
+                    <td>{{ credito.moneda }} {{ "{:,.0f}".format(credito.monto_a_pagar) }}</td>
+                    <td><span class="badge bg-info">{{ credito.frecuencia }}</span></td>
+                    <td>{{ credito.numero_cuotas }}</td>
+                    <td>
+                        {% if credito.estado == 'ACTIVO' %}
+                        <span class="badge bg-success">ACTIVO</span>
+                        {% elif credito.estado == 'CANCELADO' %}
+                        <span class="badge bg-secondary">CANCELADO</span>
+                        {% else %}
+                        <span class="badge bg-warning">{{ credito.estado }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="3" class="text-end">TOTAL PRESTADO:</th>
+                    <th><span class="text-primary">${{ "{:,.0f}".format(lista_creditos|sum(attribute='monto_prestado')) }}</span></th>
+                    <th colspan="4"></th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-muted text-center py-4">No hay créditos creados en este período</p>
+    {% endif %}
+</div>
+
+<!-- Lista de Gastos -->
+<div class="chart-container mb-4">
+    <h5 class="mb-3"><i class="bi bi-receipt text-danger me-2"></i>Gastos Registrados ({{ lista_gastos|length }})</h5>
+    {% if lista_gastos %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Concepto</th>
+                    <th>Descripción</th>
+                    <th>Monto</th>
+                    <th>Naturaleza</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for gasto in lista_gastos %}
+                <tr>
+                    <td>{{ gasto.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td><strong>{{ gasto.concepto }}</strong></td>
+                    <td>{{ gasto.descripcion or '-' }}</td>
+                    <td><span class="text-danger fw-bold">${{ "{:,.0f}".format(gasto.monto) }}</span></td>
+                    <td><span class="badge bg-secondary">{{ gasto.naturaleza }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="3" class="text-end">TOTAL GASTOS:</th>
+                    <th><span class="text-danger">${{ "{:,.0f}".format(lista_gastos|sum(attribute='monto')) }}</span></th>
+                    <th></th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-muted text-center py-4">No hay gastos registrados en este período</p>
+    {% endif %}
+</div>
+
+<!-- Resumen de Movimientos -->
+<div class="chart-container mb-4">
+    <h5 class="mb-3"><i class="bi bi-list-ul text-info me-2"></i>Resumen de Todos los Movimientos ({{ lista_movimientos|length }})</h5>
+    {% if lista_movimientos %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th style="width: 50px;"></th>
+                    <th>Fecha y Hora</th>
+                    <th>Tipo</th>
+                    <th>Descripción</th>
+                    <th>Monto</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mov in lista_movimientos %}
+                <tr>
+                    <td><i class="bi {{ mov.icono }} text-{{ mov.color }} fs-4"></i></td>
+                    <td>{{ mov.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td><span class="badge bg-{{ mov.color }}">{{ mov.tipo }}</span></td>
+                    <td>{{ mov.descripcion }}</td>
+                    <td>
+                        <span class="text-{{ mov.color }} fw-bold">
+                            {% if mov.tipo == 'GASTO' %}-{% endif %}${{ "{:,.0f}".format(mov.monto) }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-muted text-center py-4">No hay movimientos en este período</p>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+<script>
+    // Configuración de colores
+    const colors = {
+        primary: '#00E5FF',
+        success: '#00FF99',
+        warning: '#FFD700',
+        info: '#BB86FC',
+        danger: '#FF3366',
+        cyan: '#00E5FF',
+        text: '#8D8E98',
+        grid: 'rgba(255, 255, 255, 0.08)'
+    };
+
+    // Configuración global para tema oscuro
+    Chart.defaults.color = '#8D8E98';
+    Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.08)';
+
+    // Gráfico de Pagos Diarios
+    const ctxPagos = document.getElementById('chartPagosDiarios');
+    new Chart(ctxPagos, {
+        type: 'line',
+        data: {
+            labels: [{% for pago in pagos_por_dia %}'{{ pago.fecha }}'{% if not loop.last %},{% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Ingresos Diarios',
+                data: [{% for pago in pagos_por_dia %}{{ pago.total }}{% if not loop.last %},{% endif %}{% endfor %}],
+                borderColor: colors.cyan,
+                backgroundColor: 'rgba(0, 229, 255, 0.15)',
+                tension: 0.4,
+                fill: true,
+                pointBackgroundColor: colors.cyan,
+                pointBorderColor: '#1D1E33',
+                pointBorderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: colors.grid },
+                    ticks: {
+                        color: colors.text,
+                        callback: function(value) { return '$' + value.toLocaleString(); }
+                    }
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: colors.grid },
-                        ticks: {
-                            color: colors.text,
-                            callback: function(value) {
-                                return '$' + value.toLocaleString();
-                            }
-                        }
-                    },
-                    x: {
-                        grid: { color: colors.grid },
-                        ticks: { color: colors.text }
-                    }
+                x: {
+                    grid: { color: colors.grid },
+                    ticks: { color: colors.text }
                 }
             }
-        });
+        }
+    });
 
-        // Gráfico de Estado de Préstamos
-        const ctxEstado = document.getElementById('chartEstadoPrestamos');
-        new Chart(ctxEstado, {
-            type: 'doughnut',
-            data: {
-                labels: [{% for estado in estados_prestamos %}'{{ estado.estado }}'{% if not loop.last %},{% endif %}{% endfor %}],
-                datasets: [{
-                    data: [{% for estado in estados_prestamos %}{{ estado.cantidad }}{% if not loop.last %},{% endif %}{% endfor %}],
-                    backgroundColor: [colors.success, colors.cyan, colors.warning, colors.danger],
-                    borderColor: '#1D1E33',
-                    borderWidth: 3
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { 
-                        position: 'bottom',
-                        labels: { color: colors.text }
-                    }
-                }
+    // Gráfico de Estado de Préstamos
+    const ctxEstado = document.getElementById('chartEstadoPrestamos');
+    new Chart(ctxEstado, {
+        type: 'doughnut',
+        data: {
+            labels: [{% for estado in estados_prestamos %}'{{ estado.estado }}'{% if not loop.last %},{% endif %}{% endfor %}],
+            datasets: [{
+                data: [{% for estado in estados_prestamos %}{{ estado.cantidad }}{% if not loop.last %},{% endif %}{% endfor %}],
+                backgroundColor: [colors.success, colors.cyan, colors.warning, colors.danger],
+                borderColor: '#1D1E33',
+                borderWidth: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'bottom', labels: { color: colors.text } } }
+        }
+    });
+
+    // Gráfico de Frecuencia
+    const ctxFrecuencia = document.getElementById('chartFrecuencia');
+    new Chart(ctxFrecuencia, {
+        type: 'bar',
+        data: {
+            labels: [{% for freq in prestamos_por_frecuencia %}'{{ freq.frecuencia }}'{% if not loop.last %},{% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Cantidad',
+                data: [{% for freq in prestamos_por_frecuencia %}{{ freq.cantidad }}{% if not loop.last %},{% endif %}{% endfor %}],
+                backgroundColor: [colors.cyan, colors.success, colors.warning, colors.info],
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, grid: { color: colors.grid }, ticks: { color: colors.text } },
+                x: { grid: { color: colors.grid }, ticks: { color: colors.text } }
             }
-        });
+        }
+    });
 
-        // Gráfico de Frecuencia
-        const ctxFrecuencia = document.getElementById('chartFrecuencia');
-        new Chart(ctxFrecuencia, {
-            type: 'bar',
-            data: {
-                labels: [{% for freq in prestamos_por_frecuencia %}'{{ freq.frecuencia }}'{% if not loop.last %},{% endif %}{% endfor %}],
-                datasets: [{
-                    label: 'Cantidad',
-                    data: [{% for freq in prestamos_por_frecuencia %}{{ freq.cantidad }}{% if not loop.last %},{% endif %}{% endfor %}],
-                    backgroundColor: [colors.cyan, colors.success, colors.warning, colors.info],
-                    borderRadius: 8
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { display: false }
+    // Gráfico de Top Deudores
+    const ctxDeudores = document.getElementById('chartTopDeudores');
+    new Chart(ctxDeudores, {
+        type: 'bar',
+        data: {
+            labels: [{% for deudor in top_deudores %}'{{ deudor.nombre }}'{% if not loop.last %},{% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Saldo Pendiente',
+                data: [{% for deudor in top_deudores %}{{ deudor.saldo_actual }}{% if not loop.last %},{% endif %}{% endfor %}],
+                backgroundColor: colors.warning,
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            indexAxis: 'y',
+            plugins: { legend: { display: false } },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    grid: { color: colors.grid },
+                    ticks: { color: colors.text, callback: function(value) { return '$' + value.toLocaleString(); } }
                 },
-                scales: {
-                    y: { 
-                        beginAtZero: true,
-                        grid: { color: colors.grid },
-                        ticks: { color: colors.text }
-                    },
-                    x: {
-                        grid: { color: colors.grid },
-                        ticks: { color: colors.text }
-                    }
-                }
+                y: { grid: { color: colors.grid }, ticks: { color: colors.text } }
             }
-        });
-
-        // Gráfico de Top Deudores
-        const ctxDeudores = document.getElementById('chartTopDeudores');
-        new Chart(ctxDeudores, {
-            type: 'bar',
-            data: {
-                labels: [{% for deudor in top_deudores %}'{{ deudor.nombre }}'{% if not loop.last %},{% endif %}{% endfor %}],
-                datasets: [{
-                    label: 'Saldo Pendiente',
-                    data: [{% for deudor in top_deudores %}{{ deudor.saldo_actual }}{% if not loop.last %},{% endif %}{% endfor %}],
-                    backgroundColor: colors.warning,
-                    borderRadius: 8
-                }]
-            },
-            options: {
-                responsive: true,
-                indexAxis: 'y',
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    x: {
-                        beginAtZero: true,
-                        grid: { color: colors.grid },
-                        ticks: {
-                            color: colors.text,
-                            callback: function(value) {
-                                return '$' + value.toLocaleString();
-                            }
-                        }
-                    },
-                    y: {
-                        grid: { color: colors.grid },
-                        ticks: { color: colors.text }
-                    }
-                }
-            }
-        });
-    </script>
-</body>
-</html>
+        }
+    });
+</script>
+{% endblock %}

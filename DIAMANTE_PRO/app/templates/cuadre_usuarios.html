@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}Cuadre de Usuarios - Diamante PRO{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-0"><i class="fas fa-user-check text-primary me-2"></i>Cuadre de Usuarios</h2>
+                    <p class="text-muted mb-0">Resumen de caja por cobrador - {{ fecha_hoy }}</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('finanzas.traslados_lista') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> Ver Traslados
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen General -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-gradient-success text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="icon-box bg-white bg-opacity-25 rounded-circle p-3 me-3">
+                            <i class="fas fa-hand-holding-usd fa-2x"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 text-white-50">Total Cobrado Hoy</h6>
+                            <h4 class="mb-0">
+                                ${{ "{:,.0f}".format(cuadres|sum(attribute='cobrado_hoy')) }}
+                            </h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-gradient-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="icon-box bg-white bg-opacity-25 rounded-circle p-3 me-3">
+                            <i class="fas fa-arrow-down fa-2x"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 text-white-50">Traslados Recibidos</h6>
+                            <h4 class="mb-0">
+                                ${{ "{:,.0f}".format(cuadres|sum(attribute='traslados_recibidos')) }}
+                            </h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-gradient-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="icon-box bg-white bg-opacity-25 rounded-circle p-3 me-3">
+                            <i class="fas fa-arrow-up fa-2x"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 text-white-50">Traslados Enviados</h6>
+                            <h4 class="mb-0">
+                                ${{ "{:,.0f}".format(cuadres|sum(attribute='traslados_enviados')) }}
+                            </h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-gradient-info text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="icon-box bg-white bg-opacity-25 rounded-circle p-3 me-3">
+                            <i class="fas fa-file-invoice-dollar fa-2x"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 text-white-50">Préstamos Otorgados</h6>
+                            <h4 class="mb-0">
+                                ${{ "{:,.0f}".format(cuadres|sum(attribute='prestamos_hoy')) }}
+                            </h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Cuadre por Usuario -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0"><i class="fas fa-users me-2"></i>Cuadre por Cobrador</h5>
+        </div>
+        <div class="card-body p-0">
+            {% if cuadres %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Cobrador</th>
+                            <th class="text-end text-success">Cobrado</th>
+                            <th class="text-end text-primary">+ Recibido</th>
+                            <th class="text-end text-warning">- Enviado</th>
+                            <th class="text-end text-danger">- Gastos</th>
+                            <th class="text-end text-info">- Préstamos</th>
+                            <th class="text-end fw-bold">= Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cuadre in cuadres %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar bg-primary text-white rounded-circle me-2" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
+                                        {{ cuadre.cobrador.nombre[0]|upper }}
+                                    </div>
+                                    <div>
+                                        <strong>{{ cuadre.cobrador.nombre }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ cuadre.cobrador.rol }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-end">
+                                <span class="text-success">${{ "{:,.0f}".format(cuadre.cobrado_hoy) }}</span>
+                            </td>
+                            <td class="text-end">
+                                <span class="text-primary">${{ "{:,.0f}".format(cuadre.traslados_recibidos) }}</span>
+                            </td>
+                            <td class="text-end">
+                                <span class="text-warning">${{ "{:,.0f}".format(cuadre.traslados_enviados) }}</span>
+                            </td>
+                            <td class="text-end">
+                                <span class="text-danger">${{ "{:,.0f}".format(cuadre.gastos_hoy) }}</span>
+                            </td>
+                            <td class="text-end">
+                                <span class="text-info">${{ "{:,.0f}".format(cuadre.prestamos_hoy) }}</span>
+                            </td>
+                            <td class="text-end">
+                                {% if cuadre.balance >= 0 %}
+                                    <span class="badge bg-success fs-6">${{ "{:,.0f}".format(cuadre.balance) }}</span>
+                                {% else %}
+                                    <span class="badge bg-danger fs-6">${{ "{:,.0f}".format(cuadre.balance) }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="table-dark">
+                        <tr>
+                            <th>TOTAL</th>
+                            <th class="text-end">${{ "{:,.0f}".format(cuadres|sum(attribute='cobrado_hoy')) }}</th>
+                            <th class="text-end">${{ "{:,.0f}".format(cuadres|sum(attribute='traslados_recibidos')) }}</th>
+                            <th class="text-end">${{ "{:,.0f}".format(cuadres|sum(attribute='traslados_enviados')) }}</th>
+                            <th class="text-end">${{ "{:,.0f}".format(cuadres|sum(attribute='gastos_hoy')) }}</th>
+                            <th class="text-end">${{ "{:,.0f}".format(cuadres|sum(attribute='prestamos_hoy')) }}</th>
+                            <th class="text-end">
+                                {% set total_balance = cuadres|sum(attribute='balance') %}
+                                {% if total_balance >= 0 %}
+                                    <span class="text-success">${{ "{:,.0f}".format(total_balance) }}</span>
+                                {% else %}
+                                    <span class="text-danger">${{ "{:,.0f}".format(total_balance) }}</span>
+                                {% endif %}
+                            </th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-users fa-4x text-muted mb-3"></i>
+                <h5 class="text-muted">No hay cobradores activos</h5>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Leyenda -->
+    <div class="card mt-4">
+        <div class="card-body">
+            <h6 class="mb-3"><i class="fas fa-info-circle me-2"></i>Fórmula de Balance</h6>
+            <p class="mb-0">
+                <span class="badge bg-success">Cobrado</span> 
+                <span class="mx-1">+</span>
+                <span class="badge bg-primary">Traslados Recibidos</span>
+                <span class="mx-1">-</span>
+                <span class="badge bg-warning text-dark">Traslados Enviados</span>
+                <span class="mx-1">-</span>
+                <span class="badge bg-danger">Gastos</span>
+                <span class="mx-1">-</span>
+                <span class="badge bg-info">Préstamos Otorgados</span>
+                <span class="mx-1">=</span>
+                <span class="badge bg-dark">Balance del Día</span>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

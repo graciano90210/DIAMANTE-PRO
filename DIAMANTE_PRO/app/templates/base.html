@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Diamante Pro{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark-theme.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    {% block extra_css %}{% endblock %}
+    <style>
+        /* ==================== SIDEBAR LAYOUT ==================== */
+        :root {
+            --sidebar-width: 280px;
+            --sidebar-collapsed-width: 70px;
+            --navbar-height: 60px;
+        }
+
+        body {
+            overflow-x: hidden;
+        }
+
+        /* Wrapper principal */
+        .wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ==================== SIDEBAR ==================== */
+        .sidebar {
+            width: var(--sidebar-width);
+            min-height: 100vh;
+            background: linear-gradient(180deg, #0A0E21 0%, #0d1224 50%, #0A0E21 100%);
+            border-right: 1px solid rgba(0, 229, 255, 0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            box-shadow: 4px 0 25px rgba(0, 0, 0, 0.5);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(0, 229, 255, 0.3);
+            border-radius: 3px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 229, 255, 0.5);
+        }
+
+        /* Logo Section */
+        .sidebar-brand {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            text-decoration: none;
+        }
+
+        .sidebar-brand:hover {
+            text-decoration: none;
+        }
+
+        .sidebar-brand svg {
+            width: 40px;
+            height: 40px;
+            filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.6));
+        }
+
+        .sidebar-brand span {
+            color: #00E5FF;
+            font-weight: 700;
+            font-size: 1.3rem;
+            letter-spacing: 1px;
+            text-shadow: 0 0 15px rgba(0, 229, 255, 0.5);
+        }
+
+        /* User Info Section */
+        .sidebar-user {
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(0, 229, 255, 0.03);
+        }
+
+        .sidebar-user .user-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00E5FF 0%, #00FFD4 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #0A0E21;
+            font-size: 1.2rem;
+        }
+
+        .sidebar-user .user-info {
+            flex: 1;
+        }
+
+        .sidebar-user .user-name {
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 2px;
+        }
+
+        .sidebar-user .user-role {
+            color: #00E5FF;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* ==================== MENU ITEMS ==================== */
+        .sidebar-menu {
+            padding: 15px 0;
+        }
+
+        .menu-section {
+            margin-bottom: 10px;
+        }
+
+        .menu-section-title {
+            padding: 10px 20px 5px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: #8D8E98;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+        }
+
+        /* Menu Item Principal */
+        .menu-item {
+            display: block;
+            padding: 12px 20px;
+            color: #E0E0E0;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+            cursor: pointer;
+        }
+
+        .menu-item:hover {
+            background: rgba(0, 229, 255, 0.08);
+            color: #00E5FF;
+            border-left-color: #00E5FF;
+            text-decoration: none;
+        }
+
+        .menu-item.active {
+            background: rgba(0, 229, 255, 0.12);
+            color: #00E5FF;
+            border-left-color: #00E5FF;
+        }
+
+        .menu-item i {
+            font-size: 1.25rem;
+            width: 25px;
+            text-align: center;
+        }
+
+        .menu-item span {
+            flex: 1;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .menu-item .badge {
+            font-size: 0.7rem;
+            padding: 4px 8px;
+            border-radius: 10px;
+        }
+
+        .menu-item .arrow {
+            transition: transform 0.3s ease;
+        }
+
+        .menu-item[aria-expanded="true"] .arrow {
+            transform: rotate(90deg);
+        }
+
+        /* ==================== SUBMENU ==================== */
+        .submenu {
+            background: rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height 0.3s ease;
+        }
+
+        .submenu.show {
+            max-height: 500px;
+        }
+
+        .submenu-item {
+            display: block;
+            padding: 10px 20px 10px 57px;
+            color: #B0B0B0;
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .submenu-item:hover {
+            background: rgba(0, 229, 255, 0.05);
+            color: #00E5FF;
+            border-left-color: rgba(0, 229, 255, 0.5);
+            text-decoration: none;
+        }
+
+        .submenu-item.active {
+            color: #00E5FF;
+            background: rgba(0, 229, 255, 0.08);
+        }
+
+        .submenu-item i {
+            margin-right: 8px;
+            font-size: 0.8rem;
+        }
+
+        /* ==================== MAIN CONTENT ==================== */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            background: #0A0E21;
+            transition: margin-left 0.3s ease;
+        }
+
+        /* Top Navbar */
+        .top-navbar {
+            height: var(--navbar-height);
+            background: linear-gradient(135deg, #0A0E21 0%, #1D1E33 100%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 25px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .top-navbar .toggle-sidebar {
+            background: none;
+            border: none;
+            color: #00E5FF;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 5px;
+            transition: transform 0.3s ease;
+        }
+
+        .top-navbar .toggle-sidebar:hover {
+            transform: scale(1.1);
+        }
+
+        .top-navbar .page-title {
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .top-navbar .navbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .top-navbar .btn-action {
+            background: rgba(0, 229, 255, 0.1);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            color: #00E5FF;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+
+        .top-navbar .btn-action:hover {
+            background: rgba(0, 229, 255, 0.2);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+        }
+
+        .top-navbar .btn-logout {
+            background: transparent;
+            border: 1px solid #FF3366;
+            color: #FF3366;
+        }
+
+        .top-navbar .btn-logout:hover {
+            background: rgba(255, 51, 102, 0.1);
+            box-shadow: 0 0 15px rgba(255, 51, 102, 0.3);
+        }
+
+        /* Content Area */
+        .content-area {
+            padding: 25px;
+        }
+
+        /* ==================== COLLAPSED STATE ==================== */
+        .sidebar.collapsed {
+            width: var(--sidebar-collapsed-width);
+        }
+
+        .sidebar.collapsed .sidebar-brand span,
+        .sidebar.collapsed .menu-item span,
+        .sidebar.collapsed .menu-item .arrow,
+        .sidebar.collapsed .menu-item .badge,
+        .sidebar.collapsed .menu-section-title,
+        .sidebar.collapsed .user-info,
+        .sidebar.collapsed .submenu {
+            display: none;
+        }
+
+        .sidebar.collapsed .sidebar-brand {
+            justify-content: center;
+            padding: 20px 10px;
+        }
+
+        .sidebar.collapsed .sidebar-user {
+            padding: 15px 10px;
+            justify-content: center;
+        }
+
+        .sidebar.collapsed .menu-item {
+            justify-content: center;
+            padding: 15px;
+        }
+
+        .sidebar.collapsed + .main-content {
+            margin-left: var(--sidebar-collapsed-width);
+        }
+
+        /* ==================== RESPONSIVE ==================== */
+        @media (max-width: 991.98px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 999;
+            }
+
+            .sidebar-overlay.show {
+                display: block;
+            }
+        }
+
+        /* ==================== BADGES DE ESTADO ==================== */
+        .badge-pending {
+            background: linear-gradient(135deg, #FF3366 0%, #FF6B6B 100%);
+            animation: pulse-badge 2s infinite;
+        }
+
+        .badge-success-glow {
+            background: linear-gradient(135deg, #00FF99 0%, #00E5FF 100%);
+            color: #0A0E21;
+        }
+
+        @keyframes pulse-badge {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* ==================== QUICK STATS IN SIDEBAR ==================== */
+        .sidebar-stats {
+            padding: 15px 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            margin-top: auto;
+        }
+
+        .sidebar-stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .sidebar-stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .sidebar-stat-label {
+            color: #8D8E98;
+            font-size: 0.75rem;
+        }
+
+        .sidebar-stat-value {
+            color: #00E5FF;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Overlay para móvil -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="wrapper">
+        <!-- ==================== SIDEBAR ==================== -->
+        <nav class="sidebar" id="sidebar">
+            <!-- Logo -->
+            <a href="{{ url_for('main.dashboard') }}" class="sidebar-brand">
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="diamondGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#00E5FF"/>
+                            <stop offset="50%" style="stop-color:#00FFD4"/>
+                            <stop offset="100%" style="stop-color:#00E5FF"/>
+                        </linearGradient>
+                    </defs>
+                    <polygon points="50,5 95,50 50,95 5,50" fill="url(#diamondGradient)" opacity="0.9"/>
+                    <polygon points="50,15 80,50 50,85 20,50" fill="#0A0E21" opacity="0.4"/>
+                    <polygon points="50,5 50,95 5,50" fill="rgba(255,255,255,0.2)"/>
+                </svg>
+                <span>DIAMANTE PRO</span>
+            </a>
+
+            <!-- User Info -->
+            <div class="sidebar-user d-flex align-items-center gap-3">
+                <div class="user-avatar">
+                    {{ nombre[:1].upper() if nombre else 'U' }}
+                </div>
+                <div class="user-info">
+                    <div class="user-name">{{ nombre }}</div>
+                    <div class="user-role">{{ rol }}</div>
+                </div>
+            </div>
+
+            <!-- Menu -->
+            <div class="sidebar-menu">
+                <!-- Dashboard -->
+                <a href="{{ url_for('main.dashboard') }}" class="menu-item {% if request.endpoint == 'main.dashboard' %}active{% endif %}">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Dashboard</span>
+                </a>
+
+                <!-- CLIENTES -->
+                <div class="menu-section">
+                    <div class="menu-section-title">Gestión</div>
+                </div>
+                
+                <div class="menu-item" data-bs-toggle="collapse" data-bs-target="#menuClientes" aria-expanded="false">
+                    <i class="bi bi-people-fill"></i>
+                    <span>Clientes</span>
+                    <i class="bi bi-chevron-right arrow"></i>
+                </div>
+                <div class="submenu collapse" id="menuClientes">
+                    <a href="{{ url_for('clientes.lista') }}" class="submenu-item">
+                        <i class="bi bi-list-ul"></i> Lista de Clientes
+                    </a>
+                    <a href="{{ url_for('clientes.nuevo') }}" class="submenu-item">
+                        <i class="bi bi-person-plus"></i> Nuevo Cliente
+                    </a>
+                </div>
+
+                <!-- CRÉDITOS / PRÉSTAMOS -->
+                <div class="menu-item" data-bs-toggle="collapse" data-bs-target="#menuCreditos" aria-expanded="false">
+                    <i class="bi bi-cash-stack"></i>
+                    <span>Mant. de Créditos</span>
+                    {% if solicitudes_pendientes is defined and solicitudes_pendientes > 0 %}
+                    <span class="badge badge-pending">{{ solicitudes_pendientes }}</span>
+                    {% endif %}
+                    <i class="bi bi-chevron-right arrow"></i>
+                </div>
+                <div class="submenu collapse" id="menuCreditos">
+                    <a href="{{ url_for('prestamos.lista') }}" class="submenu-item">
+                        <i class="bi bi-clipboard-data"></i> Administrar Créditos
+                    </a>
+                    <a href="{{ url_for('prestamos.nuevo') }}" class="submenu-item">
+                        <i class="bi bi-plus-circle"></i> Nuevo Préstamo
+                    </a>
+                    <a href="{{ url_for('cobros.lista') }}" class="submenu-item">
+                        <i class="bi bi-wallet2"></i> Recorrido de Cobro
+                    </a>
+                    {% if rol in ['dueno', 'gerente', 'supervisor'] %}
+                    <a href="#" class="submenu-item" onclick="alert('Próximamente: Aprobación de Solicitudes')">
+                        <i class="bi bi-check-circle"></i> Aprobar Solicitudes
+                        {% if solicitudes_pendientes is defined and solicitudes_pendientes > 0 %}
+                        <span class="badge badge-pending ms-2">{{ solicitudes_pendientes }}</span>
+                        {% endif %}
+                    </a>
+                    <a href="#" class="submenu-item" onclick="alert('Próximamente: Desembolsar')">
+                        <i class="bi bi-box-arrow-up"></i> Desembolsar
+                    </a>
+                    {% endif %}
+                </div>
+
+                <!-- CAJA -->
+                <div class="menu-item" data-bs-toggle="collapse" data-bs-target="#menuCaja" aria-expanded="false">
+                    <i class="bi bi-safe"></i>
+                    <span>Caja</span>
+                    <i class="bi bi-chevron-right arrow"></i>
+                </div>
+                <div class="submenu collapse" id="menuCaja">
+                    <a href="{{ url_for('finanzas.caja_inicio') }}" class="submenu-item">
+                        <i class="bi bi-cash-coin"></i> Estado de Caja
+                    </a>
+                    <a href="{{ url_for('finanzas.caja_gastos') }}" class="submenu-item">
+                        <i class="bi bi-receipt"></i> Ingresos y Egresos
+                    </a>
+                    {% if rol in ['dueno', 'gerente'] %}
+                    <a href="#" class="submenu-item" onclick="alert('Próximamente: Cuadre de Caja')">
+                        <i class="bi bi-calculator"></i> Cuadre de Caja
+                    </a>
+                    {% endif %}
+                </div>
+
+                {% if rol in ['dueno', 'gerente', 'supervisor'] %}
+                <!-- TRASLADOS DE EFECTIVO -->
+                <div class="menu-item" data-bs-toggle="collapse" data-bs-target="#menuTraslados" aria-expanded="false">
+                    <i class="bi bi-arrow-left-right"></i>
+                    <span>Traslados de Efectivo</span>
+                    <i class="bi bi-chevron-right arrow"></i>
+                </div>
+                <div class="submenu collapse" id="menuTraslados">
+                    <a href="{{ url_for('finanzas.traslados_lista') }}" class="submenu-item">
+                        <i class="bi bi-list-check"></i> Ver Traslados
+                    </a>
+                    <a href="{{ url_for('finanzas.traslados_nuevo') }}" class="submenu-item">
+                        <i class="bi bi-plus-circle"></i> Nuevo Traslado
+                    </a>
+                    <a href="{{ url_for('finanzas.traslados_entre_rutas') }}" class="submenu-item">
+                        <i class="bi bi-signpost-split"></i> Entre Rutas
+                    </a>
+                    <a href="{{ url_for('finanzas.cuadre_usuarios') }}" class="submenu-item">
+                        <i class="bi bi-person-check"></i> Cuadre Usuarios
+                    </a>
+                </div>
+                {% endif %}
+
+                <!-- REPORTES -->
+                <div class="menu-section">
+                    <div class="menu-section-title">Análisis</div>
+                </div>
+                
+                <div class="menu-item" data-bs-toggle="collapse" data-bs-target="#menuReportes" aria-expanded="false">
+                    <i class="bi bi-file-earmark-bar-graph"></i>
+                    <span>Reportes</span>
+                    <i class="bi bi-chevron-right arrow"></i>
+                </div>
+                <div class="submenu collapse" id="menuReportes">
+                    <a href="{{ url_for('reportes.reportes') }}" class="submenu-item">
+                        <i class="bi bi-graph-up"></i> Resumen General
+                    </a>
+                    <a href="#" class="submenu-item" onclick="alert('Próximamente: Reporte Recaudador')">
+                        <i class="bi bi-person-badge"></i> Por Recaudador
+                    </a>
+                    <a href="#" class="submenu-item" onclick="alert('Próximamente: Reporte Caja')">
+                        <i class="bi bi-cash-coin"></i> Reporte de Caja
+                    </a>
+                    <a href="#" class="submenu-item" onclick="alert('Próximamente: Cartera')">
+                        <i class="bi bi-briefcase"></i> Cartera (Créditos)
+                    </a>
+                    {% if rol in ['dueno', 'gerente'] %}
+                    <a href="#" class="submenu-item" onclick="alert('Próximamente: Auditoría')">
+                        <i class="bi bi-shield-check"></i> Auditoría
+                    </a>
+                    {% endif %}
+                </div>
+
+                {% if rol in ['dueno', 'gerente'] %}
+                <!-- ADMINISTRACIÓN -->
+                <div class="menu-section">
+                    <div class="menu-section-title">Configuración</div>
+                </div>
+
+                <div class="menu-item" data-bs-toggle="collapse" data-bs-target="#menuUsuarios" aria-expanded="false">
+                    <i class="bi bi-person-gear"></i>
+                    <span>Usuarios</span>
+                    <i class="bi bi-chevron-right arrow"></i>
+                </div>
+                <div class="submenu collapse" id="menuUsuarios">
+                    <a href="{{ url_for('admin_bp.usuarios_lista') }}" class="submenu-item">
+                        <i class="bi bi-people"></i> Lista de Usuarios
+                    </a>
+                    <a href="#" class="submenu-item" onclick="alert('Próximamente: Nuevo Usuario')">
+                        <i class="bi bi-person-plus"></i> Nuevo Usuario
+                    </a>
+                </div>
+
+                <div class="menu-item" data-bs-toggle="collapse" data-bs-target="#menuRutas" aria-expanded="false">
+                    <i class="bi bi-map"></i>
+                    <span>Rutas</span>
+                    <i class="bi bi-chevron-right arrow"></i>
+                </div>
+                <div class="submenu collapse" id="menuRutas">
+                    <a href="{{ url_for('rutas.lista') }}" class="submenu-item">
+                        <i class="bi bi-signpost-2"></i> Ver Rutas
+                    </a>
+                    <a href="{{ url_for('rutas.nueva') }}" class="submenu-item">
+                        <i class="bi bi-plus-circle"></i> Nueva Ruta
+                    </a>
+                </div>
+
+                <div class="menu-item" data-bs-toggle="collapse" data-bs-target="#menuSociedades" aria-expanded="false">
+                    <i class="bi bi-diagram-3"></i>
+                    <span>Sociedades</span>
+                    <i class="bi bi-chevron-right arrow"></i>
+                </div>
+                <div class="submenu collapse" id="menuSociedades">
+                    <a href="{{ url_for('sociedades.lista') }}" class="submenu-item">
+                        <i class="bi bi-building"></i> Ver Sociedades
+                    </a>
+                    <a href="{{ url_for('sociedades.nueva') }}" class="submenu-item">
+                        <i class="bi bi-plus-circle"></i> Nueva Sociedad
+                    </a>
+                </div>
+
+                <!-- FINANZAS -->
+                <div class="menu-item" data-bs-toggle="collapse" data-bs-target="#menuFinanzas" aria-expanded="false">
+                    <i class="bi bi-piggy-bank"></i>
+                    <span>Capital y Activos</span>
+                    <i class="bi bi-chevron-right arrow"></i>
+                </div>
+                <div class="submenu collapse" id="menuFinanzas">
+                    <a href="{{ url_for('finanzas.capital_lista') }}" class="submenu-item">
+                        <i class="bi bi-cash-stack"></i> Aportes de Capital
+                    </a>
+                    <a href="{{ url_for('finanzas.activos_lista') }}" class="submenu-item">
+                        <i class="bi bi-box-seam"></i> Activos Fijos
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Logout at bottom -->
+            <div class="mt-auto p-3 border-top" style="border-color: rgba(255,255,255,0.08) !important;">
+                <a href="{{ url_for('auth.logout') }}" class="menu-item text-danger" style="border-radius: 8px; background: rgba(255, 51, 102, 0.1);">
+                    <i class="bi bi-box-arrow-left"></i>
+                    <span>Cerrar Sesión</span>
+                </a>
+            </div>
+        </nav>
+
+        <!-- ==================== MAIN CONTENT ==================== -->
+        <div class="main-content">
+            <!-- Top Navbar -->
+            <header class="top-navbar">
+                <div class="d-flex align-items-center gap-3">
+                    <button class="toggle-sidebar" id="toggleSidebar">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+                </div>
+                
+                <div class="navbar-actions">
+                    {% block navbar_actions %}
+                    <!-- Acciones adicionales del navbar -->
+                    {% endblock %}
+                    <span class="text-white-50 d-none d-md-inline">
+                        <i class="bi bi-clock"></i>
+                        <span id="currentTime"></span>
+                    </span>
+                </div>
+            </header>
+
+            <!-- Content Area -->
+            <main class="content-area">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Toggle Sidebar
+        const toggleBtn = document.getElementById('toggleSidebar');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+
+        toggleBtn.addEventListener('click', function() {
+            if (window.innerWidth < 992) {
+                sidebar.classList.toggle('show');
+                overlay.classList.toggle('show');
+            } else {
+                sidebar.classList.toggle('collapsed');
+            }
+        });
+
+        overlay.addEventListener('click', function() {
+            sidebar.classList.remove('show');
+            overlay.classList.remove('show');
+        });
+
+        // Current Time
+        function updateTime() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+            const dateStr = now.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' });
+            document.getElementById('currentTime').textContent = `${dateStr} ${timeStr}`;
+        }
+        updateTime();
+        setInterval(updateTime, 60000);
+
+        // Handle submenu collapse arrows
+        document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(item => {
+            item.addEventListener('click', function() {
+                const isExpanded = this.getAttribute('aria-expanded') === 'true';
+                this.setAttribute('aria-expanded', !isExpanded);
+            });
+
+            // Set initial state based on collapse state
+            const target = document.querySelector(this.dataset.bsTarget);
+            if (target) {
+                target.addEventListener('shown.bs.collapse', () => {
+                    item.setAttribute('aria-expanded', 'true');
+                });
+                target.addEventListener('hidden.bs.collapse', () => {
+                    item.setAttribute('aria-expanded', 'false');
+                });
+            }
+        });
+
+        // Auto-expand active menu section
+        document.addEventListener('DOMContentLoaded', function() {
+            const activeSubmenuItem = document.querySelector('.submenu-item.active');
+            if (activeSubmenuItem) {
+                const parentCollapse = activeSubmenuItem.closest('.submenu');
+                if (parentCollapse) {
+                    const bsCollapse = new bootstrap.Collapse(parentCollapse, { toggle: false });
+                    bsCollapse.show();
+                    const trigger = document.querySelector(`[data-bs-target="#${parentCollapse.id}"]`);
+                    if (trigger) {
+                        trigger.setAttribute('aria-expanded', 'true');
+                    }
+                }
+            }
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

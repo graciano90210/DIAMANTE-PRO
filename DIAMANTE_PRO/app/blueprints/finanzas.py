@@ -290,14 +290,15 @@ def caja_inicio():
 @finanzas_bp.route('/caja/gastos')
 @login_required
 def caja_gastos():
-    """Lista de gastos"""
+    """Lista de gastos (solo egresos, no traslados)"""
     usuario_id = session.get('usuario_id')
     rol = session.get('rol')
     
     fecha_inicio_str = request.args.get('fecha_inicio')
     fecha_fin_str = request.args.get('fecha_fin')
     
-    query = Transaccion.query
+    # Filtrar SOLO egresos, excluir traslados
+    query = Transaccion.query.filter(Transaccion.naturaleza == 'EGRESO')
     
     if rol == 'cobrador':
         query = query.filter_by(usuario_origen_id=usuario_id)
@@ -370,4 +371,298 @@ def caja_gastos_guardar():
             error=f'Error al guardar gasto: {str(e)}',
             nombre=session.get('nombre'),
             rol=session.get('rol'))
+
+
+@finanzas_bp.route('/caja/cuadre')
+@login_required
+def caja_cuadre():
+    """Cuadre de caja"""
+    return render_template('caja_cuadre.html',
+        nombre=session.get('nombre'),
+        rol=session.get('rol'))
+
+
+# ==================== TRASLADOS DE EFECTIVO ====================
+
+# Constante para identificar la Caja Mayor (usuario_id = 0 representa Caja Mayor)
+CAJA_MAYOR_ID = 0  # ID especial para Caja Mayor
+
+
+@finanzas_bp.route('/traslados')
+@login_required
+def traslados_lista():
+    """Lista de todos los traslados"""
+    rol = session.get('rol')
+    
+    if rol not in ['dueno', 'gerente', 'supervisor', 'secretaria']:
+        return redirect(url_for('main.dashboard'))
+    
+    # Obtener traslados
+    traslados = Transaccion.query.filter(
+        Transaccion.naturaleza == 'TRASLADO'
+    ).order_by(Transaccion.fecha.desc()).limit(100).all()
+    
+    # Obtener rutas para mostrar nombres
+    rutas = {r.id: r for r in Ruta.query.all()}
+    
+    return render_template('traslados_lista.html',
+        traslados=traslados,
+        rutas=rutas,
+        nombre=session.get('nombre'),
+        rol=session.get('rol'))
+
+
+@finanzas_bp.route('/traslados/nuevo')
+@login_required
+def traslados_nuevo():
+    """Formulario para nuevo traslado Caja Mayor <-> Ruta"""
+    rol = session.get('rol')
+    
+    if rol not in ['dueno', 'gerente', 'supervisor']:
+        return redirect(url_for('main.dashboard'))
+    
+    # Obtener rutas activas con sus cobradores
+    rutas = Ruta.query.filter_by(activo=True).order_by(Ruta.nombre).all()
+    cobradores = Usuario.query.filter(
+        Usuario.rol.in_(['cobrador', 'supervisor']),
+        Usuario.activo == True
+    ).order_by(Usuario.nombre).all()
+    
+    return render_template('traslados_nuevo.html',
+        rutas=rutas,
+        cobradores=cobradores,
+        fecha_hoy=datetime.now().strftime('%Y-%m-%d'),
+        nombre=session.get('nombre'),
+        rol=session.get('rol'))
+
+
+@finanzas_bp.route('/traslados/guardar', methods=['POST'])
+@login_required
+def traslados_guardar():
+    """Guardar traslado"""
+    rol = session.get('rol')
+    
+    if rol not in ['dueno', 'gerente', 'supervisor']:
+        return redirect(url_for('main.dashboard'))
+    
+    try:
+        tipo_traslado = request.form.get('tipo_traslado')
+        monto = float(request.form.get('monto'))
+        descripcion = request.form.get('descripcion', '')
+        fecha_str = request.form.get('fecha')
+        fecha = datetime.strptime(fecha_str, '%Y-%m-%d') if fecha_str else datetime.now()
+        
+        usuario_actual_id = session.get('usuario_id')
+        
+        if tipo_traslado == 'caja_a_ruta':
+            # Caja Mayor envía dinero a una ruta/cobrador
+            ruta_id = request.form.get('ruta_destino_id')
+            cobrador_id = request.form.get('cobrador_destino_id')
+            
+            ruta = Ruta.query.get(ruta_id) if ruta_id else None
+            cobrador = Usuario.query.get(cobrador_id) if cobrador_id else None
+            
+            destino_desc = f"Ruta: {ruta.nombre}" if ruta else f"Cobrador: {cobrador.nombre}" if cobrador else "Desconocido"
+            
+            transaccion = Transaccion(
+                naturaleza='TRASLADO',
+                concepto='CAJA_MAYOR_A_RUTA',
+                descripcion=f'Traslado de Caja Mayor a {destino_desc}. {descripcion}',
+                monto=monto,
+                fecha=fecha,
+                usuario_origen_id=usuario_actual_id,  # Quien autoriza
+                usuario_destino_id=int(cobrador_id) if cobrador_id else (ruta.cobrador_id if ruta and ruta.cobrador_id else usuario_actual_id)
+            )
+            
+        elif tipo_traslado == 'ruta_a_caja':
+            # Ruta/cobrador devuelve dinero a Caja Mayor
+            ruta_id = request.form.get('ruta_origen_id')
+            cobrador_id = request.form.get('cobrador_origen_id')
+            
+            ruta = Ruta.query.get(ruta_id) if ruta_id else None
+            cobrador = Usuario.query.get(cobrador_id) if cobrador_id else None
+            
+            origen_desc = f"Ruta: {ruta.nombre}" if ruta else f"Cobrador: {cobrador.nombre}" if cobrador else "Desconocido"
+            
+            transaccion = Transaccion(
+                naturaleza='TRASLADO',
+                concepto='RUTA_A_CAJA_MAYOR',
+                descripcion=f'Traslado de {origen_desc} a Caja Mayor. {descripcion}',
+                monto=monto,
+                fecha=fecha,
+                usuario_origen_id=int(cobrador_id) if cobrador_id else (ruta.cobrador_id if ruta and ruta.cobrador_id else usuario_actual_id),
+                usuario_destino_id=usuario_actual_id  # Quien recibe en Caja Mayor
+            )
+            
+        elif tipo_traslado == 'ruta_a_ruta':
+            # Traslado entre rutas
+            ruta_origen_id = request.form.get('ruta_origen_id')
+            ruta_destino_id = request.form.get('ruta_destino_id')
+            cobrador_origen_id = request.form.get('cobrador_origen_id')
+            cobrador_destino_id = request.form.get('cobrador_destino_id')
+            
+            # Validar que no sea el mismo
+            if ruta_origen_id and ruta_destino_id and ruta_origen_id == ruta_destino_id:
+                raise ValueError('La ruta origen y destino no pueden ser la misma')
+            if cobrador_origen_id and cobrador_destino_id and cobrador_origen_id == cobrador_destino_id:
+                raise ValueError('El cobrador origen y destino no pueden ser el mismo')
+            
+            ruta_origen = Ruta.query.get(ruta_origen_id) if ruta_origen_id else None
+            ruta_destino = Ruta.query.get(ruta_destino_id) if ruta_destino_id else None
+            
+            origen_desc = ruta_origen.nombre if ruta_origen else "Cobrador"
+            destino_desc = ruta_destino.nombre if ruta_destino else "Cobrador"
+            
+            # Determinar usuarios origen y destino
+            if cobrador_origen_id:
+                user_origen = int(cobrador_origen_id)
+            elif ruta_origen and ruta_origen.cobrador_id:
+                user_origen = ruta_origen.cobrador_id
+            else:
+                user_origen = usuario_actual_id
+                
+            if cobrador_destino_id:
+                user_destino = int(cobrador_destino_id)
+            elif ruta_destino and ruta_destino.cobrador_id:
+                user_destino = ruta_destino.cobrador_id
+            else:
+                user_destino = usuario_actual_id
+            
+            transaccion = Transaccion(
+                naturaleza='TRASLADO',
+                concepto='RUTA_A_RUTA',
+                descripcion=f'Traslado de {origen_desc} a {destino_desc}. {descripcion}',
+                monto=monto,
+                fecha=fecha,
+                usuario_origen_id=user_origen,
+                usuario_destino_id=user_destino
+            )
+        else:
+            raise ValueError('Tipo de traslado no válido')
+        
+        db.session.add(transaccion)
+        db.session.commit()
+        
+        return redirect(url_for('finanzas.traslados_exito', traslado_id=transaccion.id))
+        
+    except Exception as e:
+        db.session.rollback()
+        rutas = Ruta.query.filter_by(activo=True).order_by(Ruta.nombre).all()
+        cobradores = Usuario.query.filter(
+            Usuario.rol.in_(['cobrador', 'supervisor']),
+            Usuario.activo == True
+        ).order_by(Usuario.nombre).all()
+        
+        return render_template('traslados_nuevo.html',
+            rutas=rutas,
+            cobradores=cobradores,
+            fecha_hoy=datetime.now().strftime('%Y-%m-%d'),
+            error=f'Error al registrar traslado: {str(e)}',
+            nombre=session.get('nombre'),
+            rol=session.get('rol'))
+
+
+@finanzas_bp.route('/traslados/exito/<int:traslado_id>')
+@login_required
+def traslados_exito(traslado_id):
+    """Página de éxito después de traslado"""
+    traslado = Transaccion.query.get_or_404(traslado_id)
+    return render_template('traslados_exito.html',
+        traslado=traslado,
+        nombre=session.get('nombre'),
+        rol=session.get('rol'))
+
+
+@finanzas_bp.route('/traslados/entre-rutas')
+@login_required
+def traslados_entre_rutas():
+    """Formulario específico para traslados entre rutas"""
+    rol = session.get('rol')
+    
+    if rol not in ['dueno', 'gerente', 'supervisor']:
+        return redirect(url_for('main.dashboard'))
+    
+    rutas = Ruta.query.filter_by(activo=True).order_by(Ruta.nombre).all()
+    cobradores = Usuario.query.filter(
+        Usuario.rol.in_(['cobrador', 'supervisor']),
+        Usuario.activo == True
+    ).order_by(Usuario.nombre).all()
+    
+    return render_template('traslados_entre_rutas.html',
+        rutas=rutas,
+        cobradores=cobradores,
+        fecha_hoy=datetime.now().strftime('%Y-%m-%d'),
+        nombre=session.get('nombre'),
+        rol=session.get('rol'))
+
+
+@finanzas_bp.route('/cuadre-usuarios')
+@login_required
+def cuadre_usuarios():
+    """Cuadre de caja por usuario/cobrador"""
+    rol = session.get('rol')
+    
+    if rol not in ['dueno', 'gerente', 'supervisor', 'secretaria']:
+        return redirect(url_for('main.dashboard'))
+    
+    # Obtener cobradores con sus estadísticas
+    cobradores = Usuario.query.filter(
+        Usuario.rol.in_(['cobrador', 'supervisor']),
+        Usuario.activo == True
+    ).all()
+    
+    hoy = datetime.now().date()
+    cuadres = []
+    
+    for cobrador in cobradores:
+        # Cobrado hoy
+        cobrado_hoy = db.session.query(func.sum(Pago.monto)).join(Prestamo).filter(
+            func.date(Pago.fecha_pago) == hoy,
+            Prestamo.cobrador_id == cobrador.id
+        ).scalar() or 0
+        
+        # Traslados recibidos hoy
+        traslados_recibidos = db.session.query(func.sum(Transaccion.monto)).filter(
+            func.date(Transaccion.fecha) == hoy,
+            Transaccion.usuario_destino_id == cobrador.id,
+            Transaccion.naturaleza == 'TRASLADO'
+        ).scalar() or 0
+        
+        # Traslados enviados hoy
+        traslados_enviados = db.session.query(func.sum(Transaccion.monto)).filter(
+            func.date(Transaccion.fecha) == hoy,
+            Transaccion.usuario_origen_id == cobrador.id,
+            Transaccion.naturaleza == 'TRASLADO'
+        ).scalar() or 0
+        
+        # Gastos hoy
+        gastos_hoy = db.session.query(func.sum(Transaccion.monto)).filter(
+            func.date(Transaccion.fecha) == hoy,
+            Transaccion.usuario_origen_id == cobrador.id,
+            Transaccion.naturaleza == 'EGRESO'
+        ).scalar() or 0
+        
+        # Préstamos otorgados hoy (salida de efectivo)
+        prestamos_hoy = db.session.query(func.sum(Prestamo.monto_prestado)).filter(
+            func.date(Prestamo.fecha_inicio) == hoy,
+            Prestamo.cobrador_id == cobrador.id
+        ).scalar() or 0
+        
+        balance = cobrado_hoy + traslados_recibidos - traslados_enviados - gastos_hoy - prestamos_hoy
+        
+        cuadres.append({
+            'cobrador': cobrador,
+            'cobrado_hoy': cobrado_hoy,
+            'traslados_recibidos': traslados_recibidos,
+            'traslados_enviados': traslados_enviados,
+            'gastos_hoy': gastos_hoy,
+            'prestamos_hoy': prestamos_hoy,
+            'balance': balance
+        })
+    
+    return render_template('cuadre_usuarios.html',
+        cuadres=cuadres,
+        fecha_hoy=hoy.strftime('%d/%m/%Y'),
+        nombre=session.get('nombre'),
+        rol=session.get('rol'))
 

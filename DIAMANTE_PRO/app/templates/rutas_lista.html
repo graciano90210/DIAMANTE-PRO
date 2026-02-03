@@ -1,138 +1,105 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rutas - Diamante Pro</title>
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark-theme.css') }}">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <style>
-        body {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            min-height: 100vh;
-        }
-        .ruta-card {
-            transition: transform 0.2s;
-            border: none;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .ruta-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 12px rgba(0,0,0,0.15);
-        }
-        .badge-sociedad {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        .badge-propio {
-            background: #00ab41;
-        }
-    </style>
-</head>
-<body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/dashboard">
-                <i class="bi bi-gem"></i> DIAMANTE PRO
-            </a>
-            <div class="d-flex align-items-center">
-                <span class="text-white me-3">
-                    <i class="bi bi-person-circle"></i> {{ nombre }}
-                    <span class="badge bg-secondary text-white">{{ rol }}</span>
-                </span>
-                <a href="/dashboard" class="btn btn-outline-light btn-sm">
-                    <i class="bi bi-arrow-left"></i> Volver
-                </a>
-            </div>
-        </div>
-    </nav>
+{% extends "base.html" %}
 
-    <div class="container mt-4">
-        <div class="row mb-4">
-            <div class="col-md-8">
-                <h2><i class="bi bi-map"></i> Gestión de Rutas</h2>
-                <p class="text-white">Administra las rutas de cobro</p>
-            </div>
-            <div class="col-md-4 text-end">
-                <a href="/rutas/nueva" class="btn btn-success">
-                    <i class="bi bi-plus-circle"></i> Nueva Ruta
-                </a>
-            </div>
-        </div>
+{% block title %}Rutas - Diamante Pro{% endblock %}
 
-        {% if stats_rutas|length == 0 %}
-        <div class="alert alert-info">
-            <i class="bi bi-info-circle"></i> No hay rutas registradas. Crea una para empezar.
-        </div>
-        {% endif %}
+{% block extra_css %}
+<style>
+    .ruta-card {
+        transition: transform 0.2s;
+        border-radius: 12px;
+    }
+    .ruta-card:hover {
+        transform: translateY(-5px);
+    }
+    .badge-sociedad {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .badge-propio {
+        background: var(--neon-green);
+        color: #000;
+    }
+</style>
+{% endblock %}
 
-        <div class="row">
-            {% for stat in stats_rutas %}
-            <div class="col-md-6 col-lg-4 mb-4">
-                <div class="card ruta-card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div>
-                                <h5 class="mb-1">
-                                    {% if stat.ruta.activo %}
-                                    <span class="text-success">●</span>
-                                    {% else %}
-                                    <span class="text-secondary">●</span>
-                                    {% endif %}
-                                    {{ stat.ruta.nombre }}
-                                </h5>
-                                {% if stat.ruta.cobrador %}
-                                <p class="text-muted mb-0 small">
-                                    <i class="bi bi-person-badge"></i> {{ stat.ruta.cobrador.nombre }}
-                                </p>
-                                {% else %}
-                                <p class="text-muted mb-0 small">
-                                    <i class="bi bi-exclamation-triangle"></i> Sin cobrador asignado
-                                </p>
-                                {% endif %}
-                            </div>
-                            {% if stat.ruta.sociedad %}
-                            <span class="badge badge-sociedad">
-                                <i class="bi bi-people-fill"></i> SOCIEDAD
-                            </span>
+{% block page_title %}
+<i class="bi bi-map me-2"></i>Gestión de Rutas
+{% endblock %}
+
+{% block page_actions %}
+<a href="{{ url_for('rutas.nueva') }}" class="btn btn-success">
+    <i class="bi bi-plus-circle me-1"></i> Nueva Ruta
+</a>
+{% endblock %}
+
+{% block content %}
+{% if stats_rutas|length == 0 %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle me-2"></i>No hay rutas registradas. Crea una para empezar.
+</div>
+{% endif %}
+
+<div class="row g-4">
+    {% for stat in stats_rutas %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card ruta-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h5 class="mb-1">
+                            {% if stat.ruta.activo %}
+                            <span class="text-success">●</span>
                             {% else %}
-                            <span class="badge badge-propio">
-                                <i class="bi bi-building"></i> PROPIO
-                            </span>
+                            <span class="text-secondary">●</span>
                             {% endif %}
-                        </div>
-
-                        {% if stat.ruta.sociedad %}
-                        <div class="alert alert-info p-2 mb-3 small">
-                            <i class="bi bi-handshake"></i> {{ stat.ruta.sociedad.nombre }}
-                        </div>
+                            {{ stat.ruta.nombre }}
+                        </h5>
+                        {% if stat.ruta.cobrador %}
+                        <p class="text-muted mb-0 small">
+                            <i class="bi bi-person-badge"></i> {{ stat.ruta.cobrador.nombre }}
+                        </p>
+                        {% else %}
+                        <p class="text-warning mb-0 small">
+                            <i class="bi bi-exclamation-triangle"></i> Sin cobrador asignado
+                        </p>
                         {% endif %}
+                    </div>
+                    {% if stat.ruta.sociedad %}
+                    <span class="badge badge-sociedad">
+                        <i class="bi bi-people-fill"></i> SOCIEDAD
+                    </span>
+                    {% else %}
+                    <span class="badge badge-propio">
+                        <i class="bi bi-person-fill"></i> PROPIO
+                    </span>
+                    {% endif %}
+                </div>
 
-                        <div class="row text-center mb-3">
-                            <div class="col-6">
-                                <h4 class="mb-0 text-primary">{{ stat.num_prestamos }}</h4>
-                                <small class="text-muted">Préstamos</small>
-                            </div>
-                            <div class="col-6">
-                                <h4 class="mb-0 text-success">${{ "{:,.0f}".format(stat.total_cartera) }}</h4>
-                                <small class="text-muted">Cartera</small>
-                            </div>
-                        </div>
-
-                        <div class="d-flex gap-2 mt-3">
-                            <a href="/rutas/editar/{{ stat.ruta.id }}" class="btn btn-sm btn-outline-primary flex-fill">
-                                <i class="bi bi-pencil"></i> Editar
-                            </a>
-                        </div>
+                <div class="row text-center mb-3">
+                    <div class="col-4">
+                        <small class="text-muted d-block">Clientes</small>
+                        <strong class="text-primary">{{ stat.num_clientes }}</strong>
+                    </div>
+                    <div class="col-4">
+                        <small class="text-muted d-block">Préstamos</small>
+                        <strong class="text-success">{{ stat.num_prestamos }}</strong>
+                    </div>
+                    <div class="col-4">
+                        <small class="text-muted d-block">Cartera</small>
+                        <strong class="text-info">${{ "{:,.0f}".format(stat.total_cartera) }}</strong>
                     </div>
                 </div>
+
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('rutas.editar', id=stat.ruta.id) }}" class="btn btn-outline-warning btn-sm flex-fill">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a>
+                    <a href="{{ url_for('cobros.lista') }}?ruta={{ stat.ruta.id }}" class="btn btn-outline-primary btn-sm flex-fill">
+                        <i class="bi bi-list-check"></i> Cobros
+                    </a>
+                </div>
             </div>
-            {% endfor %}
         </div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+    {% endfor %}
+</div>
+{% endblock %}
