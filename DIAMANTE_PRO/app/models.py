@@ -81,9 +81,9 @@ class Ruta(db.Model):
     moneda = db.Column(db.String(3), default='COP')  # COP, BRL, PEN, ARS, USD
     simbolo_moneda = db.Column(db.String(5), default='$')  # $, R$, S/, $, USD
     
-    # Relaciones
-    cobrador = db.relationship('Usuario', backref='rutas_asignadas')
-    sociedad = db.relationship('Sociedad', backref='rutas')
+    # Relaciones con cascade
+    cobrador = db.relationship('Usuario', backref=db.backref('rutas_asignadas', lazy='dynamic'))
+    sociedad = db.relationship('Sociedad', backref=db.backref('rutas', lazy='dynamic'))
 
 # 2. LOS CLIENTES (Comerciantes)
 class Cliente(db.Model):
@@ -215,10 +215,10 @@ class Prestamo(db.Model):
     fecha_fin_estimada = db.Column(db.DateTime)
     fecha_ultimo_pago = db.Column(db.DateTime)
     
-    # Relaciones
-    cliente = db.relationship('Cliente', backref='prestamos')
-    ruta = db.relationship('Ruta', backref='prestamos')
-    cobrador = db.relationship('Usuario', backref='prestamos_asignados')  # Mantener por compatibilidad
+    # Relaciones con cascade
+    cliente = db.relationship('Cliente', backref=db.backref('prestamos', lazy='dynamic', cascade='all, delete-orphan'))
+    ruta = db.relationship('Ruta', backref=db.backref('prestamos', lazy='dynamic'))
+    cobrador = db.relationship('Usuario', backref=db.backref('prestamos_asignados', lazy='dynamic'))
 
 # 4. LOS PAGOS
 class Pago(db.Model):
@@ -236,9 +236,9 @@ class Pago(db.Model):
     observaciones = db.Column(db.String(500))
     tipo_pago = db.Column(db.String(20), default='NORMAL')  # NORMAL, ABONO, COMPLETO
     
-    # Relaciones
-    prestamo = db.relationship('Prestamo', backref='pagos')
-    cobrador = db.relationship('Usuario', backref='pagos_realizados')
+    # Relaciones con cascade
+    prestamo = db.relationship('Prestamo', backref=db.backref('pagos', lazy='dynamic', cascade='all, delete-orphan'))
+    cobrador = db.relationship('Usuario', backref=db.backref('pagos_realizados', lazy='dynamic'))
 
 # 5. LA CAJA
 class Transaccion(db.Model):
@@ -273,9 +273,9 @@ class AporteCapital(db.Model):
     comprobante = db.Column(db.String(300))  # Ruta de imagen del comprobante
     registrado_por_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
     
-    # Relaciones
-    sociedad = db.relationship('Sociedad', backref='aportes')
-    registrado_por = db.relationship('Usuario', backref='aportes_registrados')
+    # Relaciones con cascade
+    sociedad = db.relationship('Sociedad', backref=db.backref('aportes', lazy='dynamic', cascade='all, delete-orphan'))
+    registrado_por = db.relationship('Usuario', backref=db.backref('aportes_registrados', lazy='dynamic'))
 
 # 7. ACTIVOS FIJOS
 class Activo(db.Model):
@@ -335,8 +335,8 @@ class HistorialScoring(db.Model):
     calculado_por = db.Column(db.String(50), default='SISTEMA')  # SISTEMA, MANUAL, RECALCULO_MASIVO
     observaciones = db.Column(db.String(500))
     
-    # Relaciones
-    cliente = db.relationship('Cliente', backref='historial_scores')
+    # Relaciones con cascade
+    cliente = db.relationship('Cliente', backref=db.backref('historial_scores', lazy='dynamic', cascade='all, delete-orphan'))
 
 
 # 9. ALERTAS DE SCORING (Recomendaciones de la IA)
@@ -360,6 +360,6 @@ class AlertaScoring(db.Model):
     atendida_por_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True)
     notas_atencion = db.Column(db.String(500))
     
-    # Relaciones
-    cliente = db.relationship('Cliente', backref='alertas_scoring')
-    atendida_por = db.relationship('Usuario', backref='alertas_atendidas')
+    # Relaciones con cascade
+    cliente = db.relationship('Cliente', backref=db.backref('alertas_scoring', lazy='dynamic', cascade='all, delete-orphan'))
+    atendida_por = db.relationship('Usuario', backref=db.backref('alertas_atendidas', lazy='dynamic'))

@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from flask import Flask
+from flask import Flask, request, g
 from flask_cors import CORS
 from .extensions import db, login_manager
 
@@ -16,6 +16,13 @@ def create_app():
             load_dotenv(env_path)
         except ImportError:
             pass  # python-dotenv no instalado, usar variables del sistema
+
+    # ============================================================
+    # LOGGING ESTRUCTURADO
+    # ============================================================
+    from .logging_config import setup_logging, get_logger
+    logger = setup_logging(app)
+    logger.info('Iniciando aplicación Diamante Pro')
 
     # ============================================================
     # CONFIGURACIÓN DE SEGURIDAD
@@ -120,5 +127,24 @@ def create_app():
     # Crear tablas
     with app.app_context():
         db.create_all()
+    
+    # ============================================================
+    # REQUEST LOGGING MIDDLEWARE
+    # ============================================================
+    @app.before_request
+    def log_request_info():
+        """Registra información de cada request"""
+        g.request_start_time = __import__('time').time()
+    
+    @app.after_request
+    def log_response_info(response):
+        """Registra información de cada response"""
+        if hasattr(g, 'request_start_time'):
+            duration_ms = ((__import__('time').time() - g.request_start_time) * 1000)
+            if duration_ms > 1000:  # Solo loggear requests lentos (>1s)
+                logger.warning(f'Slow request: {request.method} {request.path} - {duration_ms:.0f}ms')
+        return response
+    
+    logger.info(f'Aplicación lista - Blueprints: {len(app.blueprints)}')
     
     return app
