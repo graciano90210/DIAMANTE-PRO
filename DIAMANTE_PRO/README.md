@@ -154,26 +154,45 @@ GET  /reportes            - Dashboard de reportes
 ```
 DIAMANTE_PRO/
 ├── app/
-│   ├── blueprints/          # Módulos organizados
-│   │   ├── auth.py          # Autenticación
-│   │   ├── clientes.py      # Gestión de clientes
+│   ├── blueprints/          # Módulos organizados (10 blueprints)
+│   │   ├── __init__.py      # Registro de blueprints
+│   │   ├── auth.py          # Autenticación (login/logout)
+│   │   ├── clientes.py      # CRUD de clientes
 │   │   ├── prestamos.py     # Gestión de préstamos
 │   │   ├── cobros.py        # Registro de pagos
 │   │   ├── rutas.py         # Rutas de cobranza
 │   │   ├── sociedades.py    # Gestión de socios
-│   │   ├── finanzas.py      # Capital y caja
-│   │   └── reportes.py      # Reportes y estadísticas
-│   ├── templates/           # Plantillas HTML
-│   ├── static/              # Archivos estáticos
-│   ├── models.py            # Modelos de datos
-│   ├── routes.py            # Rutas principales
-│   └── __init__.py          # Factory de la app
-├── instance/                # Configuración local
-├── requirements.txt         # Dependencias
+│   │   ├── finanzas.py      # Capital, caja, gastos
+│   │   └── reportes.py      # Dashboard y estadísticas
+│   ├── templates/           # Plantillas HTML (Jinja2)
+│   ├── static/              # CSS, JS, imágenes
+│   ├── models.py            # Modelos SQLAlchemy
+│   ├── extensions.py        # Extensiones Flask
+│   ├── routes.py            # Rutas principales (~300 líneas)
+│   └── __init__.py          # Application Factory
+├── instance/                # Base de datos SQLite local
+├── requirements.txt         # Dependencias Python
 ├── Procfile                 # Configuración Heroku
 ├── run.py                   # Punto de entrada
+├── SECURITY.md              # Guía de seguridad
+├── .env.example             # Plantilla de variables
 └── README.md
 ```
+
+### Arquitectura Modular
+
+El proyecto utiliza el patrón **Blueprint** de Flask para organizar el código:
+
+| Blueprint | Rutas | Responsabilidad |
+|-----------|-------|-----------------|
+| `auth` | `/login`, `/logout` | Autenticación |
+| `clientes` | `/clientes/*` | CRUD clientes |
+| `prestamos` | `/prestamos/*` | Gestión préstamos |
+| `cobros` | `/cobro/*` | Registro pagos |
+| `rutas` | `/rutas/*` | Rutas cobranza |
+| `sociedades` | `/sociedades/*` | Socios |
+| `finanzas` | `/capital/*`, `/caja/*` | Finanzas |
+| `reportes` | `/reportes/*` | Estadísticas |
 
 ---
 
@@ -190,13 +209,43 @@ DIAMANTE_PRO/
 ### Configuración de Producción (Heroku)
 
 ```bash
-# Configurar variables
-heroku config:set SECRET_KEY=tu-clave-secreta
+# Configurar variables obligatorias
+heroku config:set SECRET_KEY=$(python -c "import secrets; print(secrets.token_hex(32))")
 heroku config:set FLASK_ENV=production
+
+# Servicios opcionales
+heroku config:set SENDGRID_API_KEY=SG.xxxxx
+heroku config:set SENTRY_DSN=https://xxx@sentry.io/xxx
 
 # Desplegar
 git push heroku master
 ```
+
+---
+
+## 🔐 Seguridad
+
+### Variables de Entorno Sensibles
+
+| Variable | Descripción | Obligatorio |
+|----------|-------------|-------------|
+| `SECRET_KEY` | Clave secreta Flask (32+ caracteres) | ✅ Sí |
+| `JWT_SECRET_KEY` | Clave para tokens JWT móvil | ✅ Sí |
+| `SENDGRID_API_KEY` | API key para emails | ❌ Opcional |
+| `SENTRY_DSN` | Monitoreo de errores | ❌ Opcional |
+| `AWS_ACCESS_KEY_ID` | Almacenamiento S3 | ❌ Opcional |
+
+### Generar Claves Seguras
+
+```bash
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+### Archivos de Configuración
+
+- `.env` - Credenciales locales (⚠️ NO subir a Git)
+- `.env.example` - Plantilla sin valores reales
+- `SECURITY.md` - Guía completa de seguridad y rotación de keys
 
 ---
 
