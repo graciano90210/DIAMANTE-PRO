@@ -85,7 +85,24 @@ def lista():
 def guardar():
     """Guardar nuevo préstamo"""
     try:
-        cliente_id = int(request.form.get('cliente_id'))
+        # Validar campos requeridos
+        cliente_id_str = request.form.get('cliente_id', '').strip()
+        if not cliente_id_str:
+            raise ValueError('Debe seleccionar un cliente')
+        cliente_id = int(cliente_id_str)
+        
+        monto_prestado_str = request.form.get('monto_prestado', '').strip()
+        if not monto_prestado_str:
+            raise ValueError('Debe ingresar el monto a prestar')
+        
+        numero_cuotas_str = request.form.get('numero_cuotas', '').strip()
+        if not numero_cuotas_str:
+            raise ValueError('Debe ingresar el número de cuotas')
+        
+        cobrador_id_str = request.form.get('cobrador_id', '').strip()
+        if not cobrador_id_str:
+            # Si no hay cobrador seleccionado, usar el usuario actual
+            cobrador_id_str = str(session.get('usuario_id', 1))
         
         # VALIDACIÓN: Verificar si el cliente ya tiene un préstamo activo
         prestamo_activo = Prestamo.query.filter_by(
@@ -105,11 +122,12 @@ def guardar():
                 rol=session.get('rol')
             )
 
-        monto_prestado = float(request.form.get('monto_prestado'))
-        tasa_interes = float(request.form.get('tasa_interes'))
-        numero_cuotas = int(request.form.get('numero_cuotas'))
-        monto_a_pagar = float(request.form.get('monto_a_pagar'))
-        valor_cuota = float(request.form.get('valor_cuota'))
+        monto_prestado = float(monto_prestado_str)
+        tasa_interes = float(request.form.get('tasa_interes', '20'))
+        numero_cuotas = int(numero_cuotas_str)
+        monto_a_pagar = float(request.form.get('monto_a_pagar', str(monto_prestado * 1.2)))
+        valor_cuota = float(request.form.get('valor_cuota', str(monto_a_pagar / numero_cuotas)))
+        cobrador_id = int(cobrador_id_str)
         
         # Calcular fecha fin estimada
         fecha_inicio = datetime.strptime(request.form.get('fecha_inicio'), '%Y-%m-%d')
@@ -134,8 +152,7 @@ def guardar():
         # Obtener Ruta ID
         ruta_id = session.get('ruta_seleccionada_id')
         if not ruta_id:
-            cobrador_id_form = int(request.form.get('cobrador_id'))
-            ruta = Ruta.query.filter_by(cobrador_id=cobrador_id_form).first()
+            ruta = Ruta.query.filter_by(cobrador_id=cobrador_id).first()
             if ruta:
                 ruta_id = ruta.id
             else:
@@ -146,7 +163,7 @@ def guardar():
         nuevo_prestamo = Prestamo(
             cliente_id=cliente_id,
             ruta_id=ruta_id,
-            cobrador_id=int(request.form.get('cobrador_id')),
+            cobrador_id=cobrador_id,
             monto_prestado=monto_prestado,
             tasa_interes=tasa_interes,
             monto_a_pagar=monto_a_pagar,
