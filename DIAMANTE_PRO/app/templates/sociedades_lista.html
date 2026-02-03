@@ -71,7 +71,7 @@
                 {% endif %}
 
                 <div class="d-flex gap-2">
-                    <a href="{{ url_for('sociedades.editar', id=stat.sociedad.id) }}" class="btn btn-outline-warning btn-sm flex-fill">
+                    <a href="{{ url_for('sociedades.editar', sociedad_id=stat.sociedad.id) }}" class="btn btn-outline-warning btn-sm flex-fill">
                         <i class="bi bi-pencil"></i> Editar
                     </a>
                     <a href="{{ url_for('reportes.reportes') }}?sociedad={{ stat.sociedad.id }}" class="btn btn-outline-info btn-sm flex-fill">

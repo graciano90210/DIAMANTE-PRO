@@ -32,7 +32,7 @@
 {% endblock %}
 
 {% block page_actions %}
-<a href="{{ url_for('admin_bp.usuarios_nuevo') }}" class="btn btn-primary">
+<a href="{{ url_for('main.usuarios_nuevo') }}" class="btn btn-primary">
     <i class="bi bi-person-plus-fill me-1"></i> Nuevo Usuario
 </a>
 {% endblock %}
@@ -137,23 +137,19 @@
 
                 {% if stat.usuario.rol == 'cobrador' %}
                 <div class="row text-center mb-3">
-                    <div class="col-4">
-                        <small class="text-muted d-block">Préstamos</small>
-                        <strong>{{ stat.prestamos_activos }}</strong>
+                    <div class="col-6">
+                        <small class="text-muted d-block">Cobros</small>
+                        <strong>{{ stat.num_cobros }}</strong>
                     </div>
-                    <div class="col-4">
-                        <small class="text-muted d-block">Cobrado Hoy</small>
-                        <strong class="text-success">${{ "{:,.0f}".format(stat.cobrado_hoy) }}</strong>
-                    </div>
-                    <div class="col-4">
-                        <small class="text-muted d-block">Cartera</small>
-                        <strong class="text-info">${{ "{:,.0f}".format(stat.cartera) }}</strong>
+                    <div class="col-6">
+                        <small class="text-muted d-block">Total Cobrado</small>
+                        <strong class="text-success">${{ "{:,.0f}".format(stat.total_cobrado) }}</strong>
                     </div>
                 </div>
                 {% endif %}
 
                 <div class="d-flex gap-2">
-                    <a href="{{ url_for('admin_bp.usuarios_editar', id=stat.usuario.id) }}" class="btn btn-outline-warning btn-sm flex-fill">
+                    <a href="{{ url_for('main.usuarios_editar', usuario_id=stat.usuario.id) }}" class="btn btn-outline-warning btn-sm flex-fill">
                         <i class="bi bi-pencil"></i> Editar
                     </a>
                     {% if stat.usuario.rol == 'cobrador' %}

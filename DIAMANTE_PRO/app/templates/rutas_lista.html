@@ -90,7 +90,7 @@
                 </div>
 
                 <div class="d-flex gap-2">
-                    <a href="{{ url_for('rutas.editar', id=stat.ruta.id) }}" class="btn btn-outline-warning btn-sm flex-fill">
+                    <a href="{{ url_for('rutas.editar', ruta_id=stat.ruta.id) }}" class="btn btn-outline-warning btn-sm flex-fill">
                         <i class="bi bi-pencil"></i> Editar
                     </a>
                     <a href="{{ url_for('cobros.lista') }}?ruta={{ stat.ruta.id }}" class="btn btn-outline-primary btn-sm flex-fill">

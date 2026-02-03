@@ -18,8 +18,8 @@
     <div class="row justify-content-center">
         <div class="col-lg-8">
             <div class="card shadow">
-                <div class="card-header bg-info text-white py-3">
-                    <h5 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>Traslado Entre Rutas</h5>
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0"><i class="bi bi-arrow-left-right me-2"></i>Traslado Entre Rutas</h5>
                 </div>
                 <div class="card-body p-4">
                     {% if error %}
@@ -33,23 +33,23 @@
                         <input type="hidden" name="tipo_traslado" value="ruta_a_ruta">
 
                         <!-- Visualización del flujo -->
-                        <div class="text-center mb-4 py-3 bg-light rounded">
+                        <div class="text-center mb-4 py-3 rounded" style="background: rgba(255,255,255,0.05);">
                             <div class="d-flex align-items-center justify-content-center">
                                 <div class="text-center px-4">
-                                    <i class="fas fa-route fa-3x text-danger mb-2"></i>
-                                    <div class="fw-bold">Ruta Origen</div>
-                                    <small class="text-muted">Envía dinero</small>
+                                    <i class="bi bi-geo-alt-fill fs-1 text-warning mb-2"></i>
+                                    <div class="fw-bold text-white">Ruta Origen</div>
+                                    <small class="text-secondary">Envía dinero</small>
                                 </div>
                                 <div class="px-4">
-                                    <i class="fas fa-arrow-right fa-2x text-muted"></i>
+                                    <i class="bi bi-arrow-right fs-2 text-muted"></i>
                                     <div class="mt-2">
                                         <span id="monto_preview" class="badge bg-success fs-6">$0</span>
                                     </div>
                                 </div>
                                 <div class="text-center px-4">
-                                    <i class="fas fa-route fa-3x text-success mb-2"></i>
-                                    <div class="fw-bold">Ruta Destino</div>
-                                    <small class="text-muted">Recibe dinero</small>
+                                    <i class="bi bi-geo-alt-fill fs-1 text-success mb-2"></i>
+                                    <div class="fw-bold text-white">Ruta Destino</div>
+                                    <small class="text-secondary">Recibe dinero</small>
                                 </div>
                             </div>
                         </div>
@@ -57,9 +57,9 @@
                         <div class="row g-4">
                             <!-- Columna Origen -->
                             <div class="col-md-6">
-                                <div class="card border-danger h-100">
-                                    <div class="card-header bg-danger text-white">
-                                        <i class="fas fa-arrow-circle-up me-2"></i>ORIGEN
+                                <div class="card border-warning h-100">
+                                    <div class="card-header text-white" style="background-color: #d97706;">
+                                        <i class="bi bi-arrow-up-circle me-2"></i>ORIGEN
                                     </div>
                                     <div class="card-body">
                                         <div class="mb-3">
@@ -88,7 +88,7 @@
                             <div class="col-md-6">
                                 <div class="card border-success h-100">
                                     <div class="card-header bg-success text-white">
-                                        <i class="fas fa-arrow-circle-down me-2"></i>DESTINO
+                                        <i class="bi bi-arrow-down-circle me-2"></i>DESTINO
                                     </div>
                                     <div class="card-body">
                                         <div class="mb-3">
@@ -139,10 +139,10 @@
 
                         <div class="d-flex justify-content-between">
                             <a href="{{ url_for('finanzas.traslados_lista') }}" class="btn btn-outline-secondary btn-lg">
-                                <i class="fas fa-arrow-left me-1"></i> Cancelar
+                                <i class="bi bi-arrow-left me-1"></i> Cancelar
                             </a>
-                            <button type="submit" class="btn btn-info btn-lg text-white">
-                                <i class="fas fa-exchange-alt me-1"></i> Realizar Traslado
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-arrow-left-right me-1"></i> Realizar Traslado
                             </button>
                         </div>
                     </form>

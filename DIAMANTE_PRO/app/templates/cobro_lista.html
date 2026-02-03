@@ -221,7 +221,7 @@
                             <i class="bi bi-cash-coin me-1"></i> Cobrar
                         </a>
                         <div class="btn-group">
-                            <a href="{{ url_for('prestamos.ver', id=prestamo.id) }}" class="btn btn-outline-primary btn-sm">
+                            <a href="{{ url_for('prestamos.detalle', prestamo_id=prestamo.id) }}" class="btn btn-outline-primary btn-sm">
                                 <i class="bi bi-eye"></i> Ver
                             </a>
                             <a href="https://wa.me/57{{ prestamo.cliente.telefono }}" 

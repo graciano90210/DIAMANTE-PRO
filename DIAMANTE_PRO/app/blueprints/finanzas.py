@@ -377,7 +377,43 @@ def caja_gastos_guardar():
 @login_required
 def caja_cuadre():
     """Cuadre de caja"""
+    from datetime import datetime, date
+    
+    # Obtener fecha del filtro o usar hoy
+    fecha_str = request.args.get('fecha')
+    if fecha_str:
+        fecha = datetime.strptime(fecha_str, '%Y-%m-%d').date()
+    else:
+        fecha = date.today()
+    
+    # Obtener pagos del día (ingresos)
+    pagos = Pago.query.filter(
+        db.func.date(Pago.fecha_pago) == fecha
+    ).order_by(Pago.fecha_pago.desc()).all()
+    
+    # Calcular total ingresos
+    total_ingresos = sum(p.monto for p in pagos) if pagos else 0
+    
+    # Obtener gastos del día
+    gastos = Transaccion.query.filter(
+        Transaccion.naturaleza == 'EGRESO',
+        db.func.date(Transaccion.fecha) == fecha
+    ).order_by(Transaccion.fecha.desc()).all()
+    
+    # Calcular total gastos
+    total_gastos = sum(g.monto for g in gastos) if gastos else 0
+    
+    # Calcular efectivo esperado
+    efectivo_esperado = total_ingresos - total_gastos
+    
     return render_template('caja_cuadre.html',
+        fecha=fecha.strftime('%Y-%m-%d'),
+        fecha_display=fecha.strftime('%d/%m/%Y'),
+        pagos=pagos,
+        gastos=gastos,
+        total_ingresos=total_ingresos,
+        total_gastos=total_gastos,
+        efectivo_esperado=efectivo_esperado,
         nombre=session.get('nombre'),
         rol=session.get('rol'))
 

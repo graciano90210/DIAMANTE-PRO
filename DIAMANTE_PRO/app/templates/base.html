@@ -30,7 +30,7 @@
         /* ==================== SIDEBAR ==================== */
         .sidebar {
             width: var(--sidebar-width);
-            min-height: 100vh;
+            height: 100vh;
             background: linear-gradient(180deg, #0A0E21 0%, #0d1224 50%, #0A0E21 100%);
             border-right: 1px solid rgba(0, 229, 255, 0.1);
             position: fixed;
@@ -39,24 +39,39 @@
             z-index: 1000;
             transition: all 0.3s ease;
             box-shadow: 4px 0 25px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .sidebar-menu {
+            flex: 1;
             overflow-y: auto;
             overflow-x: hidden;
+            padding: 15px 0;
+        }
+        
+        .sidebar-logout {
+            padding: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            background: #0A0E21;
+            flex-shrink: 0;
         }
 
-        .sidebar::-webkit-scrollbar {
+        .sidebar-menu::-webkit-scrollbar {
             width: 6px;
         }
 
-        .sidebar::-webkit-scrollbar-track {
+        .sidebar-menu::-webkit-scrollbar-track {
             background: rgba(0, 0, 0, 0.2);
         }
 
-        .sidebar::-webkit-scrollbar-thumb {
+        .sidebar-menu::-webkit-scrollbar-thumb {
             background: rgba(0, 229, 255, 0.3);
             border-radius: 3px;
         }
 
-        .sidebar::-webkit-scrollbar-thumb:hover {
+        .sidebar-menu::-webkit-scrollbar-thumb:hover {
             background: rgba(0, 229, 255, 0.5);
         }
 
@@ -127,10 +142,6 @@
         }
 
         /* ==================== MENU ITEMS ==================== */
-        .sidebar-menu {
-            padding: 15px 0;
-        }
-
         .menu-section {
             margin-bottom: 10px;
         }
@@ -437,18 +448,7 @@
         <nav class="sidebar" id="sidebar">
             <!-- Logo -->
             <a href="{{ url_for('main.dashboard') }}" class="sidebar-brand">
-                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <linearGradient id="diamondGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" style="stop-color:#00E5FF"/>
-                            <stop offset="50%" style="stop-color:#00FFD4"/>
-                            <stop offset="100%" style="stop-color:#00E5FF"/>
-                        </linearGradient>
-                    </defs>
-                    <polygon points="50,5 95,50 50,95 5,50" fill="url(#diamondGradient)" opacity="0.9"/>
-                    <polygon points="50,15 80,50 50,85 20,50" fill="#0A0E21" opacity="0.4"/>
-                    <polygon points="50,5 50,95 5,50" fill="rgba(255,255,255,0.2)"/>
-                </svg>
+                <img src="{{ url_for('static', filename='img/diamond-logo.svg') }}" alt="Diamante Pro" style="width: 40px; height: 40px; filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.6));">
                 <span>DIAMANTE PRO</span>
             </a>
 
@@ -607,10 +607,10 @@
                     <i class="bi bi-chevron-right arrow"></i>
                 </div>
                 <div class="submenu collapse" id="menuUsuarios">
-                    <a href="{{ url_for('admin_bp.usuarios_lista') }}" class="submenu-item">
+                    <a href="{{ url_for('main.usuarios_lista') }}" class="submenu-item">
                         <i class="bi bi-people"></i> Lista de Usuarios
                     </a>
-                    <a href="#" class="submenu-item" onclick="alert('Próximamente: Nuevo Usuario')">
+                    <a href="{{ url_for('main.usuarios_nuevo') }}" class="submenu-item">
                         <i class="bi bi-person-plus"></i> Nuevo Usuario
                     </a>
                 </div>
@@ -660,9 +660,9 @@
                 {% endif %}
             </div>
 
-            <!-- Logout at bottom -->
-            <div class="mt-auto p-3 border-top" style="border-color: rgba(255,255,255,0.08) !important;">
-                <a href="{{ url_for('auth.logout') }}" class="menu-item text-danger" style="border-radius: 8px; background: rgba(255, 51, 102, 0.1);">
+            <!-- Logout fijo en la parte inferior -->
+            <div class="sidebar-logout">
+                <a href="{{ url_for('auth.logout') }}" class="menu-item text-danger" style="border-radius: 8px; background: rgba(255, 51, 102, 0.15); margin: 0;">
                     <i class="bi bi-box-arrow-left"></i>
                     <span>Cerrar Sesión</span>
                 </a>

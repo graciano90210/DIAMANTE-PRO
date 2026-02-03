@@ -28,7 +28,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <p class="text-muted mb-1">Total Clientes</p>
-                        <h3 class="mb-0">{{ clientes|length }}</h3>
+                        <h3 class="mb-0">{{ clientes.total }}</h3>
                     </div>
                     <div class="stat-icon bg-primary bg-opacity-10 text-primary">
                         <i class="bi bi-people"></i>
@@ -43,7 +43,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <p class="text-muted mb-1">Clientes VIP</p>
-                        <h3 class="mb-0 text-warning">{{ clientes|selectattr('es_vip')|list|length }}</h3>
+                        <h3 class="mb-0 text-warning">{{ clientes.items|selectattr('es_vip')|list|length }}</h3>
                     </div>
                     <div class="stat-icon bg-warning bg-opacity-10 text-warning">
                         <i class="bi bi-star-fill"></i>
@@ -58,7 +58,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <p class="text-muted mb-1">Clientes Regulares</p>
-                        <h3 class="mb-0 text-success">{{ clientes|rejectattr('es_vip')|list|length }}</h3>
+                        <h3 class="mb-0 text-success">{{ clientes.items|rejectattr('es_vip')|list|length }}</h3>
                     </div>
                     <div class="stat-icon bg-success bg-opacity-10 text-success">
                         <i class="bi bi-person-check"></i>
@@ -93,7 +93,7 @@
 <!-- Tabla de Clientes -->
 <div class="card">
     <div class="card-body">
-        {% if clientes %}
+        {% if clientes.items %}
         <div class="table-responsive">
             <table class="table table-hover align-middle" id="tablaClientes">
                 <thead>
@@ -109,7 +109,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for cliente in clientes %}
+                    {% for cliente in clientes.items %}
                     <tr data-vip="{{ 'vip' if cliente.es_vip else 'regular' }}">
                         <td><span class="badge bg-secondary">#{{ cliente.id }}</span></td>
                         <td>
@@ -150,7 +150,7 @@
                                    class="btn btn-sm btn-success" title="Nuevo Crédito">
                                     <i class="bi bi-cash-stack"></i>
                                 </a>
-                                <a href="{{ url_for('clientes.editar', id=cliente.id) }}" 
+                                <a href="{{ url_for('clientes.editar', cliente_id=cliente.id) }}" 
                                    class="btn btn-sm btn-warning" title="Editar">
                                     <i class="bi bi-pencil"></i>
                                 </a>

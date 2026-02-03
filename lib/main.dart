@@ -13,87 +13,113 @@ import 'package:flutter/foundation.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
-// --- 1. CONSTANTES DE DISEÑO TECH ---
-// (Pégalas al principio del archivo, fuera de main())
-const Color kBgDark = Color(0xFF0A0E21);   // Fondo principal casi negro
-const Color kCardDark = Color(0xFF1D1E33); // Color de tarjetas y campos
-const Color kNeonCyan = Color(0xFF00E5FF); // Azul eléctrico principal
-const Color kNeonGreen = Color(0xFF00FF99); // Verde neón para acciones positivas
-const Color kNeonRed = Color(0xFFFF3366);   // Rojo neón para gastos/errores
+// --- 1. CONSTANTES DE DISEÑO DIAMANTE PRO (igual que la web) ---
+const Color kBgDark = Color(0xFF0D1117);      // Fondo principal oscuro
+const Color kCardDark = Color(0xFF161B22);    // Color de tarjetas
+const Color kInputBg = Color(0xFF0D1926);     // Fondo de inputs (azul oscuro)
+const Color kPrimaryGreen = Color(0xFF00D67F); // Verde header/botones
+const Color kNeonCyan = Color(0xFF00D67F);    // Alias para compatibilidad
+const Color kNeonGreen = Color(0xFF00D67F);   // Verde para acciones
+const Color kNeonRed = Color(0xFFFF4757);     // Rojo para errores
 const Color kTextWhite = Colors.white;
-const Color kTextGrey = Color(0xFF8D8E98);
+const Color kTextGrey = Color(0xFF8B949E);
 
-// --- 2. DEFINICIÓN DEL TEMA GLOBAL ---
-// (Pégalo justo debajo de las constantes)
+// --- 2. DEFINICIÓN DEL TEMA GLOBAL (igual que la web) ---
 final ThemeData kDarkTechTheme = ThemeData.dark().copyWith(
-  // Colores base
   scaffoldBackgroundColor: kBgDark,
-  primaryColor: kNeonCyan,
-  cardColor: kCardDark, // Para alertas y menús
+  primaryColor: kPrimaryGreen,
+  cardColor: kCardDark,
+  colorScheme: const ColorScheme.dark(
+    primary: kPrimaryGreen,
+    secondary: kPrimaryGreen,
+    surface: kCardDark,
+    error: kNeonRed,
+  ),
 
-  // Barra superior (AppBar)
+  // AppBar verde como la web
   appBarTheme: const AppBarTheme(
-    backgroundColor: kBgDark,
-    elevation: 0, // Sin sombra para un look plano y moderno
-    centerTitle: true,
-    titleTextStyle: TextStyle(color: kTextWhite, fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 1),
-    iconTheme: IconThemeData(color: kNeonCyan), // Íconos de atrás/menú en cian
+    backgroundColor: kPrimaryGreen,
+    elevation: 0,
+    centerTitle: false,
+    titleTextStyle: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+    iconTheme: IconThemeData(color: Colors.white),
   ),
 
   // Textos
   textTheme: const TextTheme(
-    bodyMedium: TextStyle(color: kTextWhite), // Texto normal
-    bodySmall: TextStyle(color: kTextGrey),   // Subtítulos
-    titleLarge: TextStyle(color: kNeonCyan, fontWeight: FontWeight.bold), // Títulos grandes
-    titleMedium: TextStyle(color: kTextWhite, fontWeight: FontWeight.bold), // Títulos de tarjetas
+    bodyLarge: TextStyle(color: kTextWhite),
+    bodyMedium: TextStyle(color: kTextWhite),
+    bodySmall: TextStyle(color: kTextGrey),
+    titleLarge: TextStyle(color: kTextWhite, fontWeight: FontWeight.bold),
+    titleMedium: TextStyle(color: kTextWhite, fontWeight: FontWeight.bold),
+    labelLarge: TextStyle(color: kTextGrey),
   ),
 
-  // Campos de texto (Inputs) - ¡Esto hará que se vean increíbles!
+  // Inputs con fondo azul oscuro como la web
   inputDecorationTheme: InputDecorationTheme(
     filled: true,
-    fillColor: kCardDark, // Fondo oscuro
+    fillColor: kInputBg,
     labelStyle: const TextStyle(color: kTextGrey),
-    hintStyle: TextStyle(color: kTextGrey.withOpacity(0.5)),
-    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+    hintStyle: TextStyle(color: kTextGrey.withOpacity(0.6)),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(15),
-      borderSide: BorderSide.none, // Sin borde cuando no está en foco
+      borderRadius: BorderRadius.circular(8),
+      borderSide: BorderSide.none,
     ),
     enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(15),
-      borderSide: BorderSide(color: kCardDark.withOpacity(0.5)),
+      borderRadius: BorderRadius.circular(8),
+      borderSide: BorderSide.none,
     ),
-    focusedBorder: OutlineInputBorder( // Borde brillante al tocar
-      borderRadius: BorderRadius.circular(15),
-      borderSide: const BorderSide(color: kNeonCyan, width: 2),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8),
+      borderSide: const BorderSide(color: kPrimaryGreen, width: 2),
     ),
-    prefixIconColor: kTextGrey,
-    suffixIconColor: kNeonCyan,
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8),
+      borderSide: const BorderSide(color: kNeonRed, width: 1),
+    ),
   ),
 
-  // Botones principales (ElevatedButton)
+  // Botones verdes como la web
   elevatedButtonTheme: ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(
-      backgroundColor: kNeonCyan, // Color de fondo cian
-      foregroundColor: kBgDark,   // Texto oscuro para contraste
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1),
-      elevation: 5,
-      shadowColor: kNeonCyan.withOpacity(0.4), // Sombra con color neón
+      backgroundColor: kPrimaryGreen,
+      foregroundColor: Colors.white,
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      elevation: 0,
     ),
   ),
 
-  // Íconos generales
-  iconTheme: const IconThemeData(color: kNeonCyan),
-  
-  // Menú inferior
+  textButtonTheme: TextButtonThemeData(
+    style: TextButton.styleFrom(foregroundColor: kPrimaryGreen),
+  ),
+
+  floatingActionButtonTheme: const FloatingActionButtonThemeData(
+    backgroundColor: kPrimaryGreen,
+    foregroundColor: Colors.white,
+  ),
+
+  iconTheme: const IconThemeData(color: kPrimaryGreen),
+
   bottomNavigationBarTheme: const BottomNavigationBarThemeData(
     backgroundColor: kBgDark,
-    selectedItemColor: kNeonCyan,
+    selectedItemColor: kPrimaryGreen,
     unselectedItemColor: kTextGrey,
     elevation: 0,
-  ), dialogTheme: const DialogThemeData(backgroundColor: kCardDark),
+  ),
+
+  cardTheme: CardTheme(
+    color: kCardDark,
+    elevation: 0,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+  ),
+
+  dialogTheme: DialogTheme(
+    backgroundColor: kCardDark,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+  ),
 );
 
 void main() {
