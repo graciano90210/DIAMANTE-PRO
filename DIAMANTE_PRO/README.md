@@ -1,212 +1,256 @@
-# 💎 DIAMANTE PRO - Sistema de Préstamos y Cobros
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.10+-blue?style=for-the-badge&logo=python&logoColor=white" alt="Python"/>
+  <img src="https://img.shields.io/badge/Flask-3.0+-green?style=for-the-badge&logo=flask&logoColor=white" alt="Flask"/>
+  <img src="https://img.shields.io/badge/PostgreSQL-15+-blue?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL"/>
+  <img src="https://img.shields.io/badge/Heroku-Deployed-purple?style=for-the-badge&logo=heroku&logoColor=white" alt="Heroku"/>
+</p>
 
-Sistema completo de gestión de préstamos con API REST para aplicación móvil.
+<h1 align="center">💎 DIAMANTE PRO</h1>
+
+<p align="center">
+  <strong>Sistema Integral de Gestión de Préstamos y Cobranzas</strong><br>
+  Plataforma web profesional para administración de microcréditos
+</p>
+
+<p align="center">
+  <a href="#características">Características</a> •
+  <a href="#tecnologías">Tecnologías</a> •
+  <a href="#instalación">Instalación</a> •
+  <a href="#uso">Uso</a> •
+  <a href="#api">API</a> •
+  <a href="#estructura">Estructura</a>
+</p>
 
 ---
-## Diamante Pro
 
-**Sistema de gestión de créditos con predicción de riesgo.**
+## 📋 Descripción
 
-### Tecnologías principales
-- Python
-- SQL (PostgreSQL, SQLite)
-- Docker
-- Flask
-- Heroku
-- API REST
+**Diamante Pro** es un sistema completo de gestión financiera diseñado para empresas de microcréditos y préstamos. Permite administrar clientes, préstamos, cobros, rutas de cobranza, sociedades y generar reportes detallados.
+
+### ✨ Características Principales
+
+| Módulo | Funcionalidades |
+|--------|-----------------|
+| 👥 **Clientes** | Registro completo, scoring crediticio, historial de préstamos |
+| 💰 **Préstamos** | Creación, cálculo automático de intereses, múltiples frecuencias de pago |
+| 📱 **Cobros** | Registro de pagos, recibos digitales, envío por WhatsApp |
+| 🛣️ **Rutas** | Organización por zonas, asignación de cobradores |
+| 🏢 **Sociedades** | Gestión de socios, distribución de porcentajes |
+| 💼 **Finanzas** | Control de capital, activos, caja y gastos |
+| 📊 **Reportes** | Dashboard en tiempo real, estadísticas, gráficos |
 
 ---
 
-## 🚀 Despliegue en Heroku
+## 🛠️ Tecnologías
 
-### Paso 1: Crear cuenta y aplicación en Heroku
+### Backend
+- **Python 3.10+** - Lenguaje principal
+- **Flask 3.0** - Framework web
+- **SQLAlchemy** - ORM para base de datos
+- **PostgreSQL** - Base de datos en producción
+- **SQLite** - Base de datos en desarrollo
 
-1. Registrarse en [Heroku](https://heroku.com) con GitHub Student Pack
-2. Instalar [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli)
-3. Iniciar sesión:
-```bash
-heroku login
-```
+### Frontend
+- **HTML5 / CSS3** - Estructura y estilos
+- **Bootstrap 5** - Framework CSS responsive
+- **JavaScript** - Interactividad
+- **Chart.js** - Gráficos y estadísticas
 
-### Paso 2: Crear aplicación
+### Despliegue
+- **Heroku** - Hosting en la nube
+- **Gunicorn** - Servidor WSGI
+- **Git** - Control de versiones
 
-```bash
-heroku create diamante-pro
-```
+---
 
-<!-- Prueba de deploy GitHub Actions 2025-12-22 -->
+## 🚀 Instalación
 
-### Paso 3: Configurar Base de Datos PostgreSQL
+### Requisitos Previos
+- Python 3.10 o superior
+- pip (gestor de paquetes)
+- Git
 
-```bash
-heroku addons:create heroku-postgresql:essential-0
-```
-
-### Paso 4: Configurar variables de entorno
-
-```bash
-heroku config:set SECRET_KEY="tu-clave-secreta-muy-segura"
-heroku config:set JWT_SECRET_KEY="tu-jwt-secret-muy-segura"
-```
-
-### Paso 5: Desplegar
+### Pasos de Instalación
 
 ```bash
-git push heroku main
-```
-
-### Paso 6: Inicializar base de datos
-
-```bash
-heroku run python crear_admin.py
-```
-
-## 🌍 Configurar Dominio Personalizado
-
-### En Heroku:
-```bash
-heroku domains:add www.diamantepro.me
-heroku domains:add diamantepro.me
-```
-
-### En Namecheap (diamantepro.me):
-
-1. Ir a **Advanced DNS**
-2. Agregar registros CNAME:
-
-| Type  | Host | Value                          | TTL  |
-|-------|------|--------------------------------|------|
-| CNAME | www  | diamante-pro.herokuapp.com     | Auto |
-| CNAME | @    | diamante-pro.herokuapp.com     | Auto |
-
-3. Esperar propagación DNS (5-30 minutos)
-
-### Habilitar HTTPS:
-```bash
-heroku certs:auto:enable
-```
-
-## 📱 API REST
-
-### URL Base:
-- **Local**: `http://localhost:5001/api/v1`
-- **Producción**: `https://diamantepro.me/api/v1`
-
-### Endpoints disponibles:
-- `POST /api/v1/login` - Autenticación
-- `GET /api/v1/cobrador/rutas` - Rutas del cobrador
-- `GET /api/v1/cobrador/clientes` - Clientes activos
-- `GET /api/v1/cobrador/prestamos` - Préstamos activos
-- `GET /api/v1/cobrador/ruta-cobro` - Ruta de cobro diaria
-- `POST /api/v1/cobrador/registrar-pago` - Registrar pago
-- `GET /api/v1/cobrador/estadisticas` - Estadísticas
-
-Ver documentación completa en [API_REST.md](API_REST.md)
-
-## 💻 Desarrollo Local
-
-### 1. Clonar repositorio
-```bash
+# 1. Clonar el repositorio
 git clone https://github.com/graciano90210/DIAMANTE-PRO.git
 cd DIAMANTE-PRO
-```
 
-### 2. Crear entorno virtual
-```bash
+# 2. Crear entorno virtual
 python -m venv venv
-venv\Scripts\activate  # Windows
-source venv/bin/activate  # Mac/Linux
-```
 
-### 3. Instalar dependencias
-```bash
+# 3. Activar entorno virtual
+# Windows:
+venv\Scripts\activate
+# Linux/Mac:
+source venv/bin/activate
+
+# 4. Instalar dependencias
 pip install -r requirements.txt
-```
 
-### 4. Inicializar base de datos
-```bash
-python recrear_bd.py
+# 5. Configurar variables de entorno
+cp .env.example .env
+# Editar .env con tus configuraciones
+
+# 6. Inicializar base de datos
 python crear_admin.py
-```
 
-### 5. Ejecutar servidor
-```bash
+# 7. Ejecutar aplicación
 python run.py
 ```
 
-Abrir: http://localhost:5001
-
-## 🔧 Comandos Útiles
-
-### Ver logs en producción:
-```bash
-heroku logs --tail
-```
-
-### Acceder a consola Python en producción:
-```bash
-heroku run python
-```
-
-### Backup de base de datos:
-```bash
-heroku pg:backups:capture
-heroku pg:backups:download
-```
-
-### Reiniciar aplicación:
-```bash
-heroku restart
-```
-
-## 📊 Monitoreo
-
-### Heroku Dashboard:
-https://dashboard.heroku.com/apps/diamante-pro
-
-### Métricas:
-- Uptime
-- Response time
-- Throughput
-- Memory usage
-
-## 🔐 Seguridad
-
-- ✅ HTTPS automático
-- ✅ JWT para autenticación API
-- ✅ Contraseñas cifradas (próximamente)
-- ✅ CORS configurado
-- ✅ Variables de entorno seguras
-
-## 🎯 Próximos Pasos
-
-- [x] Implementar encriptación de contraseñas (bcrypt)
-- [x] Agregar tests automatizados
-- [x] Implementar CI/CD con GitHub Actions
-- [x] Agregar monitoreo con Sentry
-- [ ] Implementar cache con Redis
-- [ ] Crear documentación Swagger/OpenAPI
-
-## 🎓 GitHub Student Pack Implementado
-
-Este proyecto usa herramientas GRATUITAS del GitHub Student Pack:
-
-| Herramienta | Beneficio | Estado |
-|-------------|-----------|--------|
-| **GitHub Actions** | CI/CD ilimitado | ✅ Configurado |
-| **Sentry** | 100k eventos/mes | ✅ Integrado |
-| **SendGrid** | 100 emails/día | ✅ Integrado |
-| **Heroku** | $13 créditos/mes | ✅ Activo |
-| **Namecheap** | Dominio gratis 1 año | ✅ diamantepro.me |
-
-📖 **[Ver guía completa de configuración →](GITHUB_STUDENT_PACK.md)**
-
-## 📞 Soporte
-
-- **Email**: graciano90210@gmail.com
-- **GitHub**: https://github.com/graciano90210
-- **Dominio**: https://diamantepro.me
+La aplicación estará disponible en `http://127.0.0.1:5001`
 
 ---
 
-Desarrollado con ❤️ para gestión profesional de préstamos
+## 📖 Uso
+
+### Roles de Usuario
+
+| Rol | Permisos |
+|-----|----------|
+| **Dueño** | Acceso total al sistema |
+| **Gerente** | Gestión completa excepto configuraciones críticas |
+| **Secretaria** | Registro de clientes y préstamos |
+| **Cobrador** | Registro de cobros, vista de sus clientes asignados |
+
+### Credenciales por Defecto
+```
+Usuario: admin
+Contraseña: admin123
+```
+
+> ⚠️ **Importante:** Cambiar las credenciales después del primer inicio de sesión.
+
+---
+
+## 🔌 API REST
+
+### Endpoints Principales
+
+```
+GET  /estado              - Estado del servidor
+GET  /clientes/           - Lista de clientes
+POST /clientes/guardar    - Crear cliente
+GET  /prestamos/          - Lista de préstamos
+POST /prestamos/guardar   - Crear préstamo
+POST /cobro/guardar       - Registrar pago
+GET  /reportes            - Dashboard de reportes
+```
+
+### Ejemplo de Respuesta
+```json
+{
+  "estado": "OK",
+  "version": "1.0"
+}
+```
+
+---
+
+## 📁 Estructura del Proyecto
+
+```
+DIAMANTE_PRO/
+├── app/
+│   ├── blueprints/          # Módulos organizados
+│   │   ├── auth.py          # Autenticación
+│   │   ├── clientes.py      # Gestión de clientes
+│   │   ├── prestamos.py     # Gestión de préstamos
+│   │   ├── cobros.py        # Registro de pagos
+│   │   ├── rutas.py         # Rutas de cobranza
+│   │   ├── sociedades.py    # Gestión de socios
+│   │   ├── finanzas.py      # Capital y caja
+│   │   └── reportes.py      # Reportes y estadísticas
+│   ├── templates/           # Plantillas HTML
+│   ├── static/              # Archivos estáticos
+│   ├── models.py            # Modelos de datos
+│   ├── routes.py            # Rutas principales
+│   └── __init__.py          # Factory de la app
+├── instance/                # Configuración local
+├── requirements.txt         # Dependencias
+├── Procfile                 # Configuración Heroku
+├── run.py                   # Punto de entrada
+└── README.md
+```
+
+---
+
+## 🔧 Configuración
+
+### Variables de Entorno
+
+| Variable | Descripción | Ejemplo |
+|----------|-------------|---------|
+| `SECRET_KEY` | Clave secreta Flask | `tu-clave-secreta-aqui` |
+| `DATABASE_URL` | URL de conexión a BD | `postgresql://user:pass@host/db` |
+| `FLASK_ENV` | Entorno de ejecución | `production` / `development` |
+
+### Configuración de Producción (Heroku)
+
+```bash
+# Configurar variables
+heroku config:set SECRET_KEY=tu-clave-secreta
+heroku config:set FLASK_ENV=production
+
+# Desplegar
+git push heroku master
+```
+
+---
+
+## 📊 Características Detalladas
+
+### Dashboard
+- Vista general de estadísticas en tiempo real
+- Gráficos de cobros diarios (últimos 7 días)
+- Indicadores de préstamos activos, atrasados y en mora
+- Proyección de cobros para el día siguiente
+
+### Gestión de Préstamos
+- Múltiples frecuencias de pago: Diario, Semanal, Quincenal, Mensual
+- Cálculo automático de intereses y cuotas
+- Generación de comprobantes con imagen para WhatsApp
+- Control de cuotas atrasadas
+
+### Registro de Cobros
+- Lista de cobros pendientes del día
+- Registro rápido con validación de duplicados
+- Generación de recibos digitales
+- Integración con WhatsApp para envío de comprobantes
+
+### Control Financiero
+- Registro de aportes de capital por sociedad
+- Control de activos fijos
+- Gestión de caja (ingresos/egresos)
+- Traslados entre usuarios
+
+---
+
+## 🤝 Contribuir
+
+1. Fork el proyecto
+2. Crear rama feature (`git checkout -b feature/NuevaCaracteristica`)
+3. Commit cambios (`git commit -m 'Agregar nueva característica'`)
+4. Push a la rama (`git push origin feature/NuevaCaracteristica`)
+5. Abrir Pull Request
+
+---
+
+## 📄 Licencia
+
+Este proyecto es de uso privado. Todos los derechos reservados.
+
+---
+
+## 👨‍💻 Autor
+
+**Diamante Pro Team**
+
+---
+
+<p align="center">
+  <strong>💎 Diamante Pro - Sistema de Gestión de Préstamos</strong><br>
+  <sub>Desarrollado con ❤️ en Python + Flask</sub>
+</p>

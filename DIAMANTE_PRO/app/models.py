@@ -1,7 +1,8 @@
-from datetime import datetime
-from flask_sqlalchemy import SQLAlchemy
 
-db = SQLAlchemy()
+# Imports correctos para usar el Patrón de Extensiones
+from .extensions import db
+from flask_login import UserMixin
+from datetime import datetime
 
 # 1. LA GENTE (Staff y Usuarios)
 class Usuario(db.Model):
