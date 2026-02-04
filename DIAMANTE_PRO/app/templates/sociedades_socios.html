@@ -1,408 +1,654 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Socios de {{ sociedad.nombre }} - Diamante Pro</title>
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark-theme.css') }}">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <style>
-        body {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            min-height: 100vh;
-        }
-        .socio-card {
-            transition: all 0.3s ease;
-        }
-        .socio-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-        }
-        .porcentaje-badge {
-            font-size: 1.2rem;
-        }
-    </style>
-</head>
-<body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/dashboard">
-                <i class="bi bi-gem"></i> DIAMANTE PRO
-            </a>
-            <div class="d-flex align-items-center">
-                <span class="text-white me-3">
-                    <i class="bi bi-person-circle"></i> {{ nombre }}
-                </span>
-            </div>
-        </div>
-    </nav>
+{% extends "base.html" %}
 
-    <div class="container mt-4">
-        <!-- Header -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h3><i class="bi bi-people-fill"></i> {{ sociedad.nombre }}</h3>
-                                <p class="mb-0 text-muted">Gestión de Socios e Inversores</p>
-                            </div>
-                            <div>
-                                <a href="/sociedades" class="btn btn-outline-secondary">
-                                    <i class="bi bi-arrow-left"></i> Volver
-                                </a>
-                            </div>
+{% block title %}Socios de {{ sociedad.nombre }} - Diamante Pro{% endblock %}
+
+{% block page_title %}
+<i class="bi bi-people-fill me-2"></i>{{ sociedad.nombre }}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .main-card {
+        background: linear-gradient(145deg, #1D1E33 0%, #151627 100%);
+        border-radius: 20px;
+        border: 1px solid rgba(0, 229, 255, 0.1);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    }
+    
+    .header-card {
+        background: linear-gradient(135deg, rgba(0, 229, 255, 0.1) 0%, rgba(0, 136, 204, 0.05) 100%);
+        border: 1px solid rgba(0, 229, 255, 0.15);
+        border-radius: 15px;
+    }
+    
+    .section-title {
+        color: #00E5FF;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 1px;
+    }
+    
+    .card-header-primary {
+        background: linear-gradient(135deg, rgba(0, 229, 255, 0.2) 0%, rgba(0, 136, 204, 0.1) 100%);
+        border-bottom: 1px solid rgba(0, 229, 255, 0.2);
+        border-radius: 15px 15px 0 0 !important;
+    }
+    
+    .card-header-secondary {
+        background: linear-gradient(135deg, rgba(108, 117, 125, 0.2) 0%, rgba(73, 80, 87, 0.1) 100%);
+        border-bottom: 1px solid rgba(108, 117, 125, 0.2);
+        border-radius: 15px 15px 0 0 !important;
+    }
+    
+    .card-header-success {
+        background: linear-gradient(135deg, rgba(0, 255, 153, 0.2) 0%, rgba(0, 204, 119, 0.1) 100%);
+        border-bottom: 1px solid rgba(0, 255, 153, 0.2);
+        border-radius: 15px 15px 0 0 !important;
+    }
+    
+    .table-dark-custom {
+        background: transparent;
+    }
+    
+    .table-dark-custom thead th {
+        background: rgba(0, 229, 255, 0.1);
+        color: #00E5FF;
+        border-bottom: 1px solid rgba(0, 229, 255, 0.2);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+        padding: 1rem 0.75rem;
+    }
+    
+    .table-dark-custom tbody tr {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        transition: all 0.3s ease;
+    }
+    
+    .table-dark-custom tbody tr:hover {
+        background: rgba(0, 229, 255, 0.05);
+    }
+    
+    .table-dark-custom td {
+        color: #E0E0E0;
+        padding: 1rem 0.75rem;
+        vertical-align: middle;
+    }
+    
+    .badge-porcentaje {
+        background: linear-gradient(135deg, #00E5FF 0%, #0088cc 100%);
+        color: #fff;
+        font-size: 0.9rem;
+        padding: 0.5rem 0.75rem;
+        border-radius: 8px;
+    }
+    
+    .badge-tipo {
+        padding: 0.4rem 0.75rem;
+        border-radius: 8px;
+        font-weight: 500;
+    }
+    
+    .badge-capitalista {
+        background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 193, 7, 0.1) 100%);
+        color: #FFD700;
+        border: 1px solid rgba(255, 215, 0, 0.3);
+    }
+    
+    .badge-operador {
+        background: linear-gradient(135deg, rgba(23, 162, 184, 0.2) 0%, rgba(0, 123, 139, 0.1) 100%);
+        color: #17a2b8;
+        border: 1px solid rgba(23, 162, 184, 0.3);
+    }
+    
+    .badge-inversionista {
+        background: linear-gradient(135deg, rgba(108, 117, 125, 0.2) 0%, rgba(73, 80, 87, 0.1) 100%);
+        color: #adb5bd;
+        border: 1px solid rgba(108, 117, 125, 0.3);
+    }
+    
+    .btn-agregar {
+        background: linear-gradient(135deg, #00FF99 0%, #00cc77 100%);
+        border: none;
+        color: #0A0E21;
+        font-weight: 600;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-agregar:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(0, 255, 153, 0.3);
+        color: #0A0E21;
+    }
+    
+    .btn-action {
+        width: 36px;
+        height: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-action-edit {
+        background: rgba(0, 229, 255, 0.1);
+        border: 1px solid rgba(0, 229, 255, 0.3);
+        color: #00E5FF;
+    }
+    
+    .btn-action-edit:hover {
+        background: #00E5FF;
+        color: #0A0E21;
+    }
+    
+    .btn-action-delete {
+        background: rgba(255, 107, 107, 0.1);
+        border: 1px solid rgba(255, 107, 107, 0.3);
+        color: #FF6B6B;
+    }
+    
+    .btn-action-delete:hover {
+        background: #FF6B6B;
+        color: #fff;
+    }
+    
+    .progress {
+        background: #0A0E21;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .progress-bar-primary {
+        background: linear-gradient(135deg, #00E5FF 0%, #0088cc 100%);
+    }
+    
+    .progress-bar-success {
+        background: linear-gradient(135deg, #00FF99 0%, #00cc77 100%);
+    }
+    
+    .form-control, .form-select {
+        background: #0A0E21;
+        border: 1px solid rgba(0, 229, 255, 0.2);
+        color: #E0E0E0;
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        background: #0A0E21;
+        border-color: #00E5FF;
+        box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.15);
+        color: #ffffff;
+    }
+    
+    .form-label {
+        color: #B0B0B0;
+        font-weight: 500;
+    }
+    
+    .form-label.fw-bold {
+        color: #E0E0E0;
+    }
+    
+    .modal-content {
+        background: linear-gradient(145deg, #1D1E33 0%, #151627 100%);
+        border: 1px solid rgba(0, 229, 255, 0.2);
+        border-radius: 20px;
+    }
+    
+    .modal-header {
+        border-bottom: 1px solid rgba(0, 229, 255, 0.15);
+        border-radius: 20px 20px 0 0;
+    }
+    
+    .modal-header.bg-success {
+        background: linear-gradient(135deg, rgba(0, 255, 153, 0.2) 0%, rgba(0, 204, 119, 0.1) 100%) !important;
+    }
+    
+    .modal-header.bg-primary {
+        background: linear-gradient(135deg, rgba(0, 229, 255, 0.2) 0%, rgba(0, 136, 204, 0.1) 100%) !important;
+    }
+    
+    .modal-footer {
+        border-top: 1px solid rgba(0, 229, 255, 0.15);
+    }
+    
+    .btn-close-white {
+        filter: invert(1);
+    }
+    
+    .input-group-text {
+        background: rgba(0, 229, 255, 0.1);
+        border: 1px solid rgba(0, 229, 255, 0.2);
+        color: #00E5FF;
+    }
+    
+    .calculator-input {
+        background: #0A0E21;
+        border: 2px solid rgba(0, 255, 153, 0.3);
+        color: #00FF99;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+    
+    .calculator-input:focus {
+        border-color: #00FF99;
+        box-shadow: 0 0 0 3px rgba(0, 255, 153, 0.15);
+    }
+    
+    .distribution-result {
+        background: rgba(0, 255, 153, 0.05);
+        border: 1px solid rgba(0, 255, 153, 0.2);
+        border-radius: 10px;
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        color: rgba(0, 229, 255, 0.3);
+        margin-bottom: 1rem;
+    }
+    
+    .btn-volver {
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #B0B0B0;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-volver:hover {
+        border-color: #00E5FF;
+        color: #00E5FF;
+        background: rgba(0, 229, 255, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card header-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-1" style="color: #E0E0E0;">
+                                <i class="bi bi-people-fill me-2" style="color: #00E5FF;"></i>{{ sociedad.nombre }}
+                            </h3>
+                            <p class="mb-0 text-muted">Gestión de Socios e Inversores</p>
+                        </div>
+                        <div>
+                            <a href="/sociedades" class="btn btn-volver">
+                                <i class="bi bi-arrow-left me-2"></i>Volver
+                            </a>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="row">
-            <!-- Columna izquierda: Lista de socios -->
-            <div class="col-lg-8">
-                <div class="card mb-4">
-                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">
-                            <i class="bi bi-person-lines-fill"></i> Socios Activos
-                            <span class="badge bg-light text-primary ms-2">{{ socios|length }}</span>
-                        </h5>
-                        <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#modalAgregarSocio">
-                            <i class="bi bi-plus-circle"></i> Agregar Socio
+    <div class="row">
+        <!-- Columna izquierda: Lista de socios -->
+        <div class="col-lg-8">
+            <div class="card main-card mb-4">
+                <div class="card-header card-header-primary d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0" style="color: #00E5FF;">
+                        <i class="bi bi-person-lines-fill me-2"></i>Socios Activos
+                        <span class="badge bg-light text-primary ms-2">{{ socios|length }}</span>
+                    </h5>
+                    <button class="btn btn-sm btn-agregar" data-bs-toggle="modal" data-bs-target="#modalAgregarSocio">
+                        <i class="bi bi-plus-circle me-1"></i>Agregar Socio
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    {% if socios %}
+                    <div class="table-responsive">
+                        <table class="table table-dark-custom mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Socio</th>
+                                    <th>Documento</th>
+                                    <th>Contacto</th>
+                                    <th>Tipo</th>
+                                    <th class="text-center">%</th>
+                                    <th class="text-end">Aportado</th>
+                                    <th class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for socio in socios %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ socio.nombre }}</strong>
+                                    </td>
+                                    <td>{{ socio.documento or '-' }}</td>
+                                    <td>
+                                        {% if socio.telefono %}
+                                        <i class="bi bi-telephone text-success me-1"></i>{{ socio.telefono }}<br>
+                                        {% endif %}
+                                        {% if socio.email %}
+                                        <i class="bi bi-envelope text-info me-1"></i>{{ socio.email }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-tipo {% if socio.tipo_socio == 'CAPITALISTA' %}badge-capitalista{% elif socio.tipo_socio == 'OPERADOR' %}badge-operador{% else %}badge-inversionista{% endif %}">
+                                            {{ socio.tipo_socio }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge badge-porcentaje">{{ socio.porcentaje }}%</span>
+                                    </td>
+                                    <td class="text-end fw-bold" style="color: #00FF99;">
+                                        ${{ "{:,.0f}".format(socio.monto_aportado or 0) }}
+                                    </td>
+                                    <td class="text-center">
+                                        <button class="btn btn-action btn-action-edit" 
+                                                onclick="editarSocio({{ socio.id }}, '{{ socio.nombre }}', '{{ socio.documento or '' }}', '{{ socio.telefono or '' }}', '{{ socio.email or '' }}', {{ socio.porcentaje }}, {{ socio.monto_aportado or 0 }}, '{{ socio.tipo_socio }}', '{{ socio.banco or '' }}')"
+                                                data-bs-toggle="modal" data-bs-target="#modalEditarSocio">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <form action="/sociedades/socios/{{ socio.id }}/eliminar" method="POST" 
+                                              style="display:inline" onsubmit="return confirm('¿Eliminar a {{ socio.nombre }}?')">
+                                            <button type="submit" class="btn btn-action btn-action-delete">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <i class="bi bi-people"></i>
+                        <p class="text-muted mt-3">No hay socios registrados</p>
+                        <button class="btn btn-agregar" data-bs-toggle="modal" data-bs-target="#modalAgregarSocio">
+                            <i class="bi bi-plus-circle me-2"></i>Agregar Primer Socio
                         </button>
                     </div>
-                    <div class="card-body">
-                        {% if socios %}
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Socio</th>
-                                        <th>Documento</th>
-                                        <th>Contacto</th>
-                                        <th>Tipo</th>
-                                        <th class="text-center">%</th>
-                                        <th class="text-end">Aportado</th>
-                                        <th class="text-center">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for socio in socios %}
-                                    <tr>
-                                        <td>
-                                            <strong>{{ socio.nombre }}</strong>
-                                        </td>
-                                        <td>{{ socio.documento or '-' }}</td>
-                                        <td>
-                                            {% if socio.telefono %}
-                                            <i class="bi bi-telephone text-success"></i> {{ socio.telefono }}<br>
-                                            {% endif %}
-                                            {% if socio.email %}
-                                            <i class="bi bi-envelope text-info"></i> {{ socio.email }}
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <span class="badge {% if socio.tipo_socio == 'CAPITALISTA' %}bg-warning{% elif socio.tipo_socio == 'OPERADOR' %}bg-info{% else %}bg-secondary{% endif %}">
-                                                {{ socio.tipo_socio }}
-                                            </span>
-                                        </td>
-                                        <td class="text-center">
-                                            <span class="badge bg-primary porcentaje-badge">{{ socio.porcentaje }}%</span>
-                                        </td>
-                                        <td class="text-end fw-bold">
-                                            ${{ "{:,.0f}".format(socio.monto_aportado or 0) }}
-                                        </td>
-                                        <td class="text-center">
-                                            <button class="btn btn-sm btn-outline-primary" 
-                                                    onclick="editarSocio({{ socio.id }}, '{{ socio.nombre }}', '{{ socio.documento or '' }}', '{{ socio.telefono or '' }}', '{{ socio.email or '' }}', {{ socio.porcentaje }}, {{ socio.monto_aportado or 0 }}, '{{ socio.tipo_socio }}', '{{ socio.banco or '' }}')"
-                                                    data-bs-toggle="modal" data-bs-target="#modalEditarSocio">
-                                                <i class="bi bi-pencil"></i>
-                                            </button>
-                                            <form action="/sociedades/socios/{{ socio.id }}/eliminar" method="POST" 
-                                                  style="display:inline" onsubmit="return confirm('¿Eliminar a {{ socio.nombre }}?')">
-                                                <button type="submit" class="btn btn-sm btn-outline-danger">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna derecha: Resumen -->
+        <div class="col-lg-4">
+            <!-- Distribución de Porcentajes -->
+            <div class="card main-card mb-4">
+                <div class="card-header card-header-secondary">
+                    <h6 class="mb-0" style="color: #E0E0E0;">
+                        <i class="bi bi-pie-chart me-2"></i>Distribución
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span style="color: #B0B0B0;"><i class="bi bi-person-fill-gear me-2"></i>Dueño</span>
+                            <strong style="color: #00E5FF;">{{ sociedad.porcentaje_dueno }}%</strong>
                         </div>
-                        {% else %}
-                        <div class="text-center py-5">
-                            <i class="bi bi-people fs-1 text-muted"></i>
-                            <p class="text-muted mt-3">No hay socios registrados</p>
-                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAgregarSocio">
-                                <i class="bi bi-plus-circle"></i> Agregar Primer Socio
-                            </button>
+                        <div class="progress" style="height: 25px;">
+                            <div class="progress-bar progress-bar-primary" style="width: {{ sociedad.porcentaje_dueno }}%">
+                                {{ sociedad.porcentaje_dueno }}%
+                            </div>
                         </div>
-                        {% endif %}
+                    </div>
+                    
+                    {% for socio in socios %}
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between mb-1">
+                            <small style="color: #B0B0B0;">{{ socio.nombre }}</small>
+                            <strong style="color: #00FF99;">{{ socio.porcentaje }}%</strong>
+                        </div>
+                        <div class="progress" style="height: 15px;">
+                            <div class="progress-bar progress-bar-success" style="width: {{ socio.porcentaje }}%"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    <hr style="border-color: rgba(255,255,255,0.1);">
+                    <div class="d-flex justify-content-between">
+                        <strong style="color: #B0B0B0;">Total Socios:</strong>
+                        <span style="color: #FFD700;">{{ 100 - sociedad.porcentaje_dueno }}%</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Columna derecha: Resumen -->
-            <div class="col-lg-4">
-                <!-- Distribución de Porcentajes -->
-                <div class="card mb-4">
-                    <div class="card-header bg-secondary text-white">
-                        <h6 class="mb-0"><i class="bi bi-pie-chart"></i> Distribución</h6>
+            <!-- Calculadora de Ganancias -->
+            <div class="card main-card">
+                <div class="card-header card-header-success">
+                    <h6 class="mb-0" style="color: #00FF99;">
+                        <i class="bi bi-calculator me-2"></i>Calcular Distribución
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label" style="color: #B0B0B0;">Ganancia Total</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" id="gananciaTotal" class="form-control calculator-input" 
+                                   placeholder="0" min="0" onchange="calcularDistribucion()">
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between mb-1">
-                                <span><i class="bi bi-person-fill-gear"></i> Dueño</span>
-                                <strong>{{ sociedad.porcentaje_dueno }}%</strong>
-                            </div>
-                            <div class="progress" style="height: 25px;">
-                                <div class="progress-bar bg-primary" style="width: {{ sociedad.porcentaje_dueno }}%">
-                                    {{ sociedad.porcentaje_dueno }}%
-                                </div>
-                            </div>
-                        </div>
-                        
-                        {% for socio in socios %}
-                        <div class="mb-2">
-                            <div class="d-flex justify-content-between mb-1">
-                                <small>{{ socio.nombre }}</small>
-                                <strong>{{ socio.porcentaje }}%</strong>
-                            </div>
-                            <div class="progress" style="height: 15px;">
-                                <div class="progress-bar bg-success" style="width: {{ socio.porcentaje }}%"></div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                        
-                        <hr>
-                        <div class="d-flex justify-content-between">
-                            <strong>Total Socios:</strong>
-                            <span>{{ 100 - sociedad.porcentaje_dueno }}%</span>
-                        </div>
+                    <div id="resultadoDistribucion">
+                        <!-- Resultados se muestran aquí -->
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-                <!-- Calculadora de Ganancias -->
-                <div class="card">
-                    <div class="card-header bg-success text-white">
-                        <h6 class="mb-0"><i class="bi bi-calculator"></i> Calcular Distribución</h6>
+<!-- Modal: Agregar Socio -->
+<div class="modal fade" id="modalAgregarSocio" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form action="/sociedades/{{ sociedad.id }}/socios/agregar" method="POST">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" style="color: #00FF99;">
+                        <i class="bi bi-person-plus me-2"></i>Agregar Nuevo Socio
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Nombre Completo *</label>
+                            <input type="text" name="nombre" class="form-control" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Documento</label>
+                            <input type="text" name="documento" class="form-control">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label fw-bold">Porcentaje *</label>
+                            <div class="input-group">
+                                <input type="number" name="porcentaje" class="form-control" 
+                                       min="0.1" max="99" step="0.1" required>
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label class="form-label">Ganancia Total</label>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Teléfono</label>
+                            <input type="text" name="telefono" class="form-control">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email" class="form-control">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Tipo de Socio</label>
+                            <select name="tipo_socio" class="form-select">
+                                <option value="INVERSIONISTA">Inversionista</option>
+                                <option value="CAPITALISTA">Capitalista</option>
+                                <option value="OPERADOR">Operador</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Monto Aportado</label>
                             <div class="input-group">
                                 <span class="input-group-text">$</span>
-                                <input type="number" id="gananciaTotal" class="form-control" 
-                                       placeholder="0" min="0" onchange="calcularDistribucion()">
+                                <input type="number" name="monto_aportado" class="form-control" min="0">
                             </div>
                         </div>
-                        <div id="resultadoDistribucion">
-                            <!-- Resultados se muestran aquí -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Banco / Cuenta</label>
+                            <input type="text" name="banco" class="form-control">
                         </div>
                     </div>
                 </div>
-            </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-agregar">
+                        <i class="bi bi-check-circle me-2"></i>Agregar Socio
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
+</div>
 
-    <!-- Modal: Agregar Socio -->
-    <div class="modal fade" id="modalAgregarSocio" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <form action="/sociedades/{{ sociedad.id }}/socios/agregar" method="POST">
-                    <div class="modal-header bg-success text-white">
-                        <h5 class="modal-title"><i class="bi bi-person-plus"></i> Agregar Nuevo Socio</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Nombre Completo *</label>
-                                <input type="text" name="nombre" class="form-control" required>
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label class="form-label">Documento</label>
-                                <input type="text" name="documento" class="form-control">
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label class="form-label fw-bold">Porcentaje *</label>
-                                <div class="input-group">
-                                    <input type="number" name="porcentaje" class="form-control" 
-                                           min="0.1" max="99" step="0.1" required>
-                                    <span class="input-group-text">%</span>
-                                </div>
-                            </div>
+<!-- Modal: Editar Socio -->
+<div class="modal fade" id="modalEditarSocio" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="formEditarSocio" method="POST">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" style="color: #00E5FF;">
+                        <i class="bi bi-pencil me-2"></i>Editar Socio
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Nombre Completo *</label>
+                            <input type="text" name="nombre" id="edit_nombre" class="form-control" required>
                         </div>
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Teléfono</label>
-                                <input type="text" name="telefono" class="form-control">
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Email</label>
-                                <input type="email" name="email" class="form-control">
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Tipo de Socio</label>
-                                <select name="tipo_socio" class="form-select">
-                                    <option value="INVERSIONISTA">Inversionista</option>
-                                    <option value="CAPITALISTA">Capitalista</option>
-                                    <option value="OPERADOR">Operador</option>
-                                </select>
-                            </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Documento</label>
+                            <input type="text" name="documento" id="edit_documento" class="form-control">
                         </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Monto Aportado</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">$</span>
-                                    <input type="number" name="monto_aportado" class="form-control" min="0">
-                                </div>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Banco / Cuenta</label>
-                                <input type="text" name="banco" class="form-control">
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label fw-bold">Porcentaje *</label>
+                            <div class="input-group">
+                                <input type="number" name="porcentaje" id="edit_porcentaje" class="form-control" 
+                                       min="0.1" max="99" step="0.1" required>
+                                <span class="input-group-text">%</span>
                             </div>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-success">
-                            <i class="bi bi-check-circle"></i> Agregar Socio
-                        </button>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Teléfono</label>
+                            <input type="text" name="telefono" id="edit_telefono" class="form-control">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email" id="edit_email" class="form-control">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Tipo de Socio</label>
+                            <select name="tipo_socio" id="edit_tipo" class="form-select">
+                                <option value="INVERSIONISTA">Inversionista</option>
+                                <option value="CAPITALISTA">Capitalista</option>
+                                <option value="OPERADOR">Operador</option>
+                            </select>
+                        </div>
                     </div>
-                </form>
-            </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Monto Aportado</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="monto_aportado" id="edit_monto" class="form-control" min="0">
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Banco / Cuenta</label>
+                            <input type="text" name="banco" id="edit_banco" class="form-control">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn" style="background: linear-gradient(135deg, #00E5FF 0%, #0088cc 100%); color: #0A0E21; font-weight: 600;">
+                        <i class="bi bi-check-circle me-2"></i>Guardar Cambios
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
+</div>
+{% endblock %}
 
-    <!-- Modal: Editar Socio -->
-    <div class="modal fade" id="modalEditarSocio" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <form id="formEditarSocio" method="POST">
-                    <div class="modal-header bg-primary text-white">
-                        <h5 class="modal-title"><i class="bi bi-pencil"></i> Editar Socio</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Nombre Completo *</label>
-                                <input type="text" name="nombre" id="edit_nombre" class="form-control" required>
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label class="form-label">Documento</label>
-                                <input type="text" name="documento" id="edit_documento" class="form-control">
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label class="form-label fw-bold">Porcentaje *</label>
-                                <div class="input-group">
-                                    <input type="number" name="porcentaje" id="edit_porcentaje" class="form-control" 
-                                           min="0.1" max="99" step="0.1" required>
-                                    <span class="input-group-text">%</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Teléfono</label>
-                                <input type="text" name="telefono" id="edit_telefono" class="form-control">
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Email</label>
-                                <input type="email" name="email" id="edit_email" class="form-control">
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Tipo de Socio</label>
-                                <select name="tipo_socio" id="edit_tipo" class="form-select">
-                                    <option value="INVERSIONISTA">Inversionista</option>
-                                    <option value="CAPITALISTA">Capitalista</option>
-                                    <option value="OPERADOR">Operador</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Monto Aportado</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">$</span>
-                                    <input type="number" name="monto_aportado" id="edit_monto" class="form-control" min="0">
-                                </div>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Banco / Cuenta</label>
-                                <input type="text" name="banco" id="edit_banco" class="form-control">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-circle"></i> Guardar Cambios
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        function editarSocio(id, nombre, documento, telefono, email, porcentaje, monto, tipo, banco) {
-            document.getElementById('formEditarSocio').action = `/sociedades/socios/${id}/editar`;
-            document.getElementById('edit_nombre').value = nombre;
-            document.getElementById('edit_documento').value = documento;
-            document.getElementById('edit_telefono').value = telefono;
-            document.getElementById('edit_email').value = email;
-            document.getElementById('edit_porcentaje').value = porcentaje;
-            document.getElementById('edit_monto').value = monto;
-            document.getElementById('edit_tipo').value = tipo;
-            document.getElementById('edit_banco').value = banco;
+{% block extra_js %}
+<script>
+    function editarSocio(id, nombre, documento, telefono, email, porcentaje, monto, tipo, banco) {
+        document.getElementById('formEditarSocio').action = `/sociedades/socios/${id}/editar`;
+        document.getElementById('edit_nombre').value = nombre;
+        document.getElementById('edit_documento').value = documento;
+        document.getElementById('edit_telefono').value = telefono;
+        document.getElementById('edit_email').value = email;
+        document.getElementById('edit_porcentaje').value = porcentaje;
+        document.getElementById('edit_monto').value = monto;
+        document.getElementById('edit_tipo').value = tipo;
+        document.getElementById('edit_banco').value = banco;
+    }
+    
+    function calcularDistribucion() {
+        const ganancia = parseFloat(document.getElementById('gananciaTotal').value) || 0;
+        const sociedadId = {{ sociedad.id }};
+        
+        if (ganancia <= 0) {
+            document.getElementById('resultadoDistribucion').innerHTML = '';
+            return;
         }
         
-        function calcularDistribucion() {
-            const ganancia = parseFloat(document.getElementById('gananciaTotal').value) || 0;
-            const sociedadId = {{ sociedad.id }};
-            
-            if (ganancia <= 0) {
-                document.getElementById('resultadoDistribucion').innerHTML = '';
-                return;
-            }
-            
-            fetch(`/sociedades/${sociedadId}/distribucion?ganancia=${ganancia}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        document.getElementById('resultadoDistribucion').innerHTML = 
-                            `<div class="alert alert-danger">${data.error}</div>`;
-                        return;
-                    }
-                    
-                    let html = '<hr><h6 class="mb-3">Distribución:</h6>';
-                    html += `<div class="d-flex justify-content-between mb-2">
-                        <span><i class="bi bi-person-fill-gear"></i> Dueño (${data.dueno.porcentaje}%)</span>
-                        <strong class="text-primary">$${data.dueno.monto.toLocaleString('es-CO')}</strong>
+        fetch(`/sociedades/${sociedadId}/distribucion?ganancia=${ganancia}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('resultadoDistribucion').innerHTML = 
+                        `<div class="alert alert-danger">${data.error}</div>`;
+                    return;
+                }
+                
+                let html = '<hr style="border-color: rgba(255,255,255,0.1);"><h6 class="mb-3" style="color: #00FF99;">Distribución:</h6>';
+                html += `<div class="distribution-result d-flex justify-content-between">
+                    <span style="color: #B0B0B0;"><i class="bi bi-person-fill-gear me-2"></i>Dueño (${data.dueno.porcentaje}%)</span>
+                    <strong style="color: #00E5FF;">$${data.dueno.monto.toLocaleString('es-CO')}</strong>
+                </div>`;
+                
+                data.socios.forEach(socio => {
+                    html += `<div class="distribution-result d-flex justify-content-between">
+                        <span style="color: #B0B0B0;">${socio.nombre} (${socio.porcentaje}%)</span>
+                        <strong style="color: #00FF99;">$${socio.monto.toLocaleString('es-CO')}</strong>
                     </div>`;
-                    
-                    data.socios.forEach(socio => {
-                        html += `<div class="d-flex justify-content-between mb-2">
-                            <span>${socio.nombre} (${socio.porcentaje}%)</span>
-                            <strong class="text-success">$${socio.monto.toLocaleString('es-CO')}</strong>
-                        </div>`;
-                    });
-                    
-                    document.getElementById('resultadoDistribucion').innerHTML = html;
-                })
-                .catch(error => {
-                    console.error('Error:', error);
                 });
-        }
-    </script>
-</body>
-</html>
+                
+                document.getElementById('resultadoDistribucion').innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    }
+</script>
+{% endblock %}

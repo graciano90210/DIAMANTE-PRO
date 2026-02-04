@@ -1,361 +1,393 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ oficina.nombre }} - Diamante Pro</title>
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark-theme.css') }}">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <style>
-        body {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            min-height: 100vh;
-        }
-        .card {
-            background: rgba(30, 40, 60, 0.95);
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .card-header {
-            background: rgba(0,0,0,0.3) !important;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        .stat-card {
-            border-left: 4px solid;
-            transition: all 0.3s ease;
-        }
-        .stat-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-        }
-        .stat-card h2, .stat-card h4 {
-            font-weight: 700;
-        }
-        .stat-card .text-primary { color: #00d4ff !important; }
-        .stat-card .text-success { color: #00ff88 !important; }
-        .stat-card .text-info { color: #00d4ff !important; }
-        .stat-card .text-warning { color: #ffc107 !important; }
-        .stat-card .text-purple { color: #a855f7 !important; }
-        .ruta-item {
-            transition: all 0.2s ease;
-            background: transparent;
-        }
-        .ruta-item:hover {
-            background-color: rgba(0,212,255,0.1) !important;
-        }
-        .table {
-            color: #e0e0e0;
-        }
-        .table thead {
-            background: rgba(0,212,255,0.15);
-        }
-        .table thead th {
-            color: #00d4ff;
-            border-bottom: 1px solid rgba(0,212,255,0.3);
-        }
-        .table td {
-            border-color: rgba(255,255,255,0.1);
-        }
-        .text-muted {
-            color: rgba(255,255,255,0.5) !important;
-        }
-        .btn-editar {
-            background: rgba(0,212,255,0.2);
-            border: 1px solid #00d4ff;
-            color: #00d4ff;
-        }
-        .btn-editar:hover {
-            background: #00d4ff;
-            color: #1a1a2e;
-        }
-        .list-group-item {
-            background: rgba(255,255,255,0.05);
-            border-color: rgba(255,255,255,0.1);
-            color: #e0e0e0;
-        }
-        .list-group-item:hover {
-            background: rgba(0,212,255,0.15);
-            border-color: rgba(0,212,255,0.3);
-        }
-        .btn-agregar {
-            background: linear-gradient(135deg, #00d4ff, #00ff88);
-            border: none;
-            color: #1a1a2e;
-            font-weight: bold;
-        }
-        .btn-agregar:hover {
-            background: linear-gradient(135deg, #00ff88, #00d4ff);
-            color: #1a1a2e;
-        }
-        .header-primary {
-            background: linear-gradient(135deg, rgba(0,212,255,0.3), rgba(0,255,136,0.2)) !important;
-        }
-        .header-success {
-            background: rgba(0,255,136,0.2) !important;
-        }
-        .header-info {
-            background: rgba(0,212,255,0.2) !important;
-        }
-        .progress {
-            background: rgba(255,255,255,0.1);
-        }
-        .progress-bar {
-            background: linear-gradient(90deg, #00d4ff, #00ff88);
-        }
-    </style>
-</head>
-<body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/dashboard">
-                <i class="bi bi-gem"></i> DIAMANTE PRO
-            </a>
-            <div class="d-flex align-items-center">
-                <span class="text-white me-3">
-                    <i class="bi bi-person-circle"></i> {{ nombre }}
-                </span>
-            </div>
-        </div>
-    </nav>
+{% extends "base.html" %}
 
-    <div class="container-fluid mt-4">
-        <!-- Header -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="row align-items-center">
-                            <div class="col-md-8">
-                                <h3 class="text-white">
-                                    <i class="bi bi-building" style="color: #00d4ff;"></i> {{ oficina.nombre }}
-                                    {% if oficina.codigo %}
-                                    <span class="badge ms-2" style="background: rgba(0,212,255,0.2); color: #00d4ff;">{{ oficina.codigo }}</span>
-                                    {% endif %}
-                                </h3>
-                                {% if oficina.ciudad %}
-                                <p class="text-light mb-0" style="opacity: 0.8;">
-                                    <i class="bi bi-geo-alt" style="color: #00ff88;"></i> 
-                                    {{ oficina.direccion or '' }}
-                                    {{ oficina.ciudad }}{% if oficina.estado %}, {{ oficina.estado }}{% endif %}
-                                </p>
-                                {% endif %}
-                                {% if oficina.responsable %}
-                                <p class="mb-0 text-light">
-                                    <i class="bi bi-person-badge" style="color: #00d4ff;"></i> Responsable: <strong style="color: #00ff88;">{{ oficina.responsable.nombre }}</strong>
-                                </p>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-4 text-end">
-                                <a href="{{ url_for('oficinas.lista') }}" class="btn btn-outline-light me-2">
-                                    <i class="bi bi-arrow-left"></i> Volver
-                                </a>
-                                <a href="{{ url_for('oficinas.editar', oficina_id=oficina.id) }}" class="btn btn-editar">
-                                    <i class="bi bi-pencil"></i> Editar
-                                </a>
-                            </div>
+{% block title %}{{ oficina.nombre }} - Diamante Pro{% endblock %}
+
+{% block page_title %}{{ oficina.nombre }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        border-radius: 15px;
+        border: none;
+        transition: all 0.3s ease;
+        overflow: hidden;
+        background: #1D1E33 !important;
+    }
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+    }
+    .stat-card.primary { border-left: 4px solid #00E5FF; }
+    .stat-card.success { border-left: 4px solid #00FF99; }
+    .stat-card.purple { border-left: 4px solid #BB86FC; }
+    .stat-card.info { border-left: 4px solid #00E5FF; }
+    .stat-card.warning { border-left: 4px solid #FFD700; }
+    
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+    }
+    .stat-label {
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.6);
+    }
+    
+    .detail-card {
+        background: #1D1E33 !important;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 15px;
+    }
+    .detail-card .card-header {
+        background: rgba(0, 229, 255, 0.08) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 15px 20px;
+    }
+    .detail-card .card-body {
+        padding: 20px;
+    }
+    
+    .table-dark-custom {
+        background: transparent;
+        color: #E0E0E0;
+    }
+    .table-dark-custom thead {
+        background: rgba(0, 229, 255, 0.1);
+    }
+    .table-dark-custom thead th {
+        color: #00E5FF;
+        border-bottom: 1px solid rgba(0, 229, 255, 0.2);
+        font-weight: 600;
+        padding: 12px 15px;
+    }
+    .table-dark-custom tbody tr {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .table-dark-custom tbody tr:hover {
+        background: rgba(0, 229, 255, 0.08);
+    }
+    .table-dark-custom td {
+        padding: 12px 15px;
+        vertical-align: middle;
+    }
+    
+    .btn-accion {
+        background: rgba(0, 229, 255, 0.15);
+        border: 1px solid #00E5FF;
+        color: #00E5FF;
+        padding: 8px 15px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    .btn-accion:hover {
+        background: #00E5FF;
+        color: #0A0E21;
+    }
+    
+    .btn-agregar {
+        background: linear-gradient(135deg, #00E5FF, #00FF99);
+        border: none;
+        color: #0A0E21;
+        font-weight: 600;
+        padding: 10px 20px;
+        border-radius: 8px;
+    }
+    .btn-agregar:hover {
+        transform: scale(1.02);
+        box-shadow: 0 5px 20px rgba(0, 229, 255, 0.4);
+        color: #0A0E21;
+    }
+    
+    .list-group-item {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #E0E0E0;
+        padding: 12px 15px;
+        transition: all 0.2s ease;
+    }
+    .list-group-item:hover {
+        background: rgba(0, 229, 255, 0.1);
+        border-color: rgba(0, 229, 255, 0.3);
+    }
+    .list-group-item label {
+        cursor: pointer;
+        margin: 0;
+    }
+    
+    .progress {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        height: 10px;
+    }
+    .progress-bar {
+        background: linear-gradient(90deg, #00E5FF, #00FF99);
+        border-radius: 10px;
+    }
+    
+    .danger-card {
+        background: #1D1E33 !important;
+        border: 1px solid rgba(255, 51, 102, 0.3) !important;
+        border-radius: 15px;
+    }
+    .danger-card .card-header {
+        background: rgba(255, 51, 102, 0.1) !important;
+        border-bottom: 1px solid rgba(255, 51, 102, 0.2);
+    }
+    
+    .info-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 0;
+        color: rgba(255, 255, 255, 0.8);
+    }
+    .info-item i {
+        color: #00E5FF;
+        width: 20px;
+    }
+    
+    .badge-code {
+        background: rgba(0, 229, 255, 0.2);
+        color: #00E5FF;
+        padding: 5px 12px;
+        border-radius: 6px;
+        font-weight: 500;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header con info básica -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="detail-card">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <div class="d-flex align-items-center gap-3 mb-2">
+                            <h3 class="mb-0 text-white">
+                                <i class="bi bi-building me-2" style="color: #00E5FF;"></i>{{ oficina.nombre }}
+                            </h3>
+                            {% if oficina.codigo %}
+                            <span class="badge-code">{{ oficina.codigo }}</span>
+                            {% endif %}
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Estadísticas -->
-        <div class="row mb-4 g-3">
-            <div class="col-md-2">
-                <div class="card stat-card" style="border-color: #00d4ff;">
-                    <div class="card-body text-center">
-                        <h2 class="mb-0 text-primary">{{ estadisticas.num_rutas }}</h2>
-                        <small class="text-muted">Rutas</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-2">
-                <div class="card stat-card" style="border-color: #00ff88;">
-                    <div class="card-body text-center">
-                        <h2 class="mb-0 text-success">{{ estadisticas.num_cobradores }}</h2>
-                        <small class="text-muted">Cobradores</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-2">
-                <div class="card stat-card" style="border-color: #a855f7;">
-                    <div class="card-body text-center">
-                        <h2 class="mb-0 text-purple">{{ estadisticas.prestamos_activos }}</h2>
-                        <small class="text-muted">Préstamos</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stat-card" style="border-color: #00d4ff;">
-                    <div class="card-body text-center">
-                        <h4 class="mb-0 text-info">${{ "{:,.0f}".format(estadisticas.cartera_total) }}</h4>
-                        <small class="text-muted">Cartera Total</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stat-card" style="border-color: #ffc107;">
-                    <div class="card-body text-center">
-                        <h4 class="mb-0 text-warning">${{ "{:,.0f}".format(estadisticas.cobrado_hoy) }}</h4>
-                        <small class="text-muted">Cobrado Hoy</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <!-- Rutas de la oficina -->
-            <div class="col-lg-8">
-                <div class="card">
-                    <div class="card-header header-primary d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0 text-white">
-                            <i class="bi bi-signpost-2" style="color: #00d4ff;"></i> Rutas de esta Oficina
-                            <span class="badge ms-2" style="background: rgba(0,212,255,0.3); color: #00d4ff;">{{ rutas|length }}</span>
-                        </h5>
-                    </div>
-                    <div class="card-body p-0">
-                        {% if rutas %}
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Ruta</th>
-                                        <th>Cobrador</th>
-                                        <th>País</th>
-                                        <th class="text-center">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for ruta in rutas %}
-                                    <tr class="ruta-item">
-                                        <td>
-                                            <strong>{{ ruta.nombre }}</strong>
-                                            {% if ruta.descripcion %}
-                                            <br><small class="text-muted">{{ ruta.descripcion }}</small>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if ruta.cobrador %}
-                                            <i class="bi bi-person text-success"></i> {{ ruta.cobrador.nombre }}
-                                            {% else %}
-                                            <span class="text-muted">Sin asignar</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-secondary">{{ ruta.pais }}</span>
-                                        </td>
-                                        <td class="text-center">
-                                            <form action="{{ url_for('oficinas.quitar_ruta', ruta_id=ruta.id) }}" 
-                                                  method="POST" style="display:inline"
-                                                  onsubmit="return confirm('¿Quitar {{ ruta.nombre }} de esta oficina?')">
-                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Quitar de oficina">
-                                                    <i class="bi bi-x-circle"></i>
-                                                </button>
-                                            </form>
-                                            <a href="/rutas/{{ ruta.id }}" class="btn btn-sm btn-outline-primary" title="Ver ruta">
-                                                <i class="bi bi-eye"></i>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                        {% if oficina.ciudad %}
+                        <div class="info-item">
+                            <i class="bi bi-geo-alt" style="color: #00FF99;"></i>
+                            {{ oficina.direccion or '' }} {{ oficina.ciudad }}{% if oficina.estado %}, {{ oficina.estado }}{% endif %}
                         </div>
-                        {% else %}
-                        <div class="text-center py-5">
-                            <i class="bi bi-signpost-split fs-1 text-muted"></i>
-                            <p class="text-muted mt-3">No hay rutas asignadas a esta oficina</p>
+                        {% endif %}
+                        {% if oficina.responsable %}
+                        <div class="info-item">
+                            <i class="bi bi-person-badge"></i>
+                            Responsable: <strong style="color: #00FF99;">{{ oficina.responsable.nombre }}</strong>
                         </div>
                         {% endif %}
                     </div>
-                </div>
-            </div>
-
-            <!-- Panel lateral: Asignar rutas -->
-            <div class="col-lg-4">
-                <div class="card">
-                    <div class="card-header header-success">
-                        <h6 class="mb-0 text-white"><i class="bi bi-plus-circle" style="color: #00ff88;"></i> Asignar Rutas</h6>
-                    </div>
-                    <div class="card-body">
-                        {% if rutas_disponibles %}
-                        <form action="{{ url_for('oficinas.asignar_rutas', oficina_id=oficina.id) }}" method="POST">
-                            <p class="text-muted small">Selecciona las rutas a agregar:</p>
-                            
-                            <div class="list-group mb-3" style="max-height: 300px; overflow-y: auto;">
-                                {% for ruta in rutas_disponibles %}
-                                <label class="list-group-item list-group-item-action">
-                                    <input type="checkbox" name="ruta_ids[]" value="{{ ruta.id }}" class="form-check-input me-2">
-                                    <strong>{{ ruta.nombre }}</strong>
-                                    {% if ruta.cobrador %}
-                                    <br><small class="text-muted">{{ ruta.cobrador.nombre }}</small>
-                                    {% endif %}
-                                </label>
-                                {% endfor %}
-                            </div>
-                            
-                            <button type="submit" class="btn btn-agregar w-100">
-                                <i class="bi bi-plus-circle"></i> Agregar Seleccionadas
-                            </button>
-                        </form>
-                        {% else %}
-                        <div class="text-center py-3">
-                            <i class="bi bi-check-circle fs-3" style="color: #00ff88;"></i>
-                            <p class="text-muted mt-2 mb-0">Todas las rutas están asignadas</p>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <!-- Metas -->
-                {% if oficina.meta_cobro_diario or oficina.meta_prestamos_mes %}
-                <div class="card mt-3">
-                    <div class="card-header header-info">
-                        <h6 class="mb-0 text-white"><i class="bi bi-graph-up" style="color: #00d4ff;"></i> Metas</h6>
-                    </div>
-                    <div class="card-body">
-                        {% if oficina.meta_cobro_diario %}
-                        <div class="mb-2">
-                            <small class="text-muted">Meta Cobro Diario:</small>
-                            <h5 class="mb-0" style="color: #00d4ff;">${{ "{:,.0f}".format(oficina.meta_cobro_diario) }}</h5>
-                            {% set progreso = (estadisticas.cobrado_hoy / oficina.meta_cobro_diario * 100) if oficina.meta_cobro_diario > 0 else 0 %}
-                            <div class="progress mt-1" style="height: 10px;">
-                                <div class="progress-bar" style="width: {{ [progreso, 100]|min }}%"></div>
-                            </div>
-                            <small class="text-muted">{{ "%.1f"|format(progreso) }}% completado</small>
-                        </div>
-                        {% endif %}
-                        
-                        {% if oficina.meta_prestamos_mes %}
-                        <div class="mt-3">
-                            <small class="text-muted">Meta Préstamos Mensual:</small>
-                            <h5 class="mb-0" style="color: #00ff88;">${{ "{:,.0f}".format(oficina.meta_prestamos_mes) }}</h5>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-                {% endif %}
-
-                <!-- Acciones peligrosas -->
-                <div class="card mt-3" style="border-color: rgba(220,53,69,0.5);">
-                    <div class="card-header" style="background: rgba(220,53,69,0.2) !important;">
-                        <h6 class="mb-0" style="color: #ff6b6b;"><i class="bi bi-exclamation-triangle"></i> Zona de Peligro</h6>
-                    </div>
-                    <div class="card-body">
-                        <form action="{{ url_for('oficinas.eliminar', oficina_id=oficina.id) }}" method="POST"
-                              onsubmit="return confirm('¿Estás seguro de eliminar esta oficina? Las rutas quedarán sin oficina.')">
-                            <button type="submit" class="btn btn-outline-danger btn-sm w-100">
-                                <i class="bi bi-trash"></i> Eliminar Oficina
-                            </button>
-                        </form>
+                    <div class="col-md-4 text-end">
+                        <a href="{{ url_for('oficinas.lista') }}" class="btn btn-outline-light me-2">
+                            <i class="bi bi-arrow-left"></i> Volver
+                        </a>
+                        <a href="{{ url_for('oficinas.editar', oficina_id=oficina.id) }}" class="btn btn-accion">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+<!-- Estadísticas -->
+<div class="row mb-4 g-3">
+    <div class="col-md-2 col-6">
+        <div class="stat-card primary p-3 text-center">
+            <div class="stat-number" style="color: #00E5FF;">{{ estadisticas.num_rutas }}</div>
+            <div class="stat-label">Rutas</div>
+        </div>
+    </div>
+    <div class="col-md-2 col-6">
+        <div class="stat-card success p-3 text-center">
+            <div class="stat-number" style="color: #00FF99;">{{ estadisticas.num_cobradores }}</div>
+            <div class="stat-label">Cobradores</div>
+        </div>
+    </div>
+    <div class="col-md-2 col-6">
+        <div class="stat-card purple p-3 text-center">
+            <div class="stat-number" style="color: #BB86FC;">{{ estadisticas.prestamos_activos }}</div>
+            <div class="stat-label">Préstamos</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card info p-3 text-center">
+            <div class="stat-number" style="color: #00E5FF; font-size: 1.5rem;">${{ "{:,.0f}".format(estadisticas.cartera_total) }}</div>
+            <div class="stat-label">Cartera Total</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card warning p-3 text-center">
+            <div class="stat-number" style="color: #FFD700; font-size: 1.5rem;">${{ "{:,.0f}".format(estadisticas.cobrado_hoy) }}</div>
+            <div class="stat-label">Cobrado Hoy</div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Rutas de la oficina -->
+    <div class="col-lg-8 mb-4">
+        <div class="detail-card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-white">
+                    <i class="bi bi-signpost-2 me-2" style="color: #00E5FF;"></i>Rutas de esta Oficina
+                </h5>
+                <span class="badge" style="background: rgba(0, 229, 255, 0.2); color: #00E5FF; font-size: 0.9rem;">{{ rutas|length }}</span>
+            </div>
+            <div class="card-body p-0">
+                {% if rutas %}
+                <div class="table-responsive">
+                    <table class="table table-dark-custom mb-0">
+                        <thead>
+                            <tr>
+                                <th>Ruta</th>
+                                <th>Cobrador</th>
+                                <th>País</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ruta in rutas %}
+                            <tr>
+                                <td>
+                                    <strong>{{ ruta.nombre }}</strong>
+                                    {% if ruta.descripcion %}
+                                    <br><small style="color: rgba(255,255,255,0.5);">{{ ruta.descripcion }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if ruta.cobrador %}
+                                    <i class="bi bi-person me-1" style="color: #00FF99;"></i>{{ ruta.cobrador.nombre }}
+                                    {% else %}
+                                    <span style="color: rgba(255,255,255,0.4);">Sin asignar</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge" style="background: rgba(255,255,255,0.1);">{{ ruta.pais }}</span>
+                                </td>
+                                <td class="text-center">
+                                    <form action="{{ url_for('oficinas.quitar_ruta', ruta_id=ruta.id) }}" 
+                                          method="POST" style="display:inline"
+                                          onsubmit="return confirm('¿Quitar {{ ruta.nombre }} de esta oficina?')">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Quitar de oficina">
+                                            <i class="bi bi-x-circle"></i>
+                                        </button>
+                                    </form>
+                                    <a href="/rutas/{{ ruta.id }}" class="btn btn-sm btn-outline-info" title="Ver ruta">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-signpost-split" style="font-size: 3rem; color: rgba(0, 229, 255, 0.3);"></i>
+                    <p class="mt-3" style="color: rgba(255,255,255,0.5);">No hay rutas asignadas a esta oficina</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel lateral -->
+    <div class="col-lg-4">
+        <!-- Asignar rutas -->
+        <div class="detail-card mb-4">
+            <div class="card-header" style="background: rgba(0, 255, 153, 0.1) !important;">
+                <h6 class="mb-0 text-white">
+                    <i class="bi bi-plus-circle me-2" style="color: #00FF99;"></i>Asignar Rutas
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if rutas_disponibles %}
+                <form action="{{ url_for('oficinas.asignar_rutas', oficina_id=oficina.id) }}" method="POST">
+                    <p style="color: rgba(255,255,255,0.6); font-size: 0.85rem;">Selecciona las rutas a agregar:</p>
+                    
+                    <div class="list-group mb-3" style="max-height: 250px; overflow-y: auto;">
+                        {% for ruta in rutas_disponibles %}
+                        <label class="list-group-item">
+                            <input type="checkbox" name="ruta_ids[]" value="{{ ruta.id }}" class="form-check-input me-2">
+                            <strong>{{ ruta.nombre }}</strong>
+                            {% if ruta.cobrador %}
+                            <br><small style="color: rgba(255,255,255,0.5);">{{ ruta.cobrador.nombre }}</small>
+                            {% endif %}
+                        </label>
+                        {% endfor %}
+                    </div>
+                    
+                    <button type="submit" class="btn btn-agregar w-100">
+                        <i class="bi bi-plus-circle me-2"></i>Agregar Seleccionadas
+                    </button>
+                </form>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="bi bi-check-circle" style="font-size: 2rem; color: #00FF99;"></i>
+                    <p class="mt-2 mb-0" style="color: rgba(255,255,255,0.6);">Todas las rutas están asignadas</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Metas -->
+        {% if oficina.meta_cobro_diario or oficina.meta_prestamos_mes %}
+        <div class="detail-card mb-4">
+            <div class="card-header" style="background: rgba(0, 229, 255, 0.1) !important;">
+                <h6 class="mb-0 text-white">
+                    <i class="bi bi-graph-up me-2" style="color: #00E5FF;"></i>Metas
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if oficina.meta_cobro_diario %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small style="color: rgba(255,255,255,0.6);">Meta Cobro Diario:</small>
+                        <small style="color: #00E5FF;">${{ "{:,.0f}".format(oficina.meta_cobro_diario) }}</small>
+                    </div>
+                    {% set progreso = (estadisticas.cobrado_hoy / oficina.meta_cobro_diario * 100) if oficina.meta_cobro_diario > 0 else 0 %}
+                    <div class="progress">
+                        <div class="progress-bar" style="width: {{ [progreso, 100]|min }}%"></div>
+                    </div>
+                    <small style="color: rgba(255,255,255,0.5);">{{ "%.1f"|format(progreso) }}% completado</small>
+                </div>
+                {% endif %}
+                
+                {% if oficina.meta_prestamos_mes %}
+                <div>
+                    <small style="color: rgba(255,255,255,0.6);">Meta Préstamos Mensual:</small>
+                    <h5 class="mb-0" style="color: #00FF99;">${{ "{:,.0f}".format(oficina.meta_prestamos_mes) }}</h5>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Zona de peligro -->
+        <div class="danger-card">
+            <div class="card-header">
+                <h6 class="mb-0" style="color: #FF3366;">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Zona de Peligro
+                </h6>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('oficinas.eliminar', oficina_id=oficina.id) }}" method="POST"
+                      onsubmit="return confirm('¿Estás seguro de eliminar esta oficina? Las rutas quedarán sin oficina.')">
+                    <button type="submit" class="btn btn-outline-danger btn-sm w-100">
+                        <i class="bi bi-trash me-2"></i>Eliminar Oficina
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

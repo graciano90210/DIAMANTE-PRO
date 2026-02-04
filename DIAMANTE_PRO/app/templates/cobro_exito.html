@@ -1,147 +1,183 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Pago Exitoso - Diamante Pro</title>
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark-theme.css') }}">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <style>
-        .success-icon {
-            font-size: 5rem;
-            color: #28a745;
-        }
-        .recibo-box {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            border: 2px dashed #28a745;
-        }
-    </style>
-</head>
-<body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/dashboard" style="display: inline-flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: 0.5px;">
-                <svg style="width: 28px; height: 28px; fill: #60a5fa;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2L3 7v10l9 5 9-5V7l-9-5zm0 2.18L18.18 7 12 10.82 5.82 7 12 4.18zM5 8.82l6 3.5v7.86l-6-3.33V8.82zm8 11.36v-7.86l6-3.5v8.03l-6 3.33z"/>
-                </svg>
-                <span>DIAMANTE PRO</span>
-            </a>
-            <div class="d-flex align-items-center">
-                <span class="text-white me-3">
-                    <i class="bi bi-person-circle"></i> {{ nombre }}
-                </span>
-            </div>
-        </div>
-    </nav>
+{% extends "base.html" %}
 
-    <!-- Main Content -->
-    <div class="container mt-5">
-        <div class="row">
-            <div class="col-md-8 offset-md-2">
-                <div class="card shadow-lg">
-                    <div class="card-body text-center py-5">
-                        <i class="bi bi-check-circle-fill success-icon"></i>
-                        <h2 class="mt-3">¡Pago Registrado Exitosamente!</h2>
-                        <p class="text-muted">El pago se ha guardado en el sistema</p>
-                        
-                        <!-- Recibo -->
-                        <div class="recibo-box text-start mt-4">
-                            <h5 class="text-center mb-3">📄 Recibo de Pago #{{ pago.id }}</h5>
-                            <hr>
-                            <div class="row mb-2">
-                                <div class="col-6"><strong>Cliente:</strong></div>
-                                <div class="col-6">{{ cliente.nombre }}</div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-6"><strong>Crédito:</strong></div>
-                                <div class="col-6">#{{ prestamo.id }}</div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-6"><strong>Fecha:</strong></div>
-                                <div class="col-6">{{ pago.fecha_pago.strftime('%d/%m/%Y %H:%M') }}</div>
-                            </div>
-                            <hr>
-                            <div class="row mb-2">
-                                <div class="col-6"><strong>Monto Recibido:</strong></div>
-                                <div class="col-6 text-success"><h5>{{ prestamo.moneda }} {{ "{:,.0f}".format(pago.monto) }}</h5></div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-6"><strong>Saldo Anterior:</strong></div>
-                                <div class="col-6">{{ prestamo.moneda }} {{ "{:,.0f}".format(pago.saldo_anterior) }}</div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-6"><strong>Saldo Nuevo:</strong></div>
-                                <div class="col-6 text-primary"><h5>{{ prestamo.moneda }} {{ "{:,.0f}".format(pago.saldo_nuevo) }}</h5></div>
-                            </div>
-                            <hr>
-                            <div class="row">
-                                <div class="col-6"><strong>Cuotas Pagadas:</strong></div>
-                                <div class="col-6">{{ prestamo.cuotas_pagadas }} / {{ prestamo.numero_cuotas }}</div>
-                            </div>
-                            {% if pago.observaciones %}
-                            <hr>
-                            <div class="row">
-                                <div class="col-12"><strong>Observaciones:</strong></div>
-                                <div class="col-12"><em>{{ pago.observaciones }}</em></div>
-                            </div>
-                            {% endif %}
-                        </div>
+{% block title %}Pago Exitoso - Diamante Pro{% endblock %}
 
-                        <!-- Acciones -->
-                        <div class="alert alert-info mt-4">
-                            <i class="bi bi-info-circle"></i>
-                            <strong>Para enviar por WhatsApp:</strong> 
-                            <ol class="mb-0 mt-2">
-                                <li>Haz clic en el botón verde</li>
-                                <li>Se descargará el recibo automáticamente</li>
-                                <li>Se abrirá WhatsApp del cliente</li>
-                                <li>Adjunta manualmente la imagen descargada</li>
-                            </ol>
-                        </div>
-                        
-                        <div class="d-grid gap-2 mt-3">
-                            <button onclick="descargarYAbrirWhatsApp()" class="btn btn-success btn-lg">
-                                <i class="bi bi-whatsapp"></i> Descargar Recibo y Abrir WhatsApp
-                            </button>
-                            <a href="/cobro/lista" class="btn btn-primary">
-                                <i class="bi bi-list-check"></i> Continuar con la Ruta
-                            </a>
-                            <a href="/dashboard" class="btn btn-outline-secondary">
-                                <i class="bi bi-house"></i> Volver al Inicio
-                            </a>
-                        </div>
+{% block page_title %}Pago Registrado{% endblock %}
 
-                        {% if prestamo.saldo_actual <= 0 %}
-                        <div class="alert alert-success mt-4">
-                            <h5>🎉 ¡CRÉDITO LIQUIDADO!</h5>
-                            <p class="mb-0">Este cliente ha terminado de pagar su préstamo.</p>
-                        </div>
-                        {% endif %}
-                    </div>
+{% block extra_css %}
+<style>
+    .success-container {
+        text-align: center;
+        padding: 40px 20px;
+    }
+    
+    .success-icon {
+        font-size: 5rem;
+        color: #00FF99;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+    
+    .recibo-box {
+        background: linear-gradient(135deg, #1D1E33 0%, #0d1224 100%);
+        border: 2px solid #00FF99;
+        border-radius: 15px;
+        padding: 25px;
+        margin-top: 30px;
+        box-shadow: 0 0 30px rgba(0, 255, 153, 0.2);
+    }
+    
+    .recibo-header {
+        color: #00E5FF;
+        font-size: 1.2rem;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid rgba(0, 229, 255, 0.3);
+    }
+    
+    .recibo-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .recibo-row:last-child {
+        border-bottom: none;
+    }
+    .recibo-label {
+        color: rgba(255, 255, 255, 0.7);
+    }
+    .recibo-value {
+        color: #E0E0E0;
+        font-weight: 500;
+    }
+    .recibo-value.highlight {
+        color: #00FF99;
+        font-size: 1.3rem;
+        font-weight: 700;
+    }
+    .recibo-value.cyan {
+        color: #00E5FF;
+        font-size: 1.3rem;
+        font-weight: 700;
+    }
+    
+    .btn-whatsapp {
+        background: linear-gradient(135deg, #25D366, #128C7E);
+        border: none;
+        color: white;
+        padding: 12px 25px;
+        border-radius: 10px;
+    }
+    .btn-whatsapp:hover {
+        transform: scale(1.02);
+        box-shadow: 0 5px 20px rgba(37, 211, 102, 0.4);
+        color: white;
+    }
+    
+    .btn-accion {
+        background: rgba(0, 229, 255, 0.1);
+        border: 1px solid #00E5FF;
+        color: #00E5FF;
+        padding: 12px 25px;
+        border-radius: 10px;
+    }
+    .btn-accion:hover {
+        background: #00E5FF;
+        color: #0A0E21;
+    }
+    
+    .alert-info-custom {
+        background: rgba(0, 229, 255, 0.1);
+        border: 1px solid rgba(0, 229, 255, 0.3);
+        border-radius: 10px;
+        color: #00E5FF;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="success-container">
+            <i class="bi bi-check-circle-fill success-icon"></i>
+            <h2 class="mt-4 text-white">¡Pago Registrado Exitosamente!</h2>
+            <p style="color: rgba(255,255,255,0.6);">El pago se ha guardado en el sistema</p>
+            
+            <!-- Recibo -->
+            <div class="recibo-box text-start">
+                <div class="recibo-header text-center">
+                    <i class="bi bi-receipt me-2"></i>Recibo de Pago #{{ pago.id }}
                 </div>
+                
+                <div class="recibo-row">
+                    <span class="recibo-label">Cliente:</span>
+                    <span class="recibo-value">{{ cliente.nombre }}</span>
+                </div>
+                <div class="recibo-row">
+                    <span class="recibo-label">Crédito:</span>
+                    <span class="recibo-value">#{{ prestamo.id }}</span>
+                </div>
+                <div class="recibo-row">
+                    <span class="recibo-label">Fecha:</span>
+                    <span class="recibo-value">{{ pago.fecha_pago.strftime('%d/%m/%Y %H:%M') }}</span>
+                </div>
+                
+                <hr style="border-color: rgba(0, 229, 255, 0.2); margin: 20px 0;">
+                
+                <div class="recibo-row">
+                    <span class="recibo-label">Monto Recibido:</span>
+                    <span class="recibo-value highlight">{{ prestamo.moneda }} {{ "{:,.0f}".format(pago.monto) }}</span>
+                </div>
+                <div class="recibo-row">
+                    <span class="recibo-label">Saldo Anterior:</span>
+                    <span class="recibo-value">{{ prestamo.moneda }} {{ "{:,.0f}".format(pago.saldo_anterior) }}</span>
+                </div>
+                <div class="recibo-row">
+                    <span class="recibo-label">Saldo Nuevo:</span>
+                    <span class="recibo-value cyan">{{ prestamo.moneda }} {{ "{:,.0f}".format(pago.saldo_nuevo) }}</span>
+                </div>
+                
+                <hr style="border-color: rgba(0, 229, 255, 0.2); margin: 20px 0;">
+                
+                <div class="recibo-row">
+                    <span class="recibo-label">Cuotas Pagadas:</span>
+                    <span class="recibo-value">{{ prestamo.cuotas_pagadas }} / {{ prestamo.numero_cuotas }}</span>
+                </div>
+                
+                {% if pago.observaciones %}
+                <hr style="border-color: rgba(0, 229, 255, 0.2); margin: 20px 0;">
+                <div>
+                    <span class="recibo-label">Observaciones:</span>
+                    <p class="recibo-value mt-2" style="font-style: italic;">{{ pago.observaciones }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Info WhatsApp -->
+            <div class="alert alert-info-custom mt-4">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>Para enviar por WhatsApp:</strong> Haz clic en el botón verde
+            </div>
+
+            <!-- Acciones -->
+            <div class="d-flex justify-content-center gap-3 mt-4 flex-wrap">
+                <a href="https://wa.me/57{{ cliente.telefono }}?text=Recibo%20de%20pago%20%23{{ pago.id }}%0AMonto%3A%20{{ prestamo.moneda }}%20{{ "{:,.0f}".format(pago.monto) }}%0ASaldo%3A%20{{ prestamo.moneda }}%20{{ "{:,.0f}".format(pago.saldo_nuevo) }}" 
+                   target="_blank" class="btn btn-whatsapp">
+                    <i class="bi bi-whatsapp me-2"></i>Enviar por WhatsApp
+                </a>
+                <a href="/cobro/lista" class="btn btn-accion">
+                    <i class="bi bi-list-ul me-2"></i>Ver Lista de Cobros
+                </a>
+                <a href="/dashboard" class="btn btn-accion">
+                    <i class="bi bi-house me-2"></i>Ir al Dashboard
+                </a>
             </div>
         </div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-    function descargarYAbrirWhatsApp() {
-        // Primero descargamos la imagen
-        const link = document.createElement('a');
-        link.href = '/cobro/recibo-imagen/{{ pago.id }}';
-        link.download = 'recibo_{{ pago.id }}.png';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        // Esperamos 500ms y abrimos WhatsApp
-        setTimeout(function() {
-            window.open('{{ whatsapp_url }}', '_blank');
-        }, 500);
-    }
-    </script>
-</body>
-</html>
+</div>
+{% endblock %}

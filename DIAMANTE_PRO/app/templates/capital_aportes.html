@@ -1,10 +1,206 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Aportes de Capital</title>
-</head>
-<body>
-    <h1>Aportes de Capital</h1>
-    <p>Página básica de aportes de capital.</p>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Aportes de Capital - Diamante Pro{% endblock %}
+
+{% block page_title %}
+<i class="bi bi-cash-stack me-2"></i>Aportes de Capital
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .main-card {
+        background: linear-gradient(145deg, #1D1E33 0%, #151627 100%);
+        border-radius: 20px;
+        border: 1px solid rgba(0, 229, 255, 0.1);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    }
+    
+    .stat-card {
+        background: linear-gradient(145deg, #1D1E33 0%, #151627 100%);
+        border-radius: 15px;
+        border: 1px solid rgba(0, 229, 255, 0.1);
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+    
+    .stat-card.cyan {
+        border-left: 4px solid #00E5FF;
+    }
+    
+    .stat-card.green {
+        border-left: 4px solid #00FF99;
+    }
+    
+    .stat-card.gold {
+        border-left: 4px solid #FFD700;
+    }
+    
+    .stat-card .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+    
+    .stat-card.cyan .stat-icon {
+        background: rgba(0, 229, 255, 0.15);
+        color: #00E5FF;
+    }
+    
+    .stat-card.green .stat-icon {
+        background: rgba(0, 255, 153, 0.15);
+        color: #00FF99;
+    }
+    
+    .stat-card.gold .stat-icon {
+        background: rgba(255, 215, 0, 0.15);
+        color: #FFD700;
+    }
+    
+    .stat-card .stat-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #E0E0E0;
+    }
+    
+    .stat-card .stat-label {
+        color: #6c757d;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .section-title {
+        color: #00E5FF;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 1px;
+    }
+    
+    .btn-nuevo {
+        background: linear-gradient(135deg, #00FF99 0%, #00cc77 100%);
+        border: none;
+        color: #0A0E21;
+        font-weight: 600;
+        border-radius: 10px;
+        padding: 0.75rem 1.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-nuevo:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(0, 255, 153, 0.3);
+        color: #0A0E21;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+    }
+    
+    .empty-state i {
+        font-size: 5rem;
+        color: rgba(0, 229, 255, 0.3);
+        margin-bottom: 1.5rem;
+    }
+    
+    .empty-state h4 {
+        color: #E0E0E0;
+        margin-bottom: 1rem;
+    }
+    
+    .empty-state p {
+        color: #6c757d;
+        margin-bottom: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header con botón -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <p class="text-muted mb-0">Gestión de aportes y capital de socios</p>
+        </div>
+        <a href="/capital/nuevo" class="btn btn-nuevo">
+            <i class="bi bi-plus-circle me-2"></i>Nuevo Aporte
+        </a>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="stat-card cyan">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon me-3">
+                        <i class="bi bi-cash-coin"></i>
+                    </div>
+                    <div>
+                        <div class="stat-value">$0</div>
+                        <div class="stat-label">Total Aportes</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="stat-card green">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon me-3">
+                        <i class="bi bi-people"></i>
+                    </div>
+                    <div>
+                        <div class="stat-value">0</div>
+                        <div class="stat-label">Aportantes</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="stat-card gold">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon me-3">
+                        <i class="bi bi-building"></i>
+                    </div>
+                    <div>
+                        <div class="stat-value">0</div>
+                        <div class="stat-label">Sociedades</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Aportes -->
+    <div class="card main-card">
+        <div class="card-body p-0">
+            <div class="empty-state">
+                <i class="bi bi-cash-stack"></i>
+                <h4>No hay aportes de capital registrados</h4>
+                <p>Comienza registrando el primer aporte de capital para tus sociedades.</p>
+                <a href="/capital/nuevo" class="btn btn-nuevo">
+                    <i class="bi bi-plus-circle me-2"></i>Registrar Primer Aporte
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botón volver -->
+    <div class="mt-4">
+        <a href="/dashboard" class="btn" style="background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #B0B0B0; border-radius: 10px;">
+            <i class="bi bi-arrow-left me-2"></i>Volver al Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% endblock %}

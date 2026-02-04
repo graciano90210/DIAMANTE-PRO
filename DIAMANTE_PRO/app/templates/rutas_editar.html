@@ -1,113 +1,266 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editar Ruta - Diamante Pro</title>
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark-theme.css') }}">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <style>
-        body {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            min-height: 100vh;
-        }
-    </style>
-</head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/dashboard">
-                <i class="bi bi-gem"></i> DIAMANTE PRO
-            </a>
-            <div class="d-flex align-items-center">
-                <span class="text-white me-3">
-                    <i class="bi bi-person-circle"></i> {{ nombre }}
-                </span>
-            </div>
-        </div>
-    </nav>
+{% extends "base.html" %}
 
-    <div class="container mt-4">
-        <div class="row">
-            <div class="col-md-8 offset-md-2">
-                <div class="card">
-                    <div class="card-header bg-dark text-white">
-                        <h4 class="mb-0"><i class="bi bi-pencil"></i> Editar Ruta</h4>
+{% block title %}Editar Ruta - Diamante Pro{% endblock %}
+
+{% block page_title %}
+<i class="bi bi-pencil-square"></i> Editar Ruta
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-card {
+        background: #1D1E33;
+        border-radius: 20px;
+        border: 1px solid rgba(0, 229, 255, 0.1);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+    }
+    
+    .form-card-header {
+        background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+        padding: 20px 30px;
+    }
+    
+    .form-card-header h4 {
+        color: #0A0E21;
+        margin: 0;
+        font-weight: 700;
+    }
+    
+    .form-card-body {
+        padding: 30px;
+    }
+    
+    .section-title {
+        color: #00E5FF;
+        font-weight: 600;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid rgba(0, 229, 255, 0.3);
+    }
+    
+    .form-label {
+        color: #00E5FF;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+    
+    .form-control, .form-select {
+        background: #0A0E21;
+        border: 1px solid rgba(0, 229, 255, 0.3);
+        color: #FFFFFF;
+        border-radius: 10px;
+        padding: 12px 15px;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        background: #0A0E21;
+        border-color: #00E5FF;
+        box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+        color: #FFFFFF;
+    }
+    
+    .form-control::placeholder {
+        color: rgba(255, 255, 255, 0.4);
+    }
+    
+    .form-select option {
+        background: #1D1E33;
+        color: #FFFFFF;
+    }
+    
+    .form-text {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 0.85rem;
+    }
+    
+    .form-check-input {
+        background-color: #0A0E21;
+        border: 2px solid rgba(0, 229, 255, 0.5);
+        width: 50px;
+        height: 26px;
+    }
+    
+    .form-check-input:checked {
+        background-color: #00FF99;
+        border-color: #00FF99;
+    }
+    
+    .form-check-input:focus {
+        box-shadow: 0 0 15px rgba(0, 255, 153, 0.3);
+    }
+    
+    .form-check-label {
+        color: #FFFFFF;
+        font-weight: 600;
+        margin-left: 10px;
+    }
+    
+    .btn-guardar {
+        background: linear-gradient(135deg, #00E5FF 0%, #00FF99 100%);
+        border: none;
+        color: #0A0E21;
+        font-weight: 700;
+        padding: 15px 30px;
+        border-radius: 12px;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-guardar:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(0, 229, 255, 0.4);
+        color: #0A0E21;
+    }
+    
+    .btn-cancelar {
+        background: transparent;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        color: #FFFFFF;
+        font-weight: 600;
+        padding: 14px 30px;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-cancelar:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: #FF3366;
+        color: #FF3366;
+    }
+    
+    .alert-danger {
+        background: rgba(255, 51, 102, 0.15);
+        border: 1px solid #FF3366;
+        color: #FF3366;
+        border-radius: 10px;
+    }
+    
+    .ruta-info-badge {
+        background: rgba(0, 229, 255, 0.15);
+        border: 1px solid rgba(0, 229, 255, 0.3);
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .ruta-info-badge .info-item {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.9rem;
+    }
+    
+    .ruta-info-badge .info-value {
+        color: #00E5FF;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8 offset-lg-2">
+            <div class="form-card">
+                <div class="form-card-header">
+                    <h4><i class="bi bi-pencil-fill me-2"></i>Editar Ruta: {{ ruta.nombre }}</h4>
+                </div>
+                <div class="form-card-body">
+                    <div class="ruta-info-badge">
+                        <div class="row">
+                            <div class="col-6">
+                                <span class="info-item">ID Ruta:</span>
+                                <span class="info-value ms-2">#{{ ruta.id }}</span>
+                            </div>
+                            <div class="col-6 text-end">
+                                <span class="info-item">Estado:</span>
+                                {% if ruta.activo %}
+                                <span class="badge bg-success ms-2">Activa</span>
+                                {% else %}
+                                <span class="badge bg-secondary ms-2">Inactiva</span>
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        {% if error %}
-                        <div class="alert alert-danger">{{ error }}</div>
-                        {% endif %}
 
-                        <form method="POST" action="/rutas/actualizar/{{ ruta.id }}">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Nombre de la Ruta *</label>
-                                <input type="text" name="nombre" class="form-control" required 
-                                       value="{{ ruta.nombre }}">
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Cobrador Asignado</label>
-                                <select name="cobrador_id" class="form-select">
-                                    <option value="">-- Sin cobrador --</option>
-                                    {% for cobrador in cobradores %}
-                                    <option value="{{ cobrador.id }}" 
-                                            {% if ruta.cobrador_id == cobrador.id %}selected{% endif %}>
-                                        {{ cobrador.nombre }}
-                                    </option>
-                                    {% endfor %}
-                                </select>
-                                <small class="text-muted">Puedes cambiar el cobrador sin afectar los préstamos</small>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Tipo de Ruta</label>
-                                <select name="sociedad_id" class="form-select">
-                                    <option value="" {% if not ruta.sociedad_id %}selected{% endif %}>
-                                        PROPIO - Ruta del dueño
-                                    </option>
-                                    {% for sociedad in sociedades %}
-                                    <option value="{{ sociedad.id }}" 
-                                            {% if ruta.sociedad_id == sociedad.id %}selected{% endif %}>
-                                        SOCIEDAD - {{ sociedad.nombre }}
-                                    </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Descripción</label>
-                                <textarea name="descripcion" class="form-control" rows="3">{{ ruta.descripcion or '' }}</textarea>
-                            </div>
-
-                            <div class="mb-3">
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" name="activo" 
-                                           id="activo" {% if ruta.activo %}checked{% endif %}>
-                                    <label class="form-check-label fw-bold" for="activo">
-                                        Ruta Activa
-                                    </label>
-                                </div>
-                                <small class="text-muted">Las rutas inactivas no se muestran en listados</small>
-                            </div>
-
-                            <div class="d-grid gap-2">
-                                <button type="submit" class="btn btn-primary btn-lg">
-                                    <i class="bi bi-check-circle"></i> Guardar Cambios
-                                </button>
-                                <a href="/rutas" class="btn btn-outline-secondary">
-                                    Cancelar
-                                </a>
-                            </div>
-                        </form>
+                    {% if error %}
+                    <div class="alert alert-danger mb-4">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
                     </div>
+                    {% endif %}
+
+                    <form method="POST" action="/rutas/actualizar/{{ ruta.id }}">
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="bi bi-tag-fill me-1"></i> Nombre de la Ruta *
+                            </label>
+                            <input type="text" name="nombre" class="form-control" required 
+                                   value="{{ ruta.nombre }}">
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="bi bi-person-badge-fill me-1"></i> Cobrador Asignado
+                            </label>
+                            <select name="cobrador_id" class="form-select">
+                                <option value="">-- Sin cobrador --</option>
+                                {% for cobrador in cobradores %}
+                                <option value="{{ cobrador.id }}" 
+                                        {% if ruta.cobrador_id == cobrador.id %}selected{% endif %}>
+                                    {{ cobrador.nombre }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Puedes cambiar el cobrador sin afectar los préstamos</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="bi bi-people-fill me-1"></i> Tipo de Ruta
+                            </label>
+                            <select name="sociedad_id" class="form-select">
+                                <option value="" {% if not ruta.sociedad_id %}selected{% endif %}>
+                                    PROPIO - Ruta del dueño
+                                </option>
+                                {% for sociedad in sociedades %}
+                                <option value="{{ sociedad.id }}" 
+                                        {% if ruta.sociedad_id == sociedad.id %}selected{% endif %}>
+                                    SOCIEDAD - {{ sociedad.nombre }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="bi bi-card-text me-1"></i> Descripción
+                            </label>
+                            <textarea name="descripcion" class="form-control" rows="3">{{ ruta.descripcion or '' }}</textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="activo" 
+                                       id="activo" {% if ruta.activo %}checked{% endif %}>
+                                <label class="form-check-label" for="activo">
+                                    <i class="bi bi-toggle-on me-1"></i> Ruta Activa
+                                </label>
+                            </div>
+                            <div class="form-text mt-2">Las rutas inactivas no se muestran en listados</div>
+                        </div>
+
+                        <div class="d-grid gap-3 mt-4">
+                            <button type="submit" class="btn btn-guardar">
+                                <i class="bi bi-check-circle-fill me-2"></i>Guardar Cambios
+                            </button>
+                            <a href="/rutas" class="btn btn-cancelar">
+                                <i class="bi bi-x-circle me-2"></i>Cancelar
+                            </a>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+</div>
+{% endblock %}

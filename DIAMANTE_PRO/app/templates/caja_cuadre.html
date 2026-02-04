@@ -1,185 +1,392 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Cuadre de Caja - Diamante Pro</title>
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark-theme.css') }}">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <style>
-        .summary-box {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 20px;
-        }
-        .summary-item {
-            padding: 15px;
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 10px;
-            margin-bottom: 10px;
-        }
-    </style>
-</head>
-<body style="background: #f5f7fa;">
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark" >
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/dashboard" style="display: inline-flex; align-items: center; gap: 10px; font-weight: 600;">
-                <svg style="width: 28px; height: 28px; fill: #60a5fa;" viewBox="0 0 24 24">
-                    <path d="M12 2L3 7v10l9 5 9-5V7l-9-5zm0 2.18L18.18 7 12 10.82 5.82 7 12 4.18zM5 8.82l6 3.5v7.86l-6-3.33V8.82zm8 11.36v-7.86l6-3.5v8.03l-6 3.33z"/>
-                </svg>
-                <span>DIAMANTE PRO</span>
-            </a>
-            <div class="d-flex align-items-center">
-                <span class="text-white me-3">
-                    <i class="bi bi-person-circle"></i> {{ nombre }}
-                </span>
-                <a href="/caja" class="btn btn-outline-light btn-sm">
-                    <i class="bi bi-arrow-left"></i> Volver
-                </a>
-            </div>
-        </div>
-    </nav>
+{% extends "base.html" %}
 
-    <div class="container mt-4">
-        <!-- Encabezado -->
-        <div class="row mb-4">
-            <div class="col-md-8">
-                <h2><i class="bi bi-calculator"></i> Cuadre de Caja</h2>
-            </div>
-            <div class="col-md-4">
+{% block title %}Cuadre de Caja - Diamante Pro{% endblock %}
+
+{% block page_title %}
+<i class="bi bi-calculator"></i> Cuadre de Caja
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .cuadre-card {
+        background: #1D1E33;
+        border-radius: 20px;
+        border: 1px solid rgba(0, 229, 255, 0.1);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+        margin-bottom: 25px;
+    }
+    
+    .section-title {
+        color: #00E5FF;
+        font-weight: 700;
+        font-size: 1.3rem;
+        margin-bottom: 20px;
+    }
+    
+    .summary-box {
+        background: linear-gradient(135deg, #00E5FF 0%, #00FF99 100%);
+        padding: 30px;
+        border-radius: 20px;
+        margin-bottom: 25px;
+    }
+    
+    .summary-box h4 {
+        color: #0A0E21;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 25px;
+    }
+    
+    .summary-item {
+        background: rgba(10, 14, 33, 0.3);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .summary-item .label {
+        color: #0A0E21;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+    
+    .summary-item .label i {
+        margin-right: 10px;
+    }
+    
+    .summary-item .value {
+        color: #0A0E21;
+        font-weight: 700;
+        font-size: 1.4rem;
+    }
+    
+    .summary-item.total {
+        background: rgba(10, 14, 33, 0.5);
+        border: 2px solid #0A0E21;
+    }
+    
+    .summary-item.total .label,
+    .summary-item.total .value {
+        font-size: 1.2rem;
+    }
+    
+    .cuadre-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    
+    .cuadre-table thead th {
+        background: linear-gradient(135deg, #00E5FF 0%, #00B8D4 100%);
+        color: #0A0E21;
+        font-weight: 700;
+        padding: 15px;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+    }
+    
+    .cuadre-table thead th:first-child {
+        border-radius: 15px 0 0 0;
+    }
+    
+    .cuadre-table thead th:last-child {
+        border-radius: 0 15px 0 0;
+    }
+    
+    .cuadre-table tbody tr {
+        transition: all 0.3s ease;
+    }
+    
+    .cuadre-table tbody tr:hover {
+        background: rgba(0, 229, 255, 0.1);
+    }
+    
+    .cuadre-table tbody td {
+        padding: 15px;
+        color: #FFFFFF;
+        border-bottom: 1px solid rgba(0, 229, 255, 0.1);
+    }
+    
+    .cuadre-table .text-success {
+        color: #00FF99 !important;
+        font-weight: 600;
+    }
+    
+    .cuadre-table .text-danger {
+        color: #FF3366 !important;
+        font-weight: 600;
+    }
+    
+    .badge-credito {
+        background: linear-gradient(135deg, #00E5FF 0%, #00B8D4 100%);
+        color: #0A0E21;
+        font-weight: 600;
+        padding: 5px 12px;
+        border-radius: 20px;
+    }
+    
+    .filter-box {
+        background: #0A0E21;
+        border: 1px solid rgba(0, 229, 255, 0.2);
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 25px;
+    }
+    
+    .form-control {
+        background: #1D1E33;
+        border: 1px solid rgba(0, 229, 255, 0.3);
+        color: #FFFFFF;
+        border-radius: 10px;
+        padding: 12px 15px;
+    }
+    
+    .form-control:focus {
+        background: #1D1E33;
+        border-color: #00E5FF;
+        box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+        color: #FFFFFF;
+    }
+    
+    .btn-filtrar {
+        background: linear-gradient(135deg, #00E5FF 0%, #00FF99 100%);
+        border: none;
+        color: #0A0E21;
+        font-weight: 700;
+        padding: 12px 25px;
+        border-radius: 10px;
+    }
+    
+    .btn-filtrar:hover {
+        box-shadow: 0 5px 20px rgba(0, 229, 255, 0.4);
+        color: #0A0E21;
+    }
+    
+    .card-header-ingresos {
+        background: linear-gradient(135deg, #00FF99 0%, #00CC7A 100%);
+        color: #0A0E21;
+        padding: 15px 25px;
+    }
+    
+    .card-header-gastos {
+        background: linear-gradient(135deg, #FF3366 0%, #CC2952 100%);
+        color: #FFFFFF;
+        padding: 15px 25px;
+    }
+    
+    .card-body-dark {
+        padding: 25px;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: rgba(255, 255, 255, 0.5);
+    }
+    
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 15px;
+        opacity: 0.5;
+    }
+    
+    .btn-imprimir {
+        background: linear-gradient(135deg, #00E5FF 0%, #00FF99 100%);
+        border: none;
+        color: #0A0E21;
+        font-weight: 700;
+        padding: 15px 30px;
+        border-radius: 12px;
+        font-size: 1.1rem;
+    }
+    
+    .btn-imprimir:hover {
+        box-shadow: 0 8px 25px rgba(0, 229, 255, 0.4);
+        color: #0A0E21;
+    }
+    
+    .btn-gasto {
+        background: linear-gradient(135deg, #FF3366 0%, #FF6B6B 100%);
+        border: none;
+        color: #FFFFFF;
+        font-weight: 700;
+        padding: 15px 30px;
+        border-radius: 12px;
+        font-size: 1.1rem;
+    }
+    
+    .btn-gasto:hover {
+        box-shadow: 0 8px 25px rgba(255, 51, 102, 0.4);
+        color: #FFFFFF;
+    }
+    
+    .btn-volver {
+        background: transparent;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        color: #FFFFFF;
+        padding: 10px 20px;
+        border-radius: 10px;
+    }
+    
+    .btn-volver:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: #00E5FF;
+        color: #00E5FF;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Encabezado con filtro -->
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-6">
+            <a href="/caja" class="btn btn-volver mb-3">
+                <i class="bi bi-arrow-left me-2"></i>Volver a Caja
+            </a>
+        </div>
+        <div class="col-md-6">
+            <div class="filter-box">
                 <form method="GET" action="/caja/cuadre">
                     <div class="input-group">
                         <input type="date" name="fecha" class="form-control" value="{{ fecha }}">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-search"></i> Filtrar
+                        <button type="submit" class="btn btn-filtrar">
+                            <i class="bi bi-search me-2"></i>Filtrar
                         </button>
                     </div>
                 </form>
             </div>
         </div>
+    </div>
 
-        <!-- Resumen -->
-        <div class="summary-box">
-            <h4 class="text-center mb-3">Resumen del {{ fecha_display }}</h4>
-            
-            <div class="summary-item">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <i class="bi bi-arrow-down-circle"></i> Total Ingresos (Cobros)
-                    </div>
-                    <div>
-                        <h4 class="mb-0">${{ "{:,.0f}".format(total_ingresos) }}</h4>
-                    </div>
-                </div>
+    <!-- Resumen -->
+    <div class="summary-box">
+        <h4><i class="bi bi-calendar-check me-2"></i>Resumen del {{ fecha_display }}</h4>
+        
+        <div class="summary-item">
+            <div class="label">
+                <i class="bi bi-arrow-down-circle-fill"></i> Total Ingresos (Cobros)
             </div>
-
-            <div class="summary-item">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <i class="bi bi-arrow-up-circle"></i> Total Gastos
-                    </div>
-                    <div>
-                        <h4 class="mb-0">${{ "{:,.0f}".format(total_gastos) }}</h4>
-                    </div>
-                </div>
-            </div>
-
-            <div class="summary-item" style="background: rgba(255, 255, 255, 0.25);">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <i class="bi bi-wallet2"></i> <strong>EFECTIVO ESPERADO</strong>
-                    </div>
-                    <div>
-                        <h3 class="mb-0">${{ "{:,.0f}".format(efectivo_esperado) }}</h3>
-                    </div>
-                </div>
-            </div>
+            <div class="value">${{ "{:,.0f}".format(total_ingresos) }}</div>
         </div>
 
-        <!-- Detalle de Ingresos -->
-        <div class="card mb-4">
-            <div class="card-header bg-success text-white">
-                <h5 class="mb-0"><i class="bi bi-cash-coin"></i> Detalle de Ingresos ({{ pagos|length }} pagos)</h5>
+        <div class="summary-item">
+            <div class="label">
+                <i class="bi bi-arrow-up-circle-fill"></i> Total Gastos
             </div>
-            <div class="card-body">
-                {% if pagos %}
-                <div class="table-responsive">
-                    <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                <th>Hora</th>
-                                <th>Cliente</th>
-                                <th>Crédito</th>
-                                <th class="text-end">Monto</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for pago in pagos %}
-                            <tr>
-                                <td>{{ pago.fecha_pago.strftime('%H:%M') }}</td>
-                                <td>{{ pago.prestamo.cliente.nombre }}</td>
-                                <td><span class="badge bg-primary">#{{ pago.prestamo_id }}</span></td>
-                                <td class="text-end text-success fw-bold">${{ "{:,.0f}".format(pago.monto) }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}
-                <p class="text-muted text-center">No hay ingresos en esta fecha</p>
-                {% endif %}
-            </div>
+            <div class="value">${{ "{:,.0f}".format(total_gastos) }}</div>
         </div>
 
-        <!-- Detalle de Gastos -->
-        <div class="card mb-4">
-            <div class="card-header bg-danger text-white">
-                <h5 class="mb-0"><i class="bi bi-receipt"></i> Detalle de Gastos ({{ gastos|length }} gastos)</h5>
+        <div class="summary-item total">
+            <div class="label">
+                <i class="bi bi-wallet2"></i> <strong>EFECTIVO ESPERADO</strong>
             </div>
-            <div class="card-body">
-                {% if gastos %}
-                <div class="table-responsive">
-                    <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                <th>Hora</th>
-                                <th>Concepto</th>
-                                <th>Descripción</th>
-                                <th class="text-end">Monto</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for gasto in gastos %}
-                            <tr>
-                                <td>{{ gasto.fecha.strftime('%H:%M') }}</td>
-                                <td><strong>{{ gasto.concepto }}</strong></td>
-                                <td>{{ gasto.descripcion or '-' }}</td>
-                                <td class="text-end text-danger fw-bold">${{ "{:,.0f}".format(gasto.monto) }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}
-                <p class="text-muted text-center">No hay gastos en esta fecha</p>
-                {% endif %}
-            </div>
-        </div>
-
-        <!-- Acciones -->
-        <div class="text-center mb-4">
-            <button onclick="window.print()" class="btn btn-primary btn-lg">
-                <i class="bi bi-printer"></i> Imprimir Cuadre
-            </button>
-            <a href="/caja/gastos/nuevo" class="btn btn-danger btn-lg">
-                <i class="bi bi-plus-circle"></i> Registrar Gasto
-            </a>
+            <div class="value">${{ "{:,.0f}".format(efectivo_esperado) }}</div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+    <!-- Detalle de Ingresos -->
+    <div class="cuadre-card">
+        <div class="card-header-ingresos">
+            <h5 class="mb-0">
+                <i class="bi bi-cash-coin me-2"></i>Detalle de Ingresos ({{ pagos|length }} pagos)
+            </h5>
+        </div>
+        <div class="card-body-dark">
+            {% if pagos %}
+            <div class="table-responsive">
+                <table class="cuadre-table">
+                    <thead>
+                        <tr>
+                            <th>Hora</th>
+                            <th>Cliente</th>
+                            <th>Crédito</th>
+                            <th class="text-end">Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pago in pagos %}
+                        <tr>
+                            <td>{{ pago.fecha_pago.strftime('%H:%M') }}</td>
+                            <td>{{ pago.prestamo.cliente.nombre }}</td>
+                            <td><span class="badge-credito">#{{ pago.prestamo_id }}</span></td>
+                            <td class="text-end text-success">${{ "{:,.0f}".format(pago.monto) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="bi bi-inbox"></i>
+                <p>No hay ingresos en esta fecha</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Detalle de Gastos -->
+    <div class="cuadre-card">
+        <div class="card-header-gastos">
+            <h5 class="mb-0">
+                <i class="bi bi-receipt me-2"></i>Detalle de Gastos ({{ gastos|length }} gastos)
+            </h5>
+        </div>
+        <div class="card-body-dark">
+            {% if gastos %}
+            <div class="table-responsive">
+                <table class="cuadre-table">
+                    <thead>
+                        <tr>
+                            <th>Hora</th>
+                            <th>Concepto</th>
+                            <th>Descripción</th>
+                            <th class="text-end">Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for gasto in gastos %}
+                        <tr>
+                            <td>{{ gasto.fecha.strftime('%H:%M') }}</td>
+                            <td><strong>{{ gasto.concepto }}</strong></td>
+                            <td>{{ gasto.descripcion or '-' }}</td>
+                            <td class="text-end text-danger">${{ "{:,.0f}".format(gasto.monto) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="bi bi-inbox"></i>
+                <p>No hay gastos en esta fecha</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Acciones -->
+    <div class="text-center mb-4">
+        <button onclick="window.print()" class="btn btn-imprimir me-3">
+            <i class="bi bi-printer me-2"></i>Imprimir Cuadre
+        </button>
+        <a href="/caja/gastos/nuevo" class="btn btn-gasto">
+            <i class="bi bi-plus-circle me-2"></i>Registrar Gasto
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-refresh cada 5 minutos
+    setTimeout(function() {
+        location.reload();
+    }, 300000);
+</script>
+{% endblock %}

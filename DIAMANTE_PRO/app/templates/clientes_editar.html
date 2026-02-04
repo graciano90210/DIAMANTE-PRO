@@ -1,248 +1,314 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Editar Cliente - Diamante Pro</title>
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark-theme.css') }}">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-</head>
-<body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/dashboard" style="display: inline-flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: 0.5px;">
-                <svg style="width: 28px; height: 28px; fill: #60a5fa;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2L3 7v10l9 5 9-5V7l-9-5zm0 2.18L18.18 7 12 10.82 5.82 7 12 4.18zM5 8.82l6 3.5v7.86l-6-3.33V8.82zm8 11.36v-7.86l6-3.5v8.03l-6 3.33z"/>
-                </svg>
-                <span>DIAMANTE PRO</span>
-            </a>
-            <div class="d-flex align-items-center">
-                <span class="text-white me-3">
-                    <i class="bi bi-person-circle"></i> {{ nombre }} 
-                    <span class="badge bg-secondary text-white">{{ rol }}</span>
-                </span>
-                <a href="/logout" class="btn btn-outline-light btn-sm">
-                    <i class="bi bi-box-arrow-right"></i> Salir
-                </a>
-            </div>
+{% extends "base.html" %}
+
+{% block title %}Editar Cliente - Diamante Pro{% endblock %}
+
+{% block page_title %}
+<i class="bi bi-pencil-square me-2"></i>Editar Cliente
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-card {
+        background: #1D1E33 !important;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 20px;
+    }
+    .section-title {
+        color: #00E5FF;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid rgba(0, 229, 255, 0.3);
+    }
+    .form-control, .form-select {
+        background: #0A0E21 !important;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #E0E0E0 !important;
+        border-radius: 8px;
+        padding: 10px 15px;
+        transition: all 0.3s ease;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #00E5FF;
+        box-shadow: 0 0 0 2px rgba(0, 229, 255, 0.2);
+        background: #0A0E21 !important;
+    }
+    .form-label {
+        color: #A0A0A0;
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin-bottom: 6px;
+    }
+    .input-group-text {
+        background: #0A0E21;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #00E5FF;
+    }
+    .form-check-input {
+        background-color: #0A0E21;
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+    .form-check-input:checked {
+        background-color: #00E5FF;
+        border-color: #00E5FF;
+    }
+    .form-check-label {
+        color: #E0E0E0;
+    }
+    .btn-guardar {
+        background: linear-gradient(135deg, #00E5FF, #00FF99);
+        color: #0A0E21;
+        font-weight: 600;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+    }
+    .btn-guardar:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(0, 229, 255, 0.4);
+        color: #0A0E21;
+    }
+    .btn-cancelar {
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #A0A0A0;
+        padding: 12px 30px;
+        border-radius: 10px;
+    }
+    .btn-cancelar:hover {
+        border-color: #FF6B6B;
+        color: #FF6B6B;
+    }
+    .vip-check {
+        background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0.05));
+        border: 1px solid rgba(255, 215, 0, 0.3);
+        border-radius: 10px;
+        padding: 15px 20px;
+    }
+    .vip-check .form-check-label {
+        color: #FFD700;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        {% if error %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>{{ error }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-    </nav>
+        {% endif %}
 
-    <!-- Main Content -->
-    <div class="container mt-4">
-        <div class="row">
-            <div class="col-md-8 offset-md-2">
-                <div class="card">
-                    <div class="card-header bg-warning text-dark">
-                        <h4><i class="bi bi-pencil-square"></i> Editar Cliente</h4>
+        <form method="POST" action="/clientes/actualizar/{{ cliente.id }}">
+            <!-- Información Personal -->
+            <div class="form-card">
+                <h5 class="section-title"><i class="bi bi-person me-2"></i>Información Personal</h5>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Nombre Completo *</label>
+                        <input type="text" name="nombre" class="form-control" required 
+                               value="{{ cliente.nombre }}" placeholder="Nombre completo del cliente">
                     </div>
-                    <div class="card-body">
-                        {% if error %}
-                        <div class="alert alert-danger">{{ error }}</div>
-                        {% endif %}
+                    <div class="col-md-3">
+                        <label class="form-label">CPF (Documento) *</label>
+                        <input type="text" name="documento" class="form-control" required 
+                               value="{{ cliente.documento }}" placeholder="Número de documento">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Fecha Nacimiento</label>
+                        <input type="date" name="fecha_nacimiento" class="form-control"
+                               value="{{ cliente.fecha_nacimiento }}">
+                    </div>
+                </div>
 
-                        <form method="POST" action="/clientes/actualizar/{{ cliente.id }}">
-                            <!-- Información Personal -->
-                            <h5 class="mb-3 text-primary">Información Personal</h5>
-                            
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Nombre Completo *</label>
-                                    <input type="text" name="nombre" class="form-control" required 
-                                           value="{{ cliente.nombre }}">
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label">CPF (Documento) *</label>
-                                    <input type="text" name="documento" class="form-control" required 
-                                           value="{{ cliente.documento }}">
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label">Fecha Nacimiento</label>
-                                    <input type="date" name="fecha_nacimiento" class="form-control"
-                                           value="{{ cliente.fecha_nacimiento }}">
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-4">
-                                    <label class="form-label">Teléfono *</label>
-                                    <input type="tel" name="telefono" class="form-control" required 
-                                           value="{{ cliente.telefono }}">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Estado Civil</label>
-                                    <select name="estado_civil" class="form-select">
-                                        <option value="SOLTERO" {% if cliente.estado_civil == 'SOLTERO' %}selected{% endif %}>Soltero/a</option>
-                                        <option value="CASADO" {% if cliente.estado_civil == 'CASADO' %}selected{% endif %}>Casado/a</option>
-                                        <option value="UNION_LIBRE" {% if cliente.estado_civil == 'UNION_LIBRE' %}selected{% endif %}>Unión Libre</option>
-                                        <option value="DIVORCIADO" {% if cliente.estado_civil == 'DIVORCIADO' %}selected{% endif %}>Divorciado/a</option>
-                                        <option value="VIUDO" {% if cliente.estado_civil == 'VIUDO' %}selected{% endif %}>Viudo/a</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Personas a Cargo</label>
-                                    <input type="number" name="personas_a_cargo" class="form-control" value="{{ cliente.personas_a_cargo or 0 }}">
-                                </div>
-                            </div>
-                            
-                            <div class="row mb-3">
-                                <div class="col-md-3">
-                                    <label class="form-label">Código País WhatsApp</label>
-                                    <input type="text" name="whatsapp_codigo_pais" class="form-control"
-                                           value="{{ cliente.whatsapp_codigo_pais or '57' }}">
-                                </div>
-                                <div class="col-md-9">
-                                    <label class="form-label">Número WhatsApp</label>
-                                    <input type="tel" name="whatsapp_numero" class="form-control" 
-                                           value="{{ cliente.whatsapp_numero or '' }}">
-                                </div>
-                            </div>
-
-                            <!-- Información del Negocio -->
-                            <h5 class="mb-3 text-primary mt-4">Información del Negocio</h5>
-
-                            <!-- Documentación Fiscal -->
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">CNPJ (Documento Negocio)</label>
-                                    <input type="text" name="documento_fiscal_negocio" class="form-control" 
-                                           value="{{ cliente.documento_fiscal_negocio or '' }}"
-                                           placeholder="Ej: 12.345.678/0001-90">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Tipo de Negocio</label>
-                                    <input type="text" name="tipo_negocio" class="form-control" 
-                                           value="{{ cliente.tipo_negocio or '' }}"
-                                           placeholder="Ej: Tienda, Peluquería, Taller...">
-                                </div>
-                            </div>
-                            
-                            <div class="row mb-3">
-                                <div class="col-md-8">
-                                    <label class="form-label">Dirección del Negocio</label>
-                                    <input type="text" name="direccion_negocio" class="form-control" 
-                                           value="{{ cliente.direccion_negocio or '' }}">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">CEP (Negocio)</label>
-                                    <input type="text" name="cep_negocio" class="form-control" 
-                                           value="{{ cliente.cep_negocio or '' }}">
-                                </div>
-                            </div>
-
-                            <!-- Datos Financieros y Estabilidad -->
-                            <div class="row mb-3">
-                                <div class="col-md-3">
-                                    <label class="form-label">Antigüedad (Meses)</label>
-                                    <input type="number" name="antiguedad_negocio_meses" class="form-control" 
-                                           value="{{ cliente.antiguedad_negocio_meses or 0 }}">
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label">Ingresos Diarios</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">$</span>
-                                        <input type="number" step="any" name="ingresos_diarios_estimados" class="form-control"
-                                               value="{{ cliente.ingresos_diarios_estimados or '' }}">
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label">Gastos Mensuales</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">$</span>
-                                        <input type="number" step="any" name="gastos_mensuales_promedio" class="form-control"
-                                               value="{{ cliente.gastos_mensuales_promedio or '' }}">
-                                    </div>
-                                </div>
-                                <div class="col-md-3 d-flex align-items-end">
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="checkbox" name="local_propio" id="localPropio"
-                                               {% if cliente.local_propio %}checked{% endif %}>
-                                        <label class="form-check-label" for="localPropio">¿Local Propio?</label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">GPS Latitud (Negocio)</label>
-                                    <input type="text" name="gps_latitud" class="form-control" 
-                                           value="{{ cliente.gps_latitud or '' }}" placeholder="Ej: -23.5505">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">GPS Longitud (Negocio)</label>
-                                    <input type="text" name="gps_longitud" class="form-control" 
-                                           value="{{ cliente.gps_longitud or '' }}" placeholder="Ej: -46.6333">
-                                </div>
-                            </div>
-
-                            <!-- Información Residencial (NUEVO) -->
-                            <h5 class="mb-3 text-primary mt-4">Información Residencial</h5>
-
-                            <div class="row mb-3">
-                                <div class="col-md-8">
-                                    <label class="form-label">Dirección de Casa</label>
-                                    <input type="text" name="direccion_casa" class="form-control" 
-                                           value="{{ cliente.direccion_casa or '' }}"
-                                           placeholder="Dirección completa de residencia">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">CEP (Casa)</label>
-                                    <input type="text" name="cep_casa" class="form-control"
-                                           value="{{ cliente.cep_casa or '' }}">
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-4">
-                                    <label class="form-label">Tiempo Residencia (Meses)</label>
-                                    <input type="number" name="tiempo_residencia_meses" class="form-control" 
-                                           value="{{ cliente.tiempo_residencia_meses or 0 }}">
-                                </div>
-                                <div class="col-md-4 d-flex align-items-end">
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="checkbox" name="tiene_comprobante_residencia" id="chkComprobante"
-                                               {% if cliente.tiene_comprobante_residencia %}checked{% endif %}>
-                                        <label class="form-check-label" for="chkComprobante">Tiene Comprobante</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-4 d-flex align-items-end">
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="checkbox" name="comprobante_a_nombre_propio" id="chkNombrePropio"
-                                               {% if cliente.comprobante_a_nombre_propio %}checked{% endif %}>
-                                        <label class="form-check-label" for="chkNombrePropio">¿A nombre propio?</label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Tipo de Cliente -->
-                            <div class="mb-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="es_vip" id="es_vip" 
-                                           {% if cliente.es_vip %}checked{% endif %}>
-                                    <label class="form-check-label" for="es_vip">
-                                        <strong>Cliente VIP</strong> (Tasa preferencial: 15% en lugar de 20%)
-                                    </label>
-                                </div>
-                            </div>
-
-                            <hr>
-
-                            <div class="d-grid gap-2">
-                                <button type="submit" class="btn btn-warning btn-lg">
-                                    <i class="bi bi-save"></i> Guardar Cambios
-                                </button>
-                                <a href="/clientes" class="btn btn-outline-secondary">
-                                    <i class="bi bi-arrow-left"></i> Cancelar
-                                </a>
-                            </div>
-                        </form>
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Teléfono *</label>
+                        <input type="tel" name="telefono" class="form-control" required 
+                               value="{{ cliente.telefono }}" placeholder="Número de teléfono">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Estado Civil</label>
+                        <select name="estado_civil" class="form-select">
+                            <option value="SOLTERO" {% if cliente.estado_civil == 'SOLTERO' %}selected{% endif %}>Soltero/a</option>
+                            <option value="CASADO" {% if cliente.estado_civil == 'CASADO' %}selected{% endif %}>Casado/a</option>
+                            <option value="UNION_LIBRE" {% if cliente.estado_civil == 'UNION_LIBRE' %}selected{% endif %}>Unión Libre</option>
+                            <option value="DIVORCIADO" {% if cliente.estado_civil == 'DIVORCIADO' %}selected{% endif %}>Divorciado/a</option>
+                            <option value="VIUDO" {% if cliente.estado_civil == 'VIUDO' %}selected{% endif %}>Viudo/a</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Personas a Cargo</label>
+                        <input type="number" name="personas_a_cargo" class="form-control" 
+                               value="{{ cliente.personas_a_cargo or 0 }}" min="0">
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Código País WhatsApp</label>
+                        <input type="text" name="whatsapp_codigo_pais" class="form-control"
+                               value="{{ cliente.whatsapp_codigo_pais or '57' }}" placeholder="57">
+                    </div>
+                    <div class="col-md-9">
+                        <label class="form-label">Número WhatsApp</label>
+                        <input type="tel" name="whatsapp_numero" class="form-control" 
+                               value="{{ cliente.whatsapp_numero or '' }}" placeholder="Número de WhatsApp">
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+            <!-- Información del Negocio -->
+            <div class="form-card">
+                <h5 class="section-title"><i class="bi bi-shop me-2"></i>Información del Negocio</h5>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">CNPJ (Documento Negocio)</label>
+                        <input type="text" name="documento_fiscal_negocio" class="form-control" 
+                               value="{{ cliente.documento_fiscal_negocio or '' }}"
+                               placeholder="Ej: 12.345.678/0001-90">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Tipo de Negocio</label>
+                        <input type="text" name="tipo_negocio" class="form-control" 
+                               value="{{ cliente.tipo_negocio or '' }}"
+                               placeholder="Ej: Tienda, Peluquería, Taller...">
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <label class="form-label">Dirección del Negocio</label>
+                        <input type="text" name="direccion_negocio" class="form-control" 
+                               value="{{ cliente.direccion_negocio or '' }}" placeholder="Dirección completa">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">CEP (Negocio)</label>
+                        <input type="text" name="cep_negocio" class="form-control" 
+                               value="{{ cliente.cep_negocio or '' }}" placeholder="Código postal">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Antigüedad (Meses)</label>
+                        <input type="number" name="antiguedad_negocio_meses" class="form-control" 
+                               value="{{ cliente.antiguedad_negocio_meses or 0 }}" min="0">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Ingresos Diarios</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" step="any" name="ingresos_diarios_estimados" class="form-control"
+                                   value="{{ cliente.ingresos_diarios_estimados or '' }}" placeholder="0">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Gastos Mensuales</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" step="any" name="gastos_mensuales_promedio" class="form-control"
+                                   value="{{ cliente.gastos_mensuales_promedio or '' }}" placeholder="0">
+                        </div>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="local_propio" id="localPropio"
+                                   {% if cliente.local_propio %}checked{% endif %}>
+                            <label class="form-check-label" for="localPropio">¿Local Propio?</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">GPS Latitud (Negocio)</label>
+                        <input type="text" name="gps_latitud" class="form-control" 
+                               value="{{ cliente.gps_latitud or '' }}" placeholder="Ej: -23.5505">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">GPS Longitud (Negocio)</label>
+                        <input type="text" name="gps_longitud" class="form-control" 
+                               value="{{ cliente.gps_longitud or '' }}" placeholder="Ej: -46.6333">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información Residencial -->
+            <div class="form-card">
+                <h5 class="section-title"><i class="bi bi-house me-2"></i>Información Residencial</h5>
+
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <label class="form-label">Dirección de Casa</label>
+                        <input type="text" name="direccion_casa" class="form-control" 
+                               value="{{ cliente.direccion_casa or '' }}"
+                               placeholder="Dirección completa de residencia">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">CEP (Casa)</label>
+                        <input type="text" name="cep_casa" class="form-control"
+                               value="{{ cliente.cep_casa or '' }}" placeholder="Código postal">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Tiempo Residencia (Meses)</label>
+                        <input type="number" name="tiempo_residencia_meses" class="form-control" 
+                               value="{{ cliente.tiempo_residencia_meses or 0 }}" min="0">
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="tiene_comprobante_residencia" id="chkComprobante"
+                                   {% if cliente.tiene_comprobante_residencia %}checked{% endif %}>
+                            <label class="form-check-label" for="chkComprobante">Tiene Comprobante</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="comprobante_a_nombre_propio" id="chkNombrePropio"
+                                   {% if cliente.comprobante_a_nombre_propio %}checked{% endif %}>
+                            <label class="form-check-label" for="chkNombrePropio">¿A nombre propio?</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cliente VIP -->
+            <div class="form-card">
+                <div class="vip-check">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="es_vip" id="es_vip" 
+                               {% if cliente.es_vip %}checked{% endif %}>
+                        <label class="form-check-label" for="es_vip">
+                            <i class="bi bi-star-fill me-2"></i>
+                            <strong>Cliente VIP</strong> - Tasa preferencial: 15% en lugar de 20%
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="d-flex gap-3 justify-content-center mt-4">
+                <button type="submit" class="btn btn-guardar btn-lg">
+                    <i class="bi bi-save me-2"></i>Guardar Cambios
+                </button>
+                <a href="/clientes" class="btn btn-cancelar btn-lg">
+                    <i class="bi bi-x-circle me-2"></i>Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

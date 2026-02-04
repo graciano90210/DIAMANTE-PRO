@@ -1,270 +1,349 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Nuevo Préstamo - Diamante Pro</title>
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark-theme.css') }}">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <style>
-        .simulador-box {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 15px;
-            margin-top: 20px;
-        }
-        .cuota-display {
-            font-size: 2.5rem;
-            font-weight: bold;
-        }
-        .badge-vip {
-            background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
-        }
-    </style>
-</head>
-<body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/dashboard" style="display: inline-flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: 0.5px;">
-                <svg style="width: 28px; height: 28px; fill: #60a5fa;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2L3 7v10l9 5 9-5V7l-9-5zm0 2.18L18.18 7 12 10.82 5.82 7 12 4.18zM5 8.82l6 3.5v7.86l-6-3.33V8.82zm8 11.36v-7.86l6-3.5v8.03l-6 3.33z"/>
-                </svg>
-                <span>DIAMANTE PRO</span>
-            </a>
-            <div class="d-flex align-items-center">
-                <span class="text-white me-3">
-                    <i class="bi bi-person-circle"></i> {{ nombre }} 
-                    <span class="badge bg-secondary text-white">{{ rol }}</span>
-                </span>
-                <a href="/logout" class="btn btn-outline-light btn-sm">
-                    <i class="bi bi-box-arrow-right"></i> Salir
+{% extends "base.html" %}
+
+{% block title %}Nuevo Préstamo - Diamante Pro{% endblock %}
+
+{% block page_title %}
+<i class="bi bi-cash-coin me-2"></i>Crear Nuevo Préstamo
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-card {
+        background: #1D1E33 !important;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 20px;
+    }
+    .section-title {
+        color: #00E5FF;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid rgba(0, 229, 255, 0.3);
+    }
+    .form-control, .form-select {
+        background: #0A0E21 !important;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #E0E0E0 !important;
+        border-radius: 8px;
+        padding: 10px 15px;
+        transition: all 0.3s ease;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #00E5FF;
+        box-shadow: 0 0 0 2px rgba(0, 229, 255, 0.2);
+        background: #0A0E21 !important;
+    }
+    .form-control:disabled, .form-control[readonly] {
+        background: #151829 !important;
+        color: #888 !important;
+    }
+    .form-label {
+        color: #A0A0A0;
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin-bottom: 6px;
+    }
+    .btn-guardar {
+        background: linear-gradient(135deg, #00FF99, #00E5FF);
+        color: #0A0E21;
+        font-weight: 600;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+    }
+    .btn-guardar:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(0, 255, 153, 0.4);
+        color: #0A0E21;
+    }
+    .btn-cancelar {
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #A0A0A0;
+        padding: 12px 30px;
+        border-radius: 10px;
+    }
+    .btn-cancelar:hover {
+        border-color: #FF6B6B;
+        color: #FF6B6B;
+    }
+    /* Simulador */
+    .simulador-box {
+        background: linear-gradient(135deg, #1D1E33 0%, #2A2D4A 100%);
+        border: 1px solid rgba(0, 229, 255, 0.3);
+        border-radius: 15px;
+        padding: 25px;
+        position: sticky;
+        top: 20px;
+    }
+    .simulador-box h5 {
+        color: #00E5FF;
+        margin-bottom: 20px;
+    }
+    .sim-label {
+        color: #888;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .sim-value {
+        color: #E0E0E0;
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-bottom: 15px;
+    }
+    .sim-value.highlight {
+        color: #00FF99;
+        font-size: 1.5rem;
+    }
+    .cuota-display {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #FFD700;
+        text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+    }
+    .info-card {
+        background: #1D1E33;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        padding: 15px;
+        margin-top: 15px;
+    }
+    .info-card h6 {
+        color: #00E5FF;
+        font-size: 0.85rem;
+        margin-bottom: 10px;
+    }
+    .info-card ul {
+        padding-left: 20px;
+        margin-bottom: 0;
+    }
+    .info-card li {
+        color: #A0A0A0;
+        font-size: 0.8rem;
+        margin-bottom: 5px;
+    }
+    .divider {
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        margin: 20px 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        {% if error %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>{{ error }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endif %}
+
+        <form method="POST" action="/prestamos/guardar" id="formPrestamo">
+            <!-- Selección de Cliente -->
+            <div class="form-card">
+                <h5 class="section-title"><i class="bi bi-person-check me-2"></i>1. Seleccionar Cliente</h5>
+                
+                <div class="mb-3">
+                    <label class="form-label">Cliente *</label>
+                    <select name="cliente_id" class="form-select" required id="selectCliente">
+                        <option value="">-- Seleccione un cliente --</option>
+                        {% for cliente in clientes %}
+                        <option value="{{ cliente.id }}" 
+                                data-vip="{{ cliente.es_vip }}"
+                                data-nombre="{{ cliente.nombre }}"
+                                {% if cliente_id_seleccionado and cliente.id == cliente_id_seleccionado %}selected{% endif %}>
+                            {{ cliente.nombre }} - {{ cliente.documento }}
+                            {% if cliente.es_vip %}⭐ VIP{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Cobrador Asignado *</label>
+                    {% if rol == 'cobrador' %}
+                        <input type="text" class="form-control" value="{{ nombre }}" readonly>
+                        <input type="hidden" name="cobrador_id" value="{{ usuario_id }}">
+                        <small class="text-muted">Los créditos se asignan automáticamente a ti</small>
+                    {% else %}
+                        <select name="cobrador_id" class="form-select" required>
+                            <option value="">-- Seleccione un cobrador --</option>
+                            {% for cobrador in cobradores %}
+                            <option value="{{ cobrador.id }}">{{ cobrador.nombre }} - {{ cobrador.rol }}</option>
+                            {% endfor %}
+                        </select>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Configuración del Préstamo -->
+            <div class="form-card">
+                <h5 class="section-title"><i class="bi bi-sliders me-2"></i>2. Configurar Préstamo</h5>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Monto a Prestar *</label>
+                        <input type="number" name="monto_prestado" class="form-control" 
+                               id="montoPrestado" required min="1" step="1" 
+                               placeholder="Ej: 500000">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Tasa de Interés (%) *</label>
+                        <input type="number" name="tasa_interes_input" class="form-control" 
+                               id="tasaInteresInput" value="20" min="0" max="100" step="1"
+                               placeholder="20">
+                        <small class="text-muted">Estándar: 20%</small>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Moneda *</label>
+                        <select name="moneda" class="form-select" id="moneda">
+                            <option value="COP">🇨🇴 Pesos Colombianos (COP)</option>
+                            <option value="USD">🇺🇸 Dólares (USD)</option>
+                            <option value="PEN">🇵🇪 Soles Peruanos (PEN)</option>
+                            <option value="BRL">🇧🇷 Reales Brasileños (BRL)</option>
+                            <option value="ARS">🇦🇷 Pesos Argentinos (ARS)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Frecuencia de Pago *</label>
+                        <select name="frecuencia" class="form-select" id="frecuencia">
+                            <option value="DIARIO">Diario (Lunes a Sábado)</option>
+                            <option value="DIARIO_LUNES_VIERNES">Diario (Lunes a Viernes)</option>
+                            <option value="BISEMANAL">Bisemanal (2 veces por semana)</option>
+                            <option value="SEMANAL">Semanal</option>
+                            <option value="QUINCENAL">Quincenal</option>
+                            <option value="MENSUAL">Mensual</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Número de Cuotas *</label>
+                        <input type="number" name="numero_cuotas" class="form-control" 
+                               id="numeroCuotas" required min="1" max="100" value="24"
+                               placeholder="Ej: 24">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Fecha de Inicio</label>
+                    <input type="date" name="fecha_inicio" class="form-control" 
+                           value="{{ fecha_hoy }}" required>
+                </div>
+
+                <!-- Campos ocultos calculados -->
+                <input type="hidden" name="tasa_interes" id="tasaInteres" value="0.20">
+                <input type="hidden" name="monto_a_pagar" id="montoAPagar">
+                <input type="hidden" name="valor_cuota" id="valorCuota">
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="d-flex gap-3 justify-content-center mt-4">
+                <button type="submit" class="btn btn-guardar btn-lg">
+                    <i class="bi bi-check-circle me-2"></i>Otorgar Préstamo
+                </button>
+                <a href="/dashboard" class="btn btn-cancelar btn-lg">
+                    <i class="bi bi-x-circle me-2"></i>Cancelar
                 </a>
             </div>
-        </div>
-    </nav>
-
-    <!-- Main Content -->
-    <div class="container mt-4">
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                <div class="card">
-                    <div class="card-header bg-success text-white">
-                        <h4><i class="bi bi-cash-coin"></i> Crear Nuevo Préstamo</h4>
-                    </div>
-                    <div class="card-body">
-                        {% if error %}
-                        <div class="alert alert-danger">{{ error }}</div>
-                        {% endif %}
-
-                        <form method="POST" action="/prestamos/guardar" id="formPrestamo">
-                            <!-- Selección de Cliente -->
-                            <h5 class="mb-3 text-primary">1. Seleccionar Cliente</h5>
-                            
-                            <div class="mb-3">
-                                <label class="form-label">Cliente *</label>
-                                <select name="cliente_id" class="form-select" required id="selectCliente">
-                                    <option value="">-- Seleccione un cliente --</option>
-                                    {% for cliente in clientes %}
-                                    <option value="{{ cliente.id }}" 
-                                            data-vip="{{ cliente.es_vip }}"
-                                            data-nombre="{{ cliente.nombre }}"
-                                            {% if cliente_id_seleccionado and cliente.id == cliente_id_seleccionado %}selected{% endif %}>
-                                        {{ cliente.nombre }} - {{ cliente.documento }}
-                                        {% if cliente.es_vip %}⭐ VIP{% endif %}
-                                    </option>
-                                    {% endfor %}
-                                </select>
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Cobrador Asignado *</label>
-                                {% if rol == 'cobrador' %}
-                                    <!-- El cobrador solo puede asignarse a sí mismo -->
-                                    <input type="text" class="form-control" value="{{ nombre }}" readonly style="background-color: #e9ecef;">
-                                    <input type="hidden" name="cobrador_id" value="{{ usuario_id }}">
-                                    <small class="text-muted">Los créditos se asignan automáticamente a ti</small>
-                                {% else %}
-                                    <!-- Otros roles pueden seleccionar el cobrador -->
-                                    <select name="cobrador_id" class="form-select" required>
-                                        <option value="">-- Seleccione un cobrador --</option>
-                                        {% for cobrador in cobradores %}
-                                        <option value="{{ cobrador.id }}">{{ cobrador.nombre }} - {{ cobrador.rol }}</option>
-                                        {% endfor %}
-                                    </select>
-                                {% endif %}
-                            </div>
-
-                            <!-- Configuración del Préstamo -->
-                            <h5 class="mb-3 text-primary mt-4">2. Configurar Préstamo</h5>
-                            
-                            <div class="row mb-3">
-                                <div class="col-md-4">
-                                    <label class="form-label">Monto a Prestar *</label>
-                                    <input type="number" name="monto_prestado" class="form-control" 
-                                           id="montoPrestado" required min="1" step="1" 
-                                           placeholder="Ej: 500000">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Tasa de Interés (%) *</label>
-                                    <input type="number" name="tasa_interes_input" class="form-control" 
-                                           id="tasaInteresInput" value="20" min="0" max="100" step="1"
-                                           placeholder="20">
-                                    <small class="text-muted">Estándar: 20%</small>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Moneda *</label>
-                                    <select name="moneda" class="form-select" id="moneda">
-                                        <option value="COP">🇨🇴 Pesos Colombianos (COP)</option>
-                                        <option value="USD">🇺🇸 Dólares (USD)</option>
-                                        <option value="PEN">🇵🇪 Soles Peruanos (PEN)</option>
-                                        <option value="BRL">🇧🇷 Reales Brasileños (BRL)</option>
-                                        <option value="ARS">🇦🇷 Pesos Argentinos (ARS)</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Frecuencia de Pago *</label>
-                                    <select name="frecuencia" class="form-select" id="frecuencia">
-                                        <option value="DIARIO">Diario (Lunes a Sábado)</option>
-                                        <option value="DIARIO_LUNES_VIERNES">Diario (Lunes a Viernes)</option>
-                                        <option value="BISEMANAL">Bisemanal (2 veces por semana)</option>
-                                        <option value="SEMANAL">Semanal</option>
-                                        <option value="QUINCENAL">Quincenal</option>
-                                        <option value="MENSUAL">Mensual</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Número de Cuotas *</label>
-                                    <input type="number" name="numero_cuotas" class="form-control" 
-                                           id="numeroCuotas" required min="1" max="100" value="24"
-                                           placeholder="Ej: 24">
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Fecha de Inicio</label>
-                                <input type="date" name="fecha_inicio" class="form-control" 
-                                       value="{{ fecha_hoy }}" required>
-                            </div>
-
-                            <!-- Campos ocultos calculados -->
-                            <input type="hidden" name="tasa_interes" id="tasaInteres" value="0.20">
-                            <input type="hidden" name="monto_a_pagar" id="montoAPagar">
-                            <input type="hidden" name="valor_cuota" id="valorCuota">
-
-                            <div class="d-grid gap-2 mt-4">
-                                <button type="submit" class="btn btn-success btn-lg">
-                                    <i class="bi bi-save"></i> Otorgar Préstamo
-                                </button>
-                                <a href="/dashboard" class="btn btn-secondary">
-                                    <i class="bi bi-x-circle"></i> Cancelar
-                                </a>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Simulador en tiempo real -->
-            <div class="col-md-4">
-                <div class="card simulador-box">
-                    <h5><i class="bi bi-calculator"></i> Simulador Automático</h5>
-                    <hr class="bg-white">
-                    
-                    <div class="mb-3">
-                        <small>Monto Prestado</small>
-                        <h4 id="simMonto">$0</h4>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <small>Tasa de Interés</small>
-                        <h4 id="simTasa">20%</h4>
-                        <small id="simTextoTasa">Cliente Regular</small>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <small>Total a Pagar</small>
-                        <h3 id="simTotal">$0</h3>
-                    </div>
-                    
-                    <hr class="bg-white">
-                    
-                    <div class="mb-3">
-                        <small>Valor de Cada Cuota</small>
-                        <div class="cuota-display" id="simCuota">$0</div>
-                        <small id="simFrecuencia">Pago diario</small>
-                    </div>
-                </div>
-
-                <div class="card mt-3">
-                    <div class="card-body">
-                        <h6><i class="bi bi-lightbulb"></i> Ventaja Diamante Pro</h6>
-                        <ul class="small mb-0">
-                            <li>Cálculo automático sin errores</li>
-                            <li>Soporte multidivisa (5 monedas)</li>
-                            <li>Plan de pagos generado al instante</li>
-                            <li>Sin costos ocultos</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
+        </form>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Simulador en tiempo real
-        const selectCliente = document.getElementById('selectCliente');
-        const montoPrestado = document.getElementById('montoPrestado');
-        const numeroCuotas = document.getElementById('numeroCuotas');
-        const moneda = document.getElementById('moneda');
-        const frecuencia = document.getElementById('frecuencia');
-        const tasaInteresInput = document.getElementById('tasaInteresInput');
+    <!-- Simulador en tiempo real -->
+    <div class="col-lg-4">
+        <div class="simulador-box">
+            <h5><i class="bi bi-calculator me-2"></i>Simulador Automático</h5>
+            
+            <div class="sim-label">Monto Prestado</div>
+            <div class="sim-value" id="simMonto">$0</div>
+            
+            <div class="sim-label">Tasa de Interés</div>
+            <div class="sim-value" id="simTasa">20%</div>
+            <small class="text-muted" id="simTextoTasa">Cliente Regular</small>
+            
+            <div class="divider"></div>
+            
+            <div class="sim-label">Total a Pagar</div>
+            <div class="sim-value highlight" id="simTotal">$0</div>
+            
+            <div class="divider"></div>
+            
+            <div class="sim-label">Valor de Cada Cuota</div>
+            <div class="cuota-display" id="simCuota">$0</div>
+            <small class="text-muted" id="simFrecuencia">Pago diario</small>
+        </div>
+
+        <div class="info-card">
+            <h6><i class="bi bi-lightbulb me-2"></i>Ventaja Diamante Pro</h6>
+            <ul>
+                <li>Cálculo automático sin errores</li>
+                <li>Soporte multidivisa (5 monedas)</li>
+                <li>Plan de pagos generado al instante</li>
+                <li>Sin costos ocultos</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Simulador en tiempo real
+    const selectCliente = document.getElementById('selectCliente');
+    const montoPrestado = document.getElementById('montoPrestado');
+    const numeroCuotas = document.getElementById('numeroCuotas');
+    const moneda = document.getElementById('moneda');
+    const frecuencia = document.getElementById('frecuencia');
+    const tasaInteresInput = document.getElementById('tasaInteresInput');
+    
+    function actualizarSimulador() {
+        const monto = parseFloat(montoPrestado.value) || 0;
+        const cuotas = parseInt(numeroCuotas.value) || 1;
+        const tasaPorcentaje = parseFloat(tasaInteresInput.value) || 20;
+        const tasa = tasaPorcentaje / 100;
+        const simboloMoneda = moneda.value === 'COP' ? '$' : moneda.value + ' ';
         
-        function actualizarSimulador() {
-            const monto = parseFloat(montoPrestado.value) || 0;
-            const cuotas = parseInt(numeroCuotas.value) || 1;
-            const tasaPorcentaje = parseFloat(tasaInteresInput.value) || 20;
-            const tasa = tasaPorcentaje / 100;
-            const simboloMoneda = moneda.value === 'COP' ? '$' : moneda.value + ' ';
-            
-            // Calcular
-            const montoTotal = monto * (1 + tasa);
-            const valorCuota = montoTotal / cuotas;
-            
-            // Actualizar campos ocultos
-            document.getElementById('tasaInteres').value = tasa;
-            document.getElementById('montoAPagar').value = montoTotal.toFixed(2);
-            document.getElementById('valorCuota').value = valorCuota.toFixed(2);
-            
-            // Actualizar simulador
-            document.getElementById('simMonto').textContent = simboloMoneda + monto.toLocaleString();
-            document.getElementById('simTasa').textContent = tasaPorcentaje + '%';
-            document.getElementById('simTextoTasa').textContent = tasaPorcentaje == 20 ? 'Tasa Estándar' : 'Tasa Personalizada';
-            document.getElementById('simTotal').textContent = simboloMoneda + montoTotal.toLocaleString();
-            document.getElementById('simCuota').textContent = simboloMoneda + Math.ceil(valorCuota).toLocaleString();
-            
-            const textoFrecuencia = {
-                'DIARIO': 'Pago diario (Lun-Sáb)',
-                'BISEMANAL': 'Pago 2 veces/semana',
-                'SEMANAL': 'Pago semanal',
-                'QUINCENAL': 'Pago quincenal',
-                'MENSUAL': 'Pago mensual'
-            };
-            document.getElementById('simFrecuencia').textContent = textoFrecuencia[frecuencia.value] || '';
-        }
+        // Calcular
+        const montoTotal = monto * (1 + tasa);
+        const valorCuota = montoTotal / cuotas;
         
-        selectCliente.addEventListener('change', actualizarSimulador);
-        montoPrestado.addEventListener('input', actualizarSimulador);
-        numeroCuotas.addEventListener('input', actualizarSimulador);
-        moneda.addEventListener('change', actualizarSimulador);
-        frecuencia.addEventListener('change', actualizarSimulador);
-        tasaInteresInput.addEventListener('input', actualizarSimulador);
-    </script>
-</body>
-</html>
+        // Actualizar campos ocultos
+        document.getElementById('tasaInteres').value = tasa;
+        document.getElementById('montoAPagar').value = montoTotal.toFixed(2);
+        document.getElementById('valorCuota').value = valorCuota.toFixed(2);
+        
+        // Actualizar simulador
+        document.getElementById('simMonto').textContent = simboloMoneda + monto.toLocaleString();
+        document.getElementById('simTasa').textContent = tasaPorcentaje + '%';
+        document.getElementById('simTextoTasa').textContent = tasaPorcentaje == 20 ? 'Tasa Estándar' : 'Tasa Personalizada';
+        document.getElementById('simTotal').textContent = simboloMoneda + montoTotal.toLocaleString();
+        document.getElementById('simCuota').textContent = simboloMoneda + Math.ceil(valorCuota).toLocaleString();
+        
+        const textoFrecuencia = {
+            'DIARIO': 'Pago diario (Lun-Sáb)',
+            'DIARIO_LUNES_VIERNES': 'Pago diario (Lun-Vie)',
+            'BISEMANAL': 'Pago 2 veces/semana',
+            'SEMANAL': 'Pago semanal',
+            'QUINCENAL': 'Pago quincenal',
+            'MENSUAL': 'Pago mensual'
+        };
+        document.getElementById('simFrecuencia').textContent = textoFrecuencia[frecuencia.value] || '';
+    }
+    
+    selectCliente.addEventListener('change', actualizarSimulador);
+    montoPrestado.addEventListener('input', actualizarSimulador);
+    numeroCuotas.addEventListener('input', actualizarSimulador);
+    moneda.addEventListener('change', actualizarSimulador);
+    frecuencia.addEventListener('change', actualizarSimulador);
+    tasaInteresInput.addEventListener('input', actualizarSimulador);
+</script>
+{% endblock %}

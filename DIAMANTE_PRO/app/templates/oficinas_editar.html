@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+
+{% block title %}Editar {{ oficina.nombre }} - Diamante Pro{% endblock %}
+
+{% block page_title %}Editar Oficina{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-card {
+        background: #1D1E33 !important;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 15px;
+    }
+    .form-card .card-header {
+        background: rgba(0, 229, 255, 0.08) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 20px 25px;
+    }
+    .form-card .card-body {
+        padding: 25px;
+    }
+    
+    .section-title {
+        color: #00E5FF;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid rgba(0, 229, 255, 0.2);
+    }
+    
+    .form-label {
+        color: rgba(255, 255, 255, 0.8);
+        font-weight: 500;
+        margin-bottom: 6px;
+    }
+    
+    .form-control, .form-select {
+        background: #0A0E21 !important;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #E0E0E0 !important;
+        border-radius: 8px;
+        padding: 10px 15px;
+    }
+    .form-control:focus, .form-select:focus {
+        background: #0A0E21 !important;
+        border-color: #00E5FF;
+        box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.2);
+        color: #E0E0E0 !important;
+    }
+    .form-control::placeholder {
+        color: rgba(255, 255, 255, 0.4);
+    }
+    .form-select option {
+        background: #1D1E33;
+        color: #E0E0E0;
+    }
+    
+    textarea.form-control {
+        min-height: 100px;
+    }
+    
+    .form-check-input {
+        background-color: #0A0E21;
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+    .form-check-input:checked {
+        background-color: #00E5FF;
+        border-color: #00E5FF;
+    }
+    .form-check-label {
+        color: rgba(255, 255, 255, 0.8);
+    }
+    
+    .btn-guardar {
+        background: linear-gradient(135deg, #00E5FF, #00FF99);
+        border: none;
+        color: #0A0E21;
+        font-weight: 600;
+        padding: 12px 30px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    .btn-guardar:hover {
+        transform: scale(1.02);
+        box-shadow: 0 5px 20px rgba(0, 229, 255, 0.4);
+        color: #0A0E21;
+    }
+    
+    .btn-cancelar {
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: rgba(255, 255, 255, 0.7);
+        padding: 12px 30px;
+        border-radius: 8px;
+    }
+    .btn-cancelar:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+    }
+    
+    .input-group-text {
+        background: rgba(0, 229, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #00E5FF;
+        border-radius: 8px 0 0 8px;
+    }
+    
+    .badge-code {
+        background: rgba(0, 229, 255, 0.2);
+        color: #00E5FF;
+        padding: 8px 15px;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <form action="{{ url_for('oficinas.actualizar', oficina_id=oficina.id) }}" method="POST">
+            <div class="form-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-3">
+                        <h4 class="mb-0 text-white">
+                            <i class="bi bi-building me-2" style="color: #00E5FF;"></i>{{ oficina.nombre }}
+                        </h4>
+                        {% if oficina.codigo %}
+                        <span class="badge-code">{{ oficina.codigo }}</span>
+                        {% endif %}
+                    </div>
+                    <a href="{{ url_for('oficinas.ver', oficina_id=oficina.id) }}" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
+                </div>
+                <div class="card-body">
+                    <!-- Sección: Datos Básicos -->
+                    <div class="section-title">
+                        <i class="bi bi-building me-2"></i>Datos Básicos
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nombre de la Oficina *</label>
+                            <input type="text" name="nombre" class="form-control" value="{{ oficina.nombre }}" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Código</label>
+                            <input type="text" name="codigo" class="form-control" value="{{ oficina.codigo or '' }}" 
+                                   placeholder="OF-001" maxlength="20">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Estado</label>
+                            <div class="form-check form-switch mt-2">
+                                <input type="checkbox" class="form-check-input" name="activo" id="activo"
+                                       {{ 'checked' if oficina.activo else '' }} style="transform: scale(1.2);">
+                                <label class="form-check-label" for="activo">
+                                    {{ 'Activo' if oficina.activo else 'Inactivo' }}
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-12 mb-3">
+                            <label class="form-label">Descripción</label>
+                            <textarea name="descripcion" class="form-control" rows="2" 
+                                      placeholder="Descripción breve de la oficina...">{{ oficina.descripcion or '' }}</textarea>
+                        </div>
+                    </div>
+                    
+                    <!-- Sección: Ubicación -->
+                    <div class="section-title">
+                        <i class="bi bi-geo-alt me-2"></i>Ubicación
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Dirección</label>
+                            <input type="text" name="direccion" class="form-control" 
+                                   value="{{ oficina.direccion or '' }}" placeholder="Calle, número, etc.">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Ciudad</label>
+                            <input type="text" name="ciudad" class="form-control" 
+                                   value="{{ oficina.ciudad or '' }}" placeholder="Ciudad">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Estado/Departamento</label>
+                            <input type="text" name="estado" class="form-control" 
+                                   value="{{ oficina.estado or '' }}" placeholder="Estado">
+                        </div>
+                    </div>
+                    
+                    <!-- Sección: Administración -->
+                    <div class="section-title">
+                        <i class="bi bi-person-badge me-2"></i>Administración
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Responsable</label>
+                            <select name="responsable_id" class="form-select">
+                                <option value="">Sin responsable asignado</option>
+                                {% for user in responsables %}
+                                <option value="{{ user.id }}" {{ 'selected' if user.id == oficina.responsable_id else '' }}>
+                                    {{ user.nombre }} ({{ user.rol }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Teléfono</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                                <input type="tel" name="telefono_oficina" class="form-control" 
+                                       value="{{ oficina.telefono_oficina or '' }}" placeholder="+57 300 000 0000">
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Email</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                <input type="email" name="email_oficina" class="form-control" 
+                                       value="{{ oficina.email_oficina or '' }}" placeholder="oficina@ejemplo.com">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sección: Metas -->
+                    <div class="section-title">
+                        <i class="bi bi-graph-up me-2"></i>Metas de la Oficina
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Meta de Cobro Diario</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="meta_cobro_diario" class="form-control" 
+                                       value="{{ oficina.meta_cobro_diario or 0 }}" min="0" step="1000">
+                            </div>
+                            <small style="color: rgba(255,255,255,0.5);">Objetivo de recaudo diario para toda la oficina</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Meta de Préstamos Mensual</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="meta_prestamos_mes" class="form-control" 
+                                       value="{{ oficina.meta_prestamos_mes or 0 }}" min="0" step="10000">
+                            </div>
+                            <small style="color: rgba(255,255,255,0.5);">Objetivo de capital prestado mensualmente</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Notas -->
+                    <div class="section-title">
+                        <i class="bi bi-journal-text me-2"></i>Notas
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <textarea name="notas" class="form-control" rows="3" 
+                                      placeholder="Notas adicionales sobre esta oficina...">{{ oficina.notas or '' }}</textarea>
+                        </div>
+                    </div>
+                    
+                    <!-- Botones -->
+                    <div class="d-flex justify-content-end gap-3 pt-4" style="border-top: 1px solid rgba(255,255,255,0.1);">
+                        <a href="{{ url_for('oficinas.ver', oficina_id=oficina.id) }}" class="btn btn-cancelar">
+                            <i class="bi bi-x-lg me-2"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-guardar">
+                            <i class="bi bi-check-lg me-2"></i>Guardar Cambios
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

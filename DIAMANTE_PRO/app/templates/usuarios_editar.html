@@ -1,142 +1,189 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Editar Usuario - Diamante Pro</title>
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark-theme.css') }}">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <style>
-        body {
-            background: #f5f7fa;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        .navbar {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        .form-card {
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-    </style>
-</head>
-<body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/dashboard" style="display: inline-flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: 0.5px;">
-                <svg style="width: 28px; height: 28px; fill: #60a5fa;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2L3 7v10l9 5 9-5V7l-9-5zm0 2.18L18.18 7 12 10.82 5.82 7 12 4.18zM5 8.82l6 3.5v7.86l-6-3.33V8.82zm8 11.36v-7.86l6-3.5v8.03l-6 3.33z"/>
-                </svg>
-                <span>DIAMANTE PRO</span>
-            </a>
-            <div class="d-flex align-items-center">
-                <span class="text-white me-3">
-                    <i class="bi bi-person-circle"></i> {{ nombre }}
-                </span>
-                <a href="/usuarios" class="btn btn-outline-light btn-sm">
-                    <i class="bi bi-arrow-left"></i> Volver
-                </a>
-            </div>
-        </div>
-    </nav>
+{% extends "base.html" %}
 
-    <!-- Main Content -->
-    <div class="container mt-4">
-        <div class="row justify-content-center">
-            <div class="col-md-6">
-                <div class="form-card">
-                    <h3 class="mb-4"><i class="bi bi-pencil-square"></i> Editar Usuario</h3>
+{% block title %}Editar Usuario - Diamante Pro{% endblock %}
 
+{% block page_title %}Editar Usuario{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-card {
+        background: #1D1E33;
+        border: 1px solid rgba(0, 229, 255, 0.2);
+        border-radius: 15px;
+    }
+    .form-card .card-header {
+        background: rgba(0, 229, 255, 0.08);
+        border-bottom: 1px solid rgba(0, 229, 255, 0.2);
+        padding: 20px 25px;
+    }
+    .form-card .card-body {
+        padding: 25px;
+    }
+    
+    .section-title {
+        color: #00E5FF;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid rgba(0, 229, 255, 0.2);
+    }
+    
+    .form-label {
+        color: rgba(255, 255, 255, 0.8);
+        font-weight: 500;
+    }
+    
+    .form-control, .form-select {
+        background: #0A0E21 !important;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #E0E0E0 !important;
+        border-radius: 8px;
+        padding: 10px 15px;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #00E5FF;
+        box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.2);
+    }
+    .form-select option {
+        background: #1D1E33;
+        color: #E0E0E0;
+    }
+    
+    .form-check-input {
+        background-color: #0A0E21;
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+    .form-check-input:checked {
+        background-color: #00E5FF;
+        border-color: #00E5FF;
+    }
+    
+    .btn-guardar {
+        background: linear-gradient(135deg, #00E5FF, #00FF99);
+        border: none;
+        color: #0A0E21;
+        font-weight: 600;
+        padding: 12px 30px;
+        border-radius: 8px;
+    }
+    .btn-guardar:hover {
+        transform: scale(1.02);
+        box-shadow: 0 5px 20px rgba(0, 229, 255, 0.4);
+    }
+    
+    .btn-cancelar {
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: rgba(255, 255, 255, 0.7);
+        padding: 12px 30px;
+        border-radius: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <form method="POST" action="{{ url_for('usuarios.actualizar', usuario_id=usuario.id) }}">
+            <div class="form-card">
+                <div class="card-header">
+                    <h4 class="mb-0 text-white">
+                        <i class="bi bi-person-gear me-2" style="color: #00E5FF;"></i>
+                        Editar: {{ usuario.nombre }}
+                    </h4>
+                </div>
+                <div class="card-body">
                     {% if error %}
-                    <div class="alert alert-danger">
-                        <i class="bi bi-exclamation-triangle"></i> {{ error }}
-                    </div>
+                    <div class="alert alert-danger">{{ error }}</div>
                     {% endif %}
-
-                    <form method="POST" action="/usuarios/actualizar/{{ usuario.id }}">
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Nombre Completo *</label>
-                            <input type="text" name="nombre" class="form-control" required 
-                                   value="{{ usuario.nombre }}">
+                    
+                    <div class="section-title">
+                        <i class="bi bi-person me-2"></i>Datos del Usuario
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nombre Completo *</label>
+                            <input type="text" name="nombre" class="form-control" 
+                                   value="{{ usuario.nombre }}" required>
                         </div>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Usuario (Login)</label>
-                            <input type="text" class="form-control" value="{{ usuario.usuario }}" disabled>
-                            <small class="text-muted">El nombre de usuario no se puede cambiar</small>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Usuario *</label>
+                            <input type="text" name="usuario" class="form-control" 
+                                   value="{{ usuario.usuario }}" required>
                         </div>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Nueva Contraseña</label>
-                            <input type="password" name="password" class="form-control" 
-                                   placeholder="Dejar vacío para mantener la actual" autocomplete="new-password">
-                            <small class="text-muted">Solo llena este campo si deseas cambiar la contraseña</small>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email" class="form-control" 
+                                   value="{{ usuario.email or '' }}">
                         </div>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Rol *</label>
-                            <select name="rol" class="form-select" required id="rolSelect">
-                                {% if rol == 'dueno' %}
-                                <option value="dueno" {% if usuario.rol == 'dueno' %}selected{% endif %}>Dueño</option>
-                                {% endif %}
-                                <option value="gerente" {% if usuario.rol == 'gerente' %}selected{% endif %}>Gerente</option>
-                                <option value="cobrador" {% if usuario.rol == 'cobrador' %}selected{% endif %}>Cobrador</option>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Teléfono</label>
+                            <input type="tel" name="telefono" class="form-control" 
+                                   value="{{ usuario.telefono or '' }}">
+                        </div>
+                    </div>
+                    
+                    <div class="section-title">
+                        <i class="bi bi-shield-lock me-2"></i>Rol y Permisos
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Rol *</label>
+                            <select name="rol" class="form-select" required>
+                                <option value="dueno" {{ 'selected' if usuario.rol == 'dueno' else '' }}>Dueño</option>
+                                <option value="gerente" {{ 'selected' if usuario.rol == 'gerente' else '' }}>Gerente</option>
+                                <option value="secretaria" {{ 'selected' if usuario.rol == 'secretaria' else '' }}>Secretaria</option>
+                                <option value="cobrador" {{ 'selected' if usuario.rol == 'cobrador' else '' }}>Cobrador</option>
                             </select>
                         </div>
-
-                        <div class="mb-3" id="grupoOperativoDiv" {% if usuario.rol != 'cobrador' %}style="display: none;"{% endif %}>
-                            <label class="form-label fw-bold">Grupo Operativo *</label>
-                            <select name="grupo_operativo" class="form-select" id="grupoOperativoSelect">
-                                <option value="PROPIO" {% if usuario.grupo_operativo == 'PROPIO' %}selected{% endif %}>PROPIO - Rutas propias del dueño</option>
-                                <option value="SOCIEDAD" {% if usuario.grupo_operativo == 'SOCIEDAD' %}selected{% endif %}>SOCIEDAD - Rutas con socio/sociedad</option>
-                            </select>
-                            <small class="text-muted">Determina si esta ruta es operación propia o en sociedad</small>
-                        </div>
-
-                        <div class="mb-4">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" name="activo" 
-                                       id="activo" {% if usuario.activo %}checked{% endif %}>
-                                <label class="form-check-label fw-bold" for="activo">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Estado</label>
+                            <div class="form-check form-switch mt-2">
+                                <input type="checkbox" class="form-check-input" name="activo" id="activo"
+                                       {{ 'checked' if usuario.activo else '' }}>
+                                <label class="form-check-label" for="activo" style="color: rgba(255,255,255,0.8);">
                                     Usuario Activo
                                 </label>
                             </div>
-                            <small class="text-muted">Los usuarios inactivos no pueden iniciar sesión</small>
                         </div>
-
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary btn-lg" style="background: #1e3c72; border: none;">
-                                <i class="bi bi-check-circle"></i> Guardar Cambios
-                            </button>
-                            <a href="/usuarios" class="btn btn-outline-secondary">
-                                Cancelar
-                            </a>
+                    </div>
+                    
+                    <div class="section-title">
+                        <i class="bi bi-key me-2"></i>Cambiar Contraseña
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nueva Contraseña</label>
+                            <input type="password" name="password" class="form-control" 
+                                   placeholder="Dejar vacío para no cambiar">
                         </div>
-                    </form>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Confirmar Contraseña</label>
+                            <input type="password" name="password_confirm" class="form-control"
+                                   placeholder="Confirmar nueva contraseña">
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end gap-3 pt-4" style="border-top: 1px solid rgba(255,255,255,0.1);">
+                        <a href="{{ url_for('usuarios.lista') }}" class="btn btn-cancelar">
+                            <i class="bi bi-x-lg me-2"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-guardar">
+                            <i class="bi bi-check-lg me-2"></i>Guardar Cambios
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
+        </form>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-    // Mostrar grupo operativo solo para cobradores
-    document.getElementById('rolSelect').addEventListener('change', function() {
-        const grupoDiv = document.getElementById('grupoOperativoDiv');
-        const grupoSelect = document.getElementById('grupoOperativoSelect');
-        
-        if (this.value === 'cobrador') {
-            grupoDiv.style.display = 'block';
-            grupoSelect.required = true;
-        } else {
-            grupoDiv.style.display = 'none';
-            grupoSelect.required = false;
-        }
-    });
-    </script>
-</body>
-</html>
+</div>
+{% endblock %}

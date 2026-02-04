@@ -1,218 +1,375 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Detalle de Préstamo - Diamante Pro</title>
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark-theme.css') }}">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <style>
-        .info-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-            margin-bottom: 20px;
-        }
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        .info-row:last-child {
-            border-bottom: none;
-        }
-        .badge-estado {
-            font-size: 1rem;
-            padding: 8px 15px;
-        }
-        .pago-item {
-            transition: all 0.3s;
-        }
-        .pago-item:hover {
-            background-color: #f8f9fa;
-            transform: translateX(5px);
-        }
-    </style>
-</head>
-<body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/dashboard" style="display: inline-flex; align-items: center; gap: 10px; font-weight: 600;">
-                <svg style="width: 28px; height: 28px; fill: #60a5fa;" viewBox="0 0 24 24">
-                    <path d="M12 2L3 7v10l9 5 9-5V7l-9-5zm0 2.18L18.18 7 12 10.82 5.82 7 12 4.18zM5 8.82l6 3.5v7.86l-6-3.33V8.82zm8 11.36v-7.86l6-3.5v8.03l-6 3.33z"/>
-                </svg>
-                <span>DIAMANTE PRO</span>
-            </a>
-            <div class="d-flex align-items-center">
-                <span class="text-white me-3">
-                    <i class="bi bi-person-circle"></i> {{ nombre }}
+{% extends "base.html" %}
+
+{% block title %}Detalle de Préstamo #{{ prestamo.id }} - Diamante Pro{% endblock %}
+
+{% block page_title %}
+<i class="bi bi-file-earmark-text me-2"></i>Préstamo #{{ prestamo.id }}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-card {
+        background: #1D1E33 !important;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 20px;
+    }
+    .section-title {
+        color: #00E5FF;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid rgba(0, 229, 255, 0.3);
+    }
+    /* Info Card Principal */
+    .info-card-principal {
+        background: linear-gradient(135deg, #1D1E33 0%, #2A2D4A 100%);
+        border: 1px solid rgba(0, 229, 255, 0.3);
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 20px;
+    }
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    .info-row span:first-child {
+        color: #888;
+        font-size: 0.9rem;
+    }
+    .info-row strong {
+        color: #E0E0E0;
+    }
+    /* Badge Estado */
+    .badge-estado {
+        font-size: 0.9rem;
+        padding: 8px 15px;
+        border-radius: 20px;
+    }
+    .badge-activo {
+        background: linear-gradient(135deg, #00FF99, #00E5FF);
+        color: #0A0E21;
+    }
+    .badge-completado {
+        background: linear-gradient(135deg, #FFD700, #FFA500);
+        color: #0A0E21;
+    }
+    .badge-cancelado {
+        background: rgba(255, 107, 107, 0.2);
+        color: #FF6B6B;
+    }
+    /* Resumen Financiero */
+    .stat-box {
+        text-align: center;
+        padding: 20px;
+        background: #0A0E21;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .stat-box h6 {
+        color: #888;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 10px;
+    }
+    .stat-box h4 {
+        font-weight: 700;
+        margin-bottom: 0;
+    }
+    .stat-box.prestado h4 { color: #00FF99; }
+    .stat-box.total h4 { color: #FFD700; }
+    .stat-box.saldo h4 { color: #00E5FF; }
+    .stat-box.cuota h4 { color: #E0E0E0; }
+    /* Info Badges */
+    .info-badge {
+        background: rgba(0, 229, 255, 0.15);
+        color: #00E5FF;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+    }
+    /* Acciones */
+    .btn-accion {
+        padding: 12px 25px;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    .btn-pago {
+        background: linear-gradient(135deg, #00FF99, #00E5FF);
+        color: #0A0E21;
+        border: none;
+    }
+    .btn-pago:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(0, 255, 153, 0.4);
+        color: #0A0E21;
+    }
+    .btn-comprobante {
+        background: transparent;
+        border: 1px solid rgba(0, 229, 255, 0.5);
+        color: #00E5FF;
+    }
+    .btn-comprobante:hover {
+        background: rgba(0, 229, 255, 0.1);
+        color: #00E5FF;
+    }
+    /* Historial de Pagos */
+    .pago-item {
+        background: #0A0E21;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 12px;
+        transition: all 0.3s ease;
+    }
+    .pago-item:hover {
+        border-color: rgba(0, 229, 255, 0.3);
+        transform: translateX(5px);
+    }
+    .pago-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    .pago-id {
+        color: #00FF99;
+        font-weight: 600;
+    }
+    .pago-fecha {
+        color: #888;
+        font-size: 0.85rem;
+    }
+    .pago-monto {
+        color: #00FF99;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+    .pago-saldo {
+        color: #888;
+        font-size: 0.8rem;
+    }
+    .pago-obs {
+        color: #A0A0A0;
+        font-style: italic;
+        font-size: 0.85rem;
+        margin-top: 8px;
+    }
+    .btn-recibo {
+        background: rgba(0, 255, 153, 0.15);
+        border: 1px solid rgba(0, 255, 153, 0.3);
+        color: #00FF99;
+        font-size: 0.8rem;
+        padding: 5px 12px;
+        border-radius: 6px;
+    }
+    .btn-recibo:hover {
+        background: rgba(0, 255, 153, 0.25);
+        color: #00FF99;
+    }
+    .scroll-container {
+        max-height: 600px;
+        overflow-y: auto;
+        padding-right: 5px;
+    }
+    .scroll-container::-webkit-scrollbar {
+        width: 6px;
+    }
+    .scroll-container::-webkit-scrollbar-track {
+        background: #0A0E21;
+        border-radius: 3px;
+    }
+    .scroll-container::-webkit-scrollbar-thumb {
+        background: #00E5FF;
+        border-radius: 3px;
+    }
+    .alert-no-pagos {
+        background: rgba(0, 229, 255, 0.1);
+        border: 1px solid rgba(0, 229, 255, 0.3);
+        color: #00E5FF;
+        border-radius: 10px;
+    }
+    .btn-volver {
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #A0A0A0;
+        padding: 8px 20px;
+        border-radius: 8px;
+    }
+    .btn-volver:hover {
+        border-color: #00E5FF;
+        color: #00E5FF;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col">
+        <a href="/prestamos" class="btn btn-volver">
+            <i class="bi bi-arrow-left me-2"></i>Volver a Préstamos
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Información del Préstamo -->
+        <div class="info-card-principal">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="mb-0" style="color: #E0E0E0;">
+                    <i class="bi bi-cash-coin me-2" style="color: #00E5FF;"></i>
+                    Préstamo #{{ prestamo.id }}
+                </h4>
+                <span class="badge badge-estado {% if prestamo.estado == 'ACTIVO' %}badge-activo{% elif prestamo.estado == 'COMPLETADO' %}badge-completado{% else %}badge-cancelado{% endif %}">
+                    {{ prestamo.estado }}
                 </span>
             </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="info-row">
+                        <span>Cliente:</span>
+                        <strong>{{ prestamo.cliente.nombre }}</strong>
+                    </div>
+                    <div class="info-row">
+                        <span>Documento:</span>
+                        <strong>{{ prestamo.cliente.documento }}</strong>
+                    </div>
+                    <div class="info-row">
+                        <span>Teléfono:</span>
+                        <strong>{{ prestamo.cliente.telefono }}</strong>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="info-row">
+                        <span>Cobrador:</span>
+                        <strong>{{ prestamo.cobrador.nombre }}</strong>
+                    </div>
+                    <div class="info-row">
+                        <span>Fecha Inicio:</span>
+                        <strong>{{ prestamo.fecha_inicio.strftime('%d/%m/%Y') }}</strong>
+                    </div>
+                    <div class="info-row">
+                        <span>Fecha Fin:</span>
+                        <strong>{{ prestamo.fecha_fin_estimada.strftime('%d/%m/%Y') }}</strong>
+                    </div>
+                </div>
+            </div>
         </div>
-    </nav>
 
-    <!-- Main Content -->
-    <div class="container mt-4">
-        <div class="row mb-3">
-            <div class="col">
-                <a href="/prestamos" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left"></i> Volver a Préstamos
+        <!-- Resumen Financiero -->
+        <div class="form-card">
+            <h5 class="section-title"><i class="bi bi-bar-chart me-2"></i>Resumen Financiero</h5>
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="stat-box prestado">
+                        <h6>Monto Prestado</h6>
+                        <h4>{{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.monto_prestado) }}</h4>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-box total">
+                        <h6>Total a Pagar</h6>
+                        <h4>{{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.monto_a_pagar) }}</h4>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-box saldo">
+                        <h6>Saldo Actual</h6>
+                        <h4>{{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.saldo_actual) }}</h4>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-box cuota">
+                        <h6>Valor Cuota</h6>
+                        <h4>{{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.valor_cuota) }}</h4>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row text-center">
+                <div class="col-md-4">
+                    <h6 style="color: #888; font-size: 0.8rem;">Frecuencia</h6>
+                    <span class="info-badge">{{ prestamo.frecuencia }}</span>
+                </div>
+                <div class="col-md-4">
+                    <h6 style="color: #888; font-size: 0.8rem;">Cuotas Pagadas</h6>
+                    <h5 style="color: #E0E0E0;">{{ prestamo.cuotas_pagadas }} / {{ prestamo.numero_cuotas }}</h5>
+                </div>
+                <div class="col-md-4">
+                    <h6 style="color: #888; font-size: 0.8rem;">Interés</h6>
+                    <h5 style="color: #FFD700;">{{ prestamo.tasa_interes }}%</h5>
+                </div>
+            </div>
+        </div>
+
+        <!-- Acciones Rápidas -->
+        <div class="form-card">
+            <div class="d-grid gap-3">
+                <a href="/cobro/registrar/{{ prestamo.id }}" class="btn btn-accion btn-pago">
+                    <i class="bi bi-cash me-2"></i>Registrar Nuevo Pago
                 </a>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-8">
-                <!-- Información del Préstamo -->
-                <div class="info-card">
-                    <h4 class="mb-4">
-                        <i class="bi bi-cash-coin"></i> Préstamo #{{ prestamo.id }}
-                        <span class="badge badge-estado {% if prestamo.estado == 'ACTIVO' %}bg-success{% else %}bg-secondary{% endif %} float-end">
-                            {{ prestamo.estado }}
-                        </span>
-                    </h4>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="info-row">
-                                <span>Cliente:</span>
-                                <strong>{{ prestamo.cliente.nombre }}</strong>
-                            </div>
-                            <div class="info-row">
-                                <span>Documento:</span>
-                                <strong>{{ prestamo.cliente.documento }}</strong>
-                            </div>
-                            <div class="info-row">
-                                <span>Teléfono:</span>
-                                <strong>{{ prestamo.cliente.telefono }}</strong>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="info-row">
-                                <span>Cobrador:</span>
-                                <strong>{{ prestamo.cobrador.nombre }}</strong>
-                            </div>
-                            <div class="info-row">
-                                <span>Fecha Inicio:</span>
-                                <strong>{{ prestamo.fecha_inicio.strftime('%d/%m/%Y') }}</strong>
-                            </div>
-                            <div class="info-row">
-                                <span>Fecha Fin:</span>
-                                <strong>{{ prestamo.fecha_fin_estimada.strftime('%d/%m/%Y') }}</strong>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Resumen Financiero -->
-                <div class="card mb-4">
-                    <div class="card-header bg-dark text-white">
-                        <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Resumen Financiero</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row text-center">
-                            <div class="col-md-3">
-                                <h6 class="text-muted">Monto Prestado</h6>
-                                <h4 class="text-success">{{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.monto_prestado) }}</h4>
-                            </div>
-                            <div class="col-md-3">
-                                <h6 class="text-muted">Total a Pagar</h6>
-                                <h4 class="text-warning">{{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.monto_a_pagar) }}</h4>
-                            </div>
-                            <div class="col-md-3">
-                                <h6 class="text-muted">Saldo Actual</h6>
-                                <h4 class="text-primary">{{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.saldo_actual) }}</h4>
-                            </div>
-                            <div class="col-md-3">
-                                <h6 class="text-muted">Valor Cuota</h6>
-                                <h4>{{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.valor_cuota) }}</h4>
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="row text-center">
-                            <div class="col-md-4">
-                                <h6 class="text-muted">Frecuencia</h6>
-                                <span class="badge bg-info">{{ prestamo.frecuencia }}</span>
-                            </div>
-                            <div class="col-md-4">
-                                <h6 class="text-muted">Cuotas Pagadas</h6>
-                                <h5>{{ prestamo.cuotas_pagadas }} / {{ prestamo.numero_cuotas }}</h5>
-                            </div>
-                            <div class="col-md-4">
-                                <h6 class="text-muted">Interés</h6>
-                                <h5>{{ prestamo.tasa_interes }}%</h5>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Acciones Rápidas -->
-                <div class="card mb-4">
-                    <div class="card-body">
-                        <div class="d-grid gap-2">
-                            <a href="/cobro/registrar/{{ prestamo.id }}" class="btn btn-success btn-lg">
-                                <i class="bi bi-cash"></i> Registrar Nuevo Pago
-                            </a>
-                            <a href="/prestamos/comprobante-imagen/{{ prestamo.id }}" class="btn btn-primary" download>
-                                <i class="bi bi-download"></i> Descargar Comprobante Original del Crédito
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Historial de Pagos -->
-            <div class="col-md-4">
-                <div class="card">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0"><i class="bi bi-clock-history"></i> Historial de Pagos</h5>
-                    </div>
-                    <div class="card-body" style="max-height: 600px; overflow-y: auto;">
-                        {% if pagos %}
-                            {% for pago in pagos %}
-                            <div class="pago-item border rounded p-3 mb-3">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <strong class="text-success">Pago #{{ pago.id }}</strong>
-                                    <small class="text-muted">{{ pago.fecha_pago.strftime('%d/%m/%Y') }}</small>
-                                </div>
-                                <div class="mb-2">
-                                    <strong>Monto:</strong> 
-                                    <span class="text-success">{{ prestamo.moneda }} {{ "{:,.0f}".format(pago.monto) }}</span>
-                                </div>
-                                <div class="mb-2">
-                                    <small class="text-muted">
-                                        Saldo: {{ prestamo.moneda }} {{ "{:,.0f}".format(pago.saldo_anterior) }}
-                                        → {{ prestamo.moneda }} {{ "{:,.0f}".format(pago.saldo_nuevo) }}
-                                    </small>
-                                </div>
-                                {% if pago.observaciones %}
-                                <div class="mb-2">
-                                    <small><em>{{ pago.observaciones }}</em></small>
-                                </div>
-                                {% endif %}
-                                <div class="d-grid gap-2">
-                                    <a href="/cobro/recibo-imagen/{{ pago.id }}" class="btn btn-sm btn-success" download>
-                                        <i class="bi bi-download"></i> Descargar Recibo
-                                    </a>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        {% else %}
-                            <div class="alert alert-info">
-                                <i class="bi bi-info-circle"></i> 
-                                No hay pagos registrados para este préstamo.
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
+                <a href="/prestamos/comprobante-imagen/{{ prestamo.id }}" class="btn btn-accion btn-comprobante" download>
+                    <i class="bi bi-download me-2"></i>Descargar Comprobante Original del Crédito
+                </a>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+    <!-- Historial de Pagos -->
+    <div class="col-lg-4">
+        <div class="form-card">
+            <h5 class="section-title"><i class="bi bi-clock-history me-2"></i>Historial de Pagos</h5>
+            
+            <div class="scroll-container">
+                {% if pagos %}
+                    {% for pago in pagos %}
+                    <div class="pago-item">
+                        <div class="pago-header">
+                            <span class="pago-id">Pago #{{ pago.id }}</span>
+                            <span class="pago-fecha">{{ pago.fecha_pago.strftime('%d/%m/%Y') }}</span>
+                        </div>
+                        <div class="mb-2">
+                            <strong style="color: #888;">Monto:</strong> 
+                            <span class="pago-monto">{{ prestamo.moneda }} {{ "{:,.0f}".format(pago.monto) }}</span>
+                        </div>
+                        <div class="pago-saldo">
+                            Saldo: {{ prestamo.moneda }} {{ "{:,.0f}".format(pago.saldo_anterior) }}
+                            → {{ prestamo.moneda }} {{ "{:,.0f}".format(pago.saldo_nuevo) }}
+                        </div>
+                        {% if pago.observaciones %}
+                        <div class="pago-obs">
+                            "{{ pago.observaciones }}"
+                        </div>
+                        {% endif %}
+                        <div class="d-grid mt-3">
+                            <a href="/cobro/recibo-imagen/{{ pago.id }}" class="btn btn-recibo" download>
+                                <i class="bi bi-download me-1"></i>Descargar Recibo
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-no-pagos text-center">
+                        <i class="bi bi-info-circle me-2"></i>
+                        No hay pagos registrados para este préstamo.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

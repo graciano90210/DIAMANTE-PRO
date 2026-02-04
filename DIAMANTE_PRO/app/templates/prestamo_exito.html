@@ -1,220 +1,210 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Crédito Aprobado - Diamante Pro</title>
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark-theme.css') }}">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <style>
-        .success-icon {
-            font-size: 5rem;
-            color: #28a745;
-        }
-        .comprobante-box {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-        }
-        .info-card {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        .info-row:last-child {
-            border-bottom: none;
-        }
-        .info-label {
-            font-weight: 500;
-            opacity: 0.9;
-        }
-        .info-value {
-            font-weight: 600;
-            text-align: right;
-        }
-        .highlight-value {
-            font-size: 1.5rem;
-            font-weight: bold;
-        }
-    </style>
-</head>
-<body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/dashboard" style="display: inline-flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: 0.5px;">
-                <svg style="width: 28px; height: 28px; fill: #60a5fa;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2L3 7v10l9 5 9-5V7l-9-5zm0 2.18L18.18 7 12 10.82 5.82 7 12 4.18zM5 8.82l6 3.5v7.86l-6-3.33V8.82zm8 11.36v-7.86l6-3.5v8.03l-6 3.33z"/>
-                </svg>
-                <span>DIAMANTE PRO</span>
-            </a>
-            <div class="d-flex align-items-center">
-                <span class="text-white me-3">
-                    <i class="bi bi-person-circle"></i> {{ nombre }}
-                </span>
-            </div>
-        </div>
-    </nav>
+{% extends "base.html" %}
 
-    <!-- Main Content -->
-    <div class="container mt-5">
-        <div class="row">
-            <div class="col-md-8 offset-md-2">
-                <div class="card shadow-lg">
-                    <div class="card-body text-center py-5">
-                        <i class="bi bi-check-circle-fill success-icon"></i>
-                        <h2 class="mt-3">¡Crédito Aprobado Exitosamente!</h2>
-                        <p class="text-muted">El préstamo ha sido registrado en el sistema</p>
-                        
-                        <!-- Comprobante -->
-                        <div class="comprobante-box text-start mt-4">
-                            <h5 class="text-center mb-4">
-                                <i class="bi bi-file-earmark-text"></i> 
-                                COMPROBANTE DE CRÉDITO #{{ prestamo.id }}
-                            </h5>
-                            
-                            <!-- Información del Cliente -->
-                            <div class="info-card">
-                                <h6 class="mb-3"><i class="bi bi-person"></i> Cliente</h6>
-                                <div class="info-row">
-                                    <span class="info-label">Nombre:</span>
-                                    <span class="info-value">{{ cliente.nombre }}</span>
-                                </div>
-                                <div class="info-row">
-                                    <span class="info-label">Documento:</span>
-                                    <span class="info-value">{{ cliente.documento }}</span>
-                                </div>
-                                <div class="info-row">
-                                    <span class="info-label">Teléfono:</span>
-                                    <span class="info-value">{{ cliente.telefono }}</span>
-                                </div>
-                            </div>
+{% block title %}Crédito Aprobado - Diamante Pro{% endblock %}
 
-                            <!-- Detalles del Crédito -->
-                            <div class="info-card">
-                                <h6 class="mb-3"><i class="bi bi-cash-coin"></i> Detalles del Crédito</h6>
-                                <div class="info-row">
-                                    <span class="info-label">Fecha:</span>
-                                    <span class="info-value">{{ prestamo.fecha_inicio.strftime('%d/%m/%Y') }}</span>
-                                </div>
-                                <div class="info-row">
-                                    <span class="info-label">Monto Prestado:</span>
-                                    <span class="info-value highlight-value">{{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.monto_prestado) }}</span>
-                                </div>
-                                <div class="info-row">
-                                    <span class="info-label">Tasa de Interés:</span>
-                                    <span class="info-value">{{ prestamo.tasa_interes }}%</span>
-                                </div>
-                                <div class="info-row">
-                                    <span class="info-label">Total a Pagar:</span>
-                                    <span class="info-value highlight-value text-warning">{{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.monto_a_pagar) }}</span>
-                                </div>
-                            </div>
+{% block page_title %}Crédito Aprobado{% endblock %}
 
-                            <!-- Plan de Pago -->
-                            <div class="info-card">
-                                <h6 class="mb-3"><i class="bi bi-calendar-check"></i> Plan de Pago</h6>
-                                <div class="info-row">
-                                    <span class="info-label">Frecuencia:</span>
-                                    <span class="info-value">
-                                        <span class="badge bg-secondary text-white">{{ prestamo.frecuencia }}</span>
-                                    </span>
-                                </div>
-                                <div class="info-row">
-                                    <span class="info-label">Número de Cuotas:</span>
-                                    <span class="info-value">{{ prestamo.numero_cuotas }}</span>
-                                </div>
-                                <div class="info-row">
-                                    <span class="info-label">Valor por Cuota:</span>
-                                    <span class="info-value highlight-value">{{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.valor_cuota) }}</span>
-                                </div>
-                                <div class="info-row">
-                                    <span class="info-label">Fecha Estimada Fin:</span>
-                                    <span class="info-value">{{ prestamo.fecha_fin_estimada.strftime('%d/%m/%Y') }}</span>
-                                </div>
-                            </div>
+{% block extra_css %}
+<style>
+    .success-container {
+        text-align: center;
+        padding: 40px 20px;
+    }
+    
+    .success-icon {
+        font-size: 5rem;
+        color: #00FF99;
+        animation: celebrate 1s ease-out;
+    }
+    
+    @keyframes celebrate {
+        0% { transform: scale(0); opacity: 0; }
+        50% { transform: scale(1.2); }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    
+    .comprobante-box {
+        background: linear-gradient(135deg, #1D1E33 0%, #0A0E21 100%);
+        border: 2px solid #00E5FF;
+        border-radius: 20px;
+        padding: 30px;
+        margin-top: 30px;
+        box-shadow: 0 0 40px rgba(0, 229, 255, 0.2);
+    }
+    
+    .comprobante-header {
+        color: #00E5FF;
+        font-size: 1.3rem;
+        margin-bottom: 25px;
+        text-align: center;
+    }
+    
+    .info-card {
+        background: rgba(0, 229, 255, 0.08);
+        border: 1px solid rgba(0, 229, 255, 0.2);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .info-card h6 {
+        color: #00E5FF;
+        margin-bottom: 15px;
+    }
+    
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    .info-label {
+        color: rgba(255, 255, 255, 0.7);
+    }
+    .info-value {
+        color: #E0E0E0;
+        font-weight: 500;
+    }
+    
+    .highlight-card {
+        background: linear-gradient(135deg, rgba(0, 255, 153, 0.1), rgba(0, 229, 255, 0.1));
+        border: 1px solid #00FF99;
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+    }
+    .highlight-label {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.9rem;
+    }
+    .highlight-value {
+        color: #00FF99;
+        font-size: 2rem;
+        font-weight: 700;
+    }
+    .highlight-value.gold {
+        color: #FFD700;
+    }
+    
+    .btn-whatsapp {
+        background: linear-gradient(135deg, #25D366, #128C7E);
+        border: none;
+        color: white;
+        padding: 12px 25px;
+        border-radius: 10px;
+    }
+    .btn-whatsapp:hover {
+        transform: scale(1.02);
+        box-shadow: 0 5px 20px rgba(37, 211, 102, 0.4);
+        color: white;
+    }
+    
+    .btn-accion {
+        background: rgba(0, 229, 255, 0.1);
+        border: 1px solid #00E5FF;
+        color: #00E5FF;
+        padding: 12px 25px;
+        border-radius: 10px;
+    }
+    .btn-accion:hover {
+        background: #00E5FF;
+        color: #0A0E21;
+    }
+</style>
+{% endblock %}
 
-                            <!-- Cobrador -->
-                            <div class="info-card">
-                                <h6 class="mb-3"><i class="bi bi-person-badge"></i> Información Adicional</h6>
-                                <div class="info-row">
-                                    <span class="info-label">Cobrador Asignado:</span>
-                                    <span class="info-value">{{ cobrador.nombre }}</span>
-                                </div>
-                                <div class="info-row">
-                                    <span class="info-label">Estado:</span>
-                                    <span class="info-value">
-                                        <span class="badge bg-success">ACTIVO</span>
-                                    </span>
-                                </div>
-                            </div>
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="success-container">
+            <i class="bi bi-check-circle-fill success-icon"></i>
+            <h2 class="mt-4 text-white">¡Crédito Aprobado Exitosamente!</h2>
+            <p style="color: rgba(255,255,255,0.6);">El préstamo ha sido registrado en el sistema</p>
+            
+            <!-- Comprobante -->
+            <div class="comprobante-box text-start">
+                <div class="comprobante-header">
+                    <i class="bi bi-file-earmark-text me-2"></i>
+                    COMPROBANTE DE CRÉDITO #{{ prestamo.id }}
+                </div>
+                
+                <!-- Info Cliente -->
+                <div class="info-card">
+                    <h6><i class="bi bi-person me-2"></i>Cliente</h6>
+                    <div class="info-row">
+                        <span class="info-label">Nombre:</span>
+                        <span class="info-value">{{ cliente.nombre }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Documento:</span>
+                        <span class="info-value">{{ cliente.documento }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Teléfono:</span>
+                        <span class="info-value">{{ cliente.telefono }}</span>
+                    </div>
+                </div>
+                
+                <!-- Montos destacados -->
+                <div class="row mb-4">
+                    <div class="col-md-4 mb-3">
+                        <div class="highlight-card">
+                            <div class="highlight-label">Capital Prestado</div>
+                            <div class="highlight-value">{{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.monto_prestado) }}</div>
                         </div>
-
-                        <!-- Acciones -->
-                        <div class="alert alert-info mt-4">
-                            <i class="bi bi-info-circle"></i>
-                            <strong>Para enviar por WhatsApp:</strong> 
-                            <ol class="mb-0 mt-2">
-                                <li>Haz clic en el botón verde</li>
-                                <li>Se descargará el comprobante automáticamente</li>
-                                <li>Se abrirá WhatsApp del cliente</li>
-                                <li>Adjunta manualmente la imagen descargada</li>
-                            </ol>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="highlight-card">
+                            <div class="highlight-label">Total a Pagar</div>
+                            <div class="highlight-value" style="color: #00E5FF;">{{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.monto_a_pagar) }}</div>
                         </div>
-                        
-                        <div class="d-grid gap-2 mt-3">
-                            <button onclick="descargarYAbrirWhatsApp()" class="btn btn-success btn-lg">
-                                <i class="bi bi-whatsapp"></i> Descargar Comprobante y Abrir WhatsApp
-                            </button>
-                            <a href="/prestamos/nuevo" class="btn btn-primary">
-                                <i class="bi bi-plus-circle"></i> Crear Otro Crédito
-                            </a>
-                            <a href="/prestamos" class="btn btn-info">
-                                <i class="bi bi-list-ul"></i> Ver Todos los Créditos
-                            </a>
-                            <a href="/dashboard" class="btn btn-outline-secondary">
-                                <i class="bi bi-house"></i> Volver al Inicio
-                            </a>
-                        </div>
-
-                        <div class="alert alert-info mt-4">
-                            <i class="bi bi-info-circle"></i>
-                            <strong>Importante:</strong> El cliente puede compartir este comprobante. 
-                            También puede consultarlo en cualquier momento.
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="highlight-card">
+                            <div class="highlight-label">Valor Cuota</div>
+                            <div class="highlight-value gold">{{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.valor_cuota) }}</div>
                         </div>
                     </div>
                 </div>
+                
+                <!-- Detalles -->
+                <div class="info-card">
+                    <h6><i class="bi bi-cash-stack me-2"></i>Detalles del Crédito</h6>
+                    <div class="info-row">
+                        <span class="info-label">Número de Cuotas:</span>
+                        <span class="info-value">{{ prestamo.numero_cuotas }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Tasa de Interés:</span>
+                        <span class="info-value">{{ prestamo.tasa_interes }}%</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Fecha Inicio:</span>
+                        <span class="info-value">{{ prestamo.fecha_inicio.strftime('%d/%m/%Y') }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Cobrador:</span>
+                        <span class="info-value">{{ prestamo.cobrador.nombre if prestamo.cobrador else 'Sin asignar' }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="d-flex justify-content-center gap-3 mt-4 flex-wrap">
+                <a href="https://wa.me/57{{ cliente.telefono }}?text=Hola%20{{ cliente.nombre }}%2C%20su%20cr%C3%A9dito%20%23{{ prestamo.id }}%20ha%20sido%20aprobado.%0ACapital%3A%20{{ prestamo.moneda }}%20{{ "{:,.0f}".format(prestamo.monto_prestado) }}%0ACuota%3A%20{{ prestamo.moneda }}%20{{ "{:,.0f}".format(prestamo.valor_cuota) }}" 
+                   target="_blank" class="btn btn-whatsapp">
+                    <i class="bi bi-whatsapp me-2"></i>Enviar por WhatsApp
+                </a>
+                <a href="/prestamos" class="btn btn-accion">
+                    <i class="bi bi-list-ul me-2"></i>Ver Préstamos
+                </a>
+                <a href="/prestamos/nuevo" class="btn btn-accion">
+                    <i class="bi bi-plus-circle me-2"></i>Nuevo Préstamo
+                </a>
             </div>
         </div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-    function descargarYAbrirWhatsApp() {
-        // Primero descargamos la imagen
-        const link = document.createElement('a');
-        link.href = '/prestamos/comprobante-imagen/{{ prestamo.id }}';
-        link.download = 'comprobante_credito_{{ prestamo.id }}.png';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        // Esperamos 500ms y abrimos WhatsApp
-        setTimeout(function() {
-            window.open('{{ whatsapp_url }}', '_blank');
-        }, 500);
-    }
-    </script>
-</body>
-</html>
+</div>
+{% endblock %}

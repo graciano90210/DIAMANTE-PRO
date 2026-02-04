@@ -629,6 +629,21 @@
                     </a>
                 </div>
 
+                <!-- OFICINAS -->
+                <div class="menu-item" data-bs-toggle="collapse" data-bs-target="#menuOficinas" aria-expanded="false">
+                    <i class="bi bi-building"></i>
+                    <span>Oficinas</span>
+                    <i class="bi bi-chevron-right arrow"></i>
+                </div>
+                <div class="submenu collapse" id="menuOficinas">
+                    <a href="{{ url_for('oficinas.lista') }}" class="submenu-item">
+                        <i class="bi bi-grid-3x3-gap"></i> Ver Oficinas
+                    </a>
+                    <a href="{{ url_for('oficinas.nueva') }}" class="submenu-item">
+                        <i class="bi bi-plus-circle"></i> Nueva Oficina
+                    </a>
+                </div>
+
                 <div class="menu-item" data-bs-toggle="collapse" data-bs-target="#menuSociedades" aria-expanded="false">
                     <i class="bi bi-diagram-3"></i>
                     <span>Sociedades</span>
