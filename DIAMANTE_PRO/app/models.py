@@ -251,6 +251,10 @@ class Cliente(db.Model):
     gps_longitud_casa = db.Column(db.Float)  # GPS de residencia
     es_vip = db.Column(db.Boolean, default=False)
     fecha_registro = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Ruta asignada al cliente (para filtrado por inversionista)
+    ruta_id = db.Column(db.Integer, db.ForeignKey('rutas.id'), nullable=True)
+    ruta = db.relationship('Ruta', backref='clientes')
 
     # NUEVOS CAMPOS PARA SCORING (Capacidad de Pago y Estabilidad)
     gastos_mensuales_promedio = db.Column(db.Float) # Vital para calcular capacidad de pago real

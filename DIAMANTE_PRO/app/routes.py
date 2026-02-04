@@ -36,8 +36,16 @@ def dashboard():
     capital_disponible = capital_total_aportado - capital_invertido_activos
     notificaciones = []
     mensajes_sin_leer = 0
-    total_clientes = Cliente.query.count()
-    clientes_vip = 0
+    # Filtrar clientes por cobrador o ruta seleccionada
+    if rol == 'cobrador':
+        total_clientes = Cliente.query.join(Prestamo).filter(Prestamo.cobrador_id == usuario_id).distinct(Cliente.id).count()
+        clientes_vip = Cliente.query.join(Prestamo).filter(Prestamo.cobrador_id == usuario_id, Cliente.es_vip == True).distinct(Cliente.id).count()
+    elif ruta_seleccionada_id:
+        total_clientes = Cliente.query.filter_by(ruta_id=ruta_seleccionada_id).count()
+        clientes_vip = Cliente.query.filter_by(ruta_id=ruta_seleccionada_id, es_vip=True).count()
+    else:
+        total_clientes = Cliente.query.count()
+        clientes_vip = Cliente.query.filter_by(es_vip=True).count()
     solicitudes_pendientes = 0  # Para futuras solicitudes de préstamos pendientes
     
     # Cargar todas las rutas para el filtro
@@ -102,16 +110,41 @@ def dashboard():
         prestamos_activos = Prestamo.query.filter_by(estado='ACTIVO').all()
     
     total_prestamos_activos = len(prestamos_activos)
-    total_cartera = db.session.query(func.sum(Prestamo.saldo_actual)).filter_by(estado='ACTIVO').scalar()
+    # Filtrar totales por cobrador o ruta seleccionada
+    if rol == 'cobrador':
+        total_cartera = db.session.query(func.sum(Prestamo.saldo_actual)).filter(
+            Prestamo.estado == 'ACTIVO',
+            Prestamo.cobrador_id == usuario_id
+        ).scalar()
+        capital_prestado = db.session.query(func.sum(Prestamo.monto_prestado)).filter(
+            Prestamo.estado == 'ACTIVO',
+            Prestamo.cobrador_id == usuario_id
+        ).scalar()
+    elif ruta_seleccionada_id:
+        total_cartera = db.session.query(func.sum(Prestamo.saldo_actual)).filter(
+            Prestamo.estado == 'ACTIVO',
+            Prestamo.ruta_id == ruta_seleccionada_id
+        ).scalar()
+        capital_prestado = db.session.query(func.sum(Prestamo.monto_prestado)).filter(
+            Prestamo.estado == 'ACTIVO',
+            Prestamo.ruta_id == ruta_seleccionada_id
+        ).scalar()
+    else:
+        total_cartera = db.session.query(func.sum(Prestamo.saldo_actual)).filter_by(estado='ACTIVO').scalar()
+        capital_prestado = db.session.query(func.sum(Prestamo.monto_prestado)).filter_by(estado='ACTIVO').scalar()
     total_cartera = float(total_cartera) if total_cartera else 0
-    
-    capital_prestado = db.session.query(func.sum(Prestamo.monto_prestado)).filter_by(estado='ACTIVO').scalar()
     capital_prestado = float(capital_prestado) if capital_prestado else 0
     
     hoy = datetime.now().date()
     pagos_hoy = Pago.query.filter(func.date(Pago.fecha_pago) == hoy).all()
     ultimos_pagos = Pago.query.order_by(Pago.fecha_pago.desc()).limit(10).all()
-    prestamos_recientes = Prestamo.query.order_by(Prestamo.fecha_inicio.desc()).limit(5).all()
+    # Filtrar préstamos recientes solo del cobrador logueado
+    if rol == 'cobrador':
+        prestamos_recientes = Prestamo.query.filter_by(cobrador_id=usuario_id).order_by(Prestamo.fecha_inicio.desc()).limit(5).all()
+    elif ruta_seleccionada_id:
+        prestamos_recientes = Prestamo.query.filter_by(ruta_id=ruta_seleccionada_id).order_by(Prestamo.fecha_inicio.desc()).limit(5).all()
+    else:
+        prestamos_recientes = Prestamo.query.order_by(Prestamo.fecha_inicio.desc()).limit(5).all()
     
     # Por cobrar hoy
     por_cobrar_hoy = 0
@@ -272,7 +305,6 @@ def usuarios_guardar():
             usuario=usuario,
             password=generate_password_hash(request.form.get('password')),
             rol=request.form.get('rol'),
-            telefono=request.form.get('telefono'),
             activo=True
         )
         db.session.add(nuevo_usuario)
@@ -325,7 +357,6 @@ def usuarios_actualizar(usuario_id):
         usuario.nombre = request.form.get('nombre')
         usuario.usuario = nuevo_usuario_nombre
         usuario.rol = request.form.get('rol')
-        usuario.telefono = request.form.get('telefono')
         
         nueva_password = request.form.get('password')
         if nueva_password and nueva_password.strip():

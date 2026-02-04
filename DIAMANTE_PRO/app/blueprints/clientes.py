@@ -4,7 +4,7 @@ Maneja: CRUD de clientes
 """
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from datetime import datetime
-from ..models import Cliente, Prestamo, db
+from ..models import Cliente, Prestamo, Ruta, db
 
 clientes_bp = Blueprint('clientes', __name__, url_prefix='/clientes')
 
@@ -45,8 +45,14 @@ def lista():
         # Dueño, gerente y secretaria ven todos o filtrados por ruta
         ruta_seleccionada_id = session.get('ruta_seleccionada_id')
         if ruta_seleccionada_id:
-            clientes_ids = db.session.query(Prestamo.cliente_id).filter_by(ruta_id=ruta_seleccionada_id).distinct()
-            query = query.filter(Cliente.id.in_(clientes_ids))
+            # Clientes asignados directamente a la ruta O que tienen préstamos en esa ruta
+            clientes_con_prestamos = db.session.query(Prestamo.cliente_id).filter_by(ruta_id=ruta_seleccionada_id).distinct()
+            query = query.filter(
+                db.or_(
+                    Cliente.ruta_id == ruta_seleccionada_id,
+                    Cliente.id.in_(clientes_con_prestamos)
+                )
+            )
     
     clientes_paginados = query.order_by(Cliente.fecha_registro.desc()).paginate(page=page, per_page=20, error_out=False)
     
@@ -121,6 +127,11 @@ def guardar():
             
             es_vip=bool(request.form.get('es_vip'))
         )
+        
+        # Asignar ruta automáticamente si hay una seleccionada en el filtro
+        ruta_seleccionada_id = session.get('ruta_seleccionada_id')
+        if ruta_seleccionada_id:
+            nuevo_cliente.ruta_id = ruta_seleccionada_id
         
         # Si tiene CNPJ, marcarlo como formalizado
         if nuevo_cliente.documento_fiscal_negocio:
