@@ -35,9 +35,28 @@
 | 💰 **Préstamos** | Creación, cálculo automático de intereses, múltiples frecuencias de pago |
 | 📱 **Cobros** | Registro de pagos, recibos digitales, envío por WhatsApp |
 | 🛣️ **Rutas** | Organización por zonas, asignación de cobradores |
-| 🏢 **Sociedades** | Gestión de socios, distribución de porcentajes |
+| 🏢 **Oficinas** | Agrupación de rutas por zona/región, metas de cobro y préstamos |
+| 🤝 **Sociedades** | Inversores ilimitados (Many-to-Many), distribución de porcentajes |
+| 👥 **Socios** | Gestión de múltiples inversores por sociedad con porcentajes |
 | 💼 **Finanzas** | Control de capital, activos, caja y gastos |
 | 📊 **Reportes** | Dashboard en tiempo real, estadísticas, gráficos |
+
+---
+
+## 🏗️ Arquitectura
+
+### Capa de Servicios (Services Layer)
+
+El proyecto implementa una **arquitectura en capas** con servicios dedicados:
+
+| Servicio | Responsabilidad |
+|----------|-----------------|
+| `DashboardService` | Estadísticas y métricas del dashboard |
+| `PrestamoService` | Lógica de negocio de préstamos |
+| `ClienteService` | Operaciones con clientes |
+| `SociedadService` | Gestión de sociedades y socios |
+| `OficinaService` | CRUD y estadísticas de oficinas |
+| `ReporteService` | Generación de reportes |
 
 ---
 
@@ -137,6 +156,10 @@ GET  /prestamos/          - Lista de préstamos
 POST /prestamos/guardar   - Crear préstamo
 POST /cobro/guardar       - Registrar pago
 GET  /reportes            - Dashboard de reportes
+GET  /oficinas/           - Lista de oficinas
+POST /oficinas/guardar    - Crear oficina
+GET  /sociedades/         - Lista de sociedades
+GET  /sociedades/<id>/socios - Gestionar socios
 ```
 
 ### Ejemplo de Respuesta
@@ -154,26 +177,42 @@ GET  /reportes            - Dashboard de reportes
 ```
 DIAMANTE_PRO/
 ├── app/
-│   ├── blueprints/          # Módulos organizados (10 blueprints)
+│   ├── blueprints/          # Módulos organizados (11 blueprints)
 │   │   ├── __init__.py      # Registro de blueprints
 │   │   ├── auth.py          # Autenticación (login/logout)
 │   │   ├── clientes.py      # CRUD de clientes
 │   │   ├── prestamos.py     # Gestión de préstamos
 │   │   ├── cobros.py        # Registro de pagos
 │   │   ├── rutas.py         # Rutas de cobranza
+│   │   ├── oficinas.py      # Gestión de oficinas (NUEVO)
 │   │   ├── sociedades.py    # Gestión de socios
 │   │   ├── finanzas.py      # Capital, caja, gastos
 │   │   └── reportes.py      # Dashboard y estadísticas
+│   ├── services/            # Capa de servicios (NUEVO)
+│   │   ├── __init__.py
+│   │   ├── dashboard_service.py
+│   │   ├── prestamo_service.py
+│   │   ├── cliente_service.py
+│   │   ├── sociedad_service.py
+│   │   ├── oficina_service.py
+│   │   └── reporte_service.py
+│   ├── utils/               # Utilidades
+│   │   └── pagination.py    # Paginación optimizada
 │   ├── templates/           # Plantillas HTML (Jinja2)
 │   ├── static/              # CSS, JS, imágenes
-│   ├── models.py            # Modelos SQLAlchemy
+│   ├── models.py            # Modelos SQLAlchemy (Oficina, Socio, etc.)
 │   ├── extensions.py        # Extensiones Flask
-│   ├── routes.py            # Rutas principales (~300 líneas)
+│   ├── routes_clean.py      # Rutas principales refactorizadas
 │   └── __init__.py          # Application Factory
+├── migrations/              # Scripts de migración
+│   ├── add_performance_indexes.py
+│   └── migrate_socios.py
 ├── instance/                # Base de datos SQLite local
 ├── requirements.txt         # Dependencias Python
 ├── Procfile                 # Configuración Heroku
 ├── run.py                   # Punto de entrada
+├── check_db.py              # Verificación de esquema BD
+├── run_migrations.py        # Ejecutar migraciones
 ├── SECURITY.md              # Guía de seguridad
 ├── .env.example             # Plantilla de variables
 └── README.md
@@ -190,7 +229,8 @@ El proyecto utiliza el patrón **Blueprint** de Flask para organizar el código:
 | `prestamos` | `/prestamos/*` | Gestión préstamos |
 | `cobros` | `/cobro/*` | Registro pagos |
 | `rutas` | `/rutas/*` | Rutas cobranza |
-| `sociedades` | `/sociedades/*` | Socios |
+| `oficinas` | `/oficinas/*` | Gestión de oficinas |
+| `sociedades` | `/sociedades/*` | Socios e inversores |
 | `finanzas` | `/capital/*`, `/caja/*` | Finanzas |
 | `reportes` | `/reportes/*` | Estadísticas |
 
@@ -256,6 +296,22 @@ python -c "import secrets; print(secrets.token_hex(32))"
 - Gráficos de cobros diarios (últimos 7 días)
 - Indicadores de préstamos activos, atrasados y en mora
 - Proyección de cobros para el día siguiente
+- **Acciones rápidas** para gestión ágil
+
+### 🏢 Gestión de Oficinas (NUEVO)
+- Crear oficinas para agrupar rutas por zona o región
+- Estadísticas por oficina: rutas, cartera, cobros del día
+- Asignar/desasignar rutas a oficinas
+- Metas de cobro diario y préstamos mensuales
+- Responsable asignado por oficina
+- Vista de rutas sin oficina para organización
+
+### 🤝 Sociedades e Inversores (MEJORADO)
+- **Modelo Many-to-Many**: Inversores ilimitados por sociedad
+- Distribución de porcentajes entre múltiples socios
+- Migración automática de socios legacy
+- Fechas de ingreso y salida de inversores
+- Estado activo/inactivo de socios
 
 ### Gestión de Préstamos
 - Múltiples frecuencias de pago: Diario, Semanal, Quincenal, Mensual
@@ -274,6 +330,26 @@ python -c "import secrets; print(secrets.token_hex(32))"
 - Control de activos fijos
 - Gestión de caja (ingresos/egresos)
 - Traslados entre usuarios
+
+---
+
+## 🗄️ Modelos de Datos
+
+### Modelos Principales
+
+| Modelo | Descripción |
+|--------|-------------|
+| `Usuario` | Usuarios del sistema (dueño, gerente, secretaria, cobrador) |
+| `Cliente` | Clientes con scoring crediticio |
+| `Prestamo` | Préstamos con cuotas y estado |
+| `Cobro` | Pagos registrados |
+| `Ruta` | Rutas de cobranza |
+| `Oficina` | Agrupación de rutas por zona **(NUEVO)** |
+| `Sociedad` | Sociedades de inversión |
+| `Socio` | Inversores con porcentaje **(NUEVO - Many-to-Many)** |
+| `Capital` | Aportes de capital |
+| `Activo` | Activos fijos |
+| `Caja` | Movimientos de caja |
 
 ---
 
