@@ -27,43 +27,182 @@ class Usuario(db.Model):
 class Sociedad(db.Model):
     __tablename__ = 'sociedades'
     id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100), nullable=False)  # Ej: "Sociedad con Juan Pérez"
-    nombre_socio = db.Column(db.String(100), nullable=False)  # Mantener por compatibilidad
-    telefono_socio = db.Column(db.String(20))
-    porcentaje_socio = db.Column(db.Float, default=50.0)  # Porcentaje del socio principal
+    nombre = db.Column(db.String(100), nullable=False)  # Ej: "Sociedad Norte", "Inversiones Centro"
+    descripcion = db.Column(db.String(500))
     activo = db.Column(db.Boolean, default=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
     notas = db.Column(db.String(500))
     
-    # Campos adicionales para socios múltiples
-    nombre_socio_2 = db.Column(db.String(100))
-    telefono_socio_2 = db.Column(db.String(20))
-    porcentaje_socio_2 = db.Column(db.Float, default=0.0)
+    # ============ CAMPOS LEGACY (mantener por compatibilidad) ============
+    # TODO: Migrar datos y eliminar estos campos en versión futura
+    nombre_socio = db.Column(db.String(100))  # DEPRECATED: usar relación 'socios'
+    telefono_socio = db.Column(db.String(20))  # DEPRECATED
+    porcentaje_socio = db.Column(db.Float, default=0.0)  # DEPRECATED
+    nombre_socio_2 = db.Column(db.String(100))  # DEPRECATED
+    telefono_socio_2 = db.Column(db.String(20))  # DEPRECATED
+    porcentaje_socio_2 = db.Column(db.Float, default=0.0)  # DEPRECATED
+    nombre_socio_3 = db.Column(db.String(100))  # DEPRECATED
+    telefono_socio_3 = db.Column(db.String(20))  # DEPRECATED
+    porcentaje_socio_3 = db.Column(db.Float, default=0.0)  # DEPRECATED
+    # =====================================================================
     
-    nombre_socio_3 = db.Column(db.String(100))
-    telefono_socio_3 = db.Column(db.String(20))
-    porcentaje_socio_3 = db.Column(db.Float, default=0.0)
+    # Relación con la nueva tabla de socios (Many-to-Many)
+    socios = db.relationship('Socio', back_populates='sociedad', lazy='dynamic', cascade='all, delete-orphan')
     
     @property
     def porcentaje_dueno(self):
-        """Calcula el porcentaje del dueño restando los porcentajes de los socios"""
-        total_socios = (self.porcentaje_socio or 0) + (self.porcentaje_socio_2 or 0) + (self.porcentaje_socio_3 or 0)
+        """Calcula el porcentaje del dueño restando los porcentajes de todos los socios"""
+        # Primero intentar con la nueva estructura
+        total_socios = sum(s.porcentaje for s in self.socios.all()) if self.socios.count() > 0 else 0
+        # Fallback a campos legacy si no hay socios en la nueva tabla
+        if total_socios == 0:
+            total_socios = (self.porcentaje_socio or 0) + (self.porcentaje_socio_2 or 0) + (self.porcentaje_socio_3 or 0)
         return 100.0 - total_socios
     
     @property
     def tiene_multiples_socios(self):
         """Verifica si tiene más de un socio"""
+        if self.socios.count() > 0:
+            return self.socios.count() > 1
         return bool(self.nombre_socio_2) or bool(self.nombre_socio_3)
     
     @property
     def numero_socios(self):
         """Cuenta cuántos socios tiene (sin contar al dueño)"""
+        if self.socios.count() > 0:
+            return self.socios.count()
+        # Fallback legacy
         count = 1 if self.nombre_socio else 0
         if self.nombre_socio_2:
             count += 1
         if self.nombre_socio_3:
             count += 1
         return count
+    
+    @property
+    def lista_socios(self):
+        """Retorna lista de socios con sus datos (compatible con nueva y vieja estructura)"""
+        if self.socios.count() > 0:
+            return [{'nombre': s.nombre, 'telefono': s.telefono, 'porcentaje': s.porcentaje, 
+                     'email': s.email, 'tipo': s.tipo_socio} for s in self.socios.all()]
+        # Fallback legacy
+        socios_legacy = []
+        if self.nombre_socio:
+            socios_legacy.append({'nombre': self.nombre_socio, 'telefono': self.telefono_socio, 
+                                  'porcentaje': self.porcentaje_socio or 0, 'email': None, 'tipo': 'INVERSOR'})
+        if self.nombre_socio_2:
+            socios_legacy.append({'nombre': self.nombre_socio_2, 'telefono': self.telefono_socio_2,
+                                  'porcentaje': self.porcentaje_socio_2 or 0, 'email': None, 'tipo': 'INVERSOR'})
+        if self.nombre_socio_3:
+            socios_legacy.append({'nombre': self.nombre_socio_3, 'telefono': self.telefono_socio_3,
+                                  'porcentaje': self.porcentaje_socio_3 or 0, 'email': None, 'tipo': 'INVERSOR'})
+        return socios_legacy
+
+
+# 1.1.1 SOCIOS (Tabla intermedia Many-to-Many para inversionistas)
+class Socio(db.Model):
+    """
+    Modelo para socios/inversionistas de una sociedad.
+    Permite múltiples socios dinámicos por sociedad.
+    """
+    __tablename__ = 'socios'
+    id = db.Column(db.Integer, primary_key=True)
+    sociedad_id = db.Column(db.Integer, db.ForeignKey('sociedades.id'), nullable=False)
+    
+    # Datos del socio
+    nombre = db.Column(db.String(100), nullable=False)
+    documento = db.Column(db.String(30))  # CPF, CNPJ, etc.
+    telefono = db.Column(db.String(20))
+    email = db.Column(db.String(100))
+    
+    # Participación
+    porcentaje = db.Column(db.Float, nullable=False, default=0.0)  # % de participación
+    monto_aportado = db.Column(db.Float, default=0.0)  # Capital total aportado
+    
+    # Tipo de socio
+    tipo_socio = db.Column(db.String(20), default='INVERSOR')  # INVERSOR, SOCIO_ACTIVO, SOCIO_CAPITALISTA
+    
+    # Estado
+    activo = db.Column(db.Boolean, default=True)
+    fecha_ingreso = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha_salida = db.Column(db.DateTime)
+    
+    # Datos bancarios para distribución de ganancias
+    banco = db.Column(db.String(50))
+    cuenta_bancaria = db.Column(db.String(50))
+    tipo_cuenta = db.Column(db.String(20))  # AHORRO, CORRIENTE
+    
+    notas = db.Column(db.String(500))
+    
+    # Relación inversa
+    sociedad = db.relationship('Sociedad', back_populates='socios')
+    
+    def __repr__(self):
+        return f'<Socio {self.nombre} - {self.porcentaje}%>'
+
+
+# 1.1.2 OFICINAS (Agrupación de rutas por zona/región)
+class Oficina(db.Model):
+    """
+    Modelo para agrupar rutas en oficinas/zonas.
+    Útil cuando un inversionista tiene muchas rutas y necesita organizarlas.
+    Jerarquía: Sociedad → Oficinas → Rutas
+    """
+    __tablename__ = 'oficinas'
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Datos básicos
+    nombre = db.Column(db.String(100), nullable=False)  # Ej: "Oficina Centro", "Oficina Norte"
+    codigo = db.Column(db.String(20))  # Código corto: "OFC-01", "NORTE"
+    descripcion = db.Column(db.String(300))
+    
+    # Ubicación
+    direccion = db.Column(db.String(200))
+    ciudad = db.Column(db.String(100))
+    estado = db.Column(db.String(50))  # Departamento/Estado
+    pais = db.Column(db.String(50), default='Colombia')
+    
+    # Responsable de la oficina
+    responsable_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True)
+    telefono_oficina = db.Column(db.String(20))
+    email_oficina = db.Column(db.String(100))
+    
+    # Pertenencia (puede ser de una sociedad o directamente del dueño)
+    sociedad_id = db.Column(db.Integer, db.ForeignKey('sociedades.id'), nullable=True)
+    
+    # Estado
+    activo = db.Column(db.Boolean, default=True)
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Configuración de la oficina
+    meta_cobro_diario = db.Column(db.Float, default=0)  # Meta de cobro diario
+    meta_prestamos_mes = db.Column(db.Float, default=0)  # Meta de préstamos mensuales
+    
+    notas = db.Column(db.String(500))
+    
+    # Relaciones
+    responsable = db.relationship('Usuario', backref=db.backref('oficinas_responsable', lazy='dynamic'))
+    sociedad = db.relationship('Sociedad', backref=db.backref('oficinas', lazy='dynamic'))
+    rutas = db.relationship('Ruta', backref='oficina', lazy='dynamic')
+    
+    @property
+    def numero_rutas(self):
+        """Retorna el número de rutas activas en esta oficina"""
+        return self.rutas.filter_by(activo=True).count()
+    
+    @property
+    def total_cartera(self):
+        """Calcula el total de cartera activa de todas las rutas de la oficina"""
+        from sqlalchemy import func
+        total = db.session.query(func.sum(Prestamo.saldo_actual)).join(Ruta).filter(
+            Ruta.oficina_id == self.id,
+            Prestamo.estado == 'ACTIVO'
+        ).scalar()
+        return float(total or 0)
+    
+    def __repr__(self):
+        return f'<Oficina {self.nombre}>'
+
 
 # 1.2 RUTAS (Con nombre propio, independientes del cobrador)
 class Ruta(db.Model):
@@ -72,6 +211,7 @@ class Ruta(db.Model):
     nombre = db.Column(db.String(100), nullable=False)  # Ej: "Ruta Centro", "Ruta Norte"
     cobrador_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True)  # Puede cambiar
     sociedad_id = db.Column(db.Integer, db.ForeignKey('sociedades.id'), nullable=True)  # NULL = PROPIO
+    oficina_id = db.Column(db.Integer, db.ForeignKey('oficinas.id'), nullable=True)  # Agrupación por oficina
     activo = db.Column(db.Boolean, default=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
     descripcion = db.Column(db.String(200))

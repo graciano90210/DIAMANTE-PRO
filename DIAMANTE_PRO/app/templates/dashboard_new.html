@@ -165,51 +165,62 @@
 </div>
 {% endif %}
 
-<!-- Acciones Rápidas -->
+<!-- Acciones Rápidas - Para usuarios web (Dueño, Gerente, Secretaria) -->
+<!-- Nota: Los cobradores solo usan la app móvil -->
 <div class="row mb-4">
     <div class="col-12">
         <h5 class="fw-bold mb-3" style="color: #00E5FF;">
             <i class="bi bi-lightning-charge"></i> Acciones Rápidas
         </h5>
     </div>
-    <div class="col-6 col-md-2 mb-3">
-        <div class="quick-action-card" onclick="window.location.href='{{ url_for('clientes.nuevo') }}'">
-            <i class="bi bi-person-plus-fill" style="color: #00E5FF;"></i>
-            <h6 class="text-white">Nuevo Cliente</h6>
-        </div>
-    </div>
-    <div class="col-6 col-md-2 mb-3">
-        <div class="quick-action-card" onclick="window.location.href='{{ url_for('prestamos.nuevo') }}'">
-            <i class="bi bi-cash-stack" style="color: #00FF99;"></i>
-            <h6 class="text-white">Nuevo Préstamo</h6>
-        </div>
-    </div>
-    <div class="col-6 col-md-2 mb-3">
-        <div class="quick-action-card" onclick="window.location.href='{{ url_for('cobros.lista') }}'">
-            <i class="bi bi-wallet2" style="color: #FFD700;"></i>
-            <h6 class="text-white">Ir a Cobrar</h6>
-        </div>
-    </div>
-    <div class="col-6 col-md-2 mb-3">
-        <div class="quick-action-card" onclick="window.location.href='{{ url_for('finanzas.caja_inicio') }}'">
-            <i class="bi bi-safe" style="color: #BB86FC;"></i>
-            <h6 class="text-white">Ver Caja</h6>
-        </div>
-    </div>
+    
+    <!-- ACCIONES PARA DUEÑO/GERENTE/SECRETARIA (usuarios web) -->
     <div class="col-6 col-md-2 mb-3">
         <div class="quick-action-card" onclick="window.location.href='{{ url_for('reportes.reportes') }}'">
-            <i class="bi bi-graph-up" style="color: #00E5FF;"></i>
-            <h6 class="text-white">Reportes</h6>
+            <i class="bi bi-bar-chart-line-fill" style="color: #00E5FF;"></i>
+            <h6 class="text-white">Análisis General</h6>
+        </div>
+    </div>
+    <div class="col-6 col-md-2 mb-3">
+        <div class="quick-action-card" onclick="window.location.href='{{ url_for('admin_bp.capital_aportes') }}'">
+            <i class="bi bi-piggy-bank-fill" style="color: #00FF99;"></i>
+            <h6 class="text-white">Capital y Aportes</h6>
+        </div>
+    </div>
+    <div class="col-6 col-md-2 mb-3">
+        <div class="quick-action-card" onclick="window.location.href='{{ url_for('rutas.lista') }}'">
+            <i class="bi bi-signpost-2-fill" style="color: #FFD700;"></i>
+            <h6 class="text-white">Gestión Rutas</h6>
+        </div>
+    </div>
+    <div class="col-6 col-md-2 mb-3">
+        <div class="quick-action-card" onclick="window.location.href='{{ url_for('sociedades.lista') }}'">
+            <i class="bi bi-people-fill" style="color: #BB86FC;"></i>
+            <h6 class="text-white">Sociedades</h6>
         </div>
     </div>
     {% if rol in ['dueno', 'gerente'] %}
     <div class="col-6 col-md-2 mb-3">
-        <div class="quick-action-card" onclick="window.location.href='{{ url_for('finanzas.traslados_lista') }}'">
-            <i class="bi bi-arrow-left-right" style="color: #FF6B6B;"></i>
-            <h6 class="text-white">Traslados</h6>
+        <div class="quick-action-card" onclick="window.location.href='{{ url_for('admin_bp.usuarios_lista') }}'">
+            <i class="bi bi-person-gear" style="color: #FF6B6B;"></i>
+            <h6 class="text-white">Usuarios</h6>
+        </div>
+    </div>
+    {% else %}
+    <!-- Secretaria ve Clientes en lugar de Usuarios -->
+    <div class="col-6 col-md-2 mb-3">
+        <div class="quick-action-card" onclick="window.location.href='{{ url_for('clientes.lista') }}'">
+            <i class="bi bi-person-lines-fill" style="color: #FF6B6B;"></i>
+            <h6 class="text-white">Clientes</h6>
         </div>
     </div>
     {% endif %}
+    <div class="col-6 col-md-2 mb-3">
+        <div class="quick-action-card" onclick="window.location.href='{{ url_for('finanzas.caja_inicio') }}'">
+            <i class="bi bi-safe-fill" style="color: #03DAC6;"></i>
+            <h6 class="text-white">Caja General</h6>
+        </div>
+    </div>
 </div>
 
 <!-- Stats Cards - Primera Fila -->

@@ -5,9 +5,11 @@ Endpoints JSON para sincronización con la app
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from .models import Usuario, Cliente, Prestamo, Pago, Ruta, Transaccion, db
+from .utils.pagination import paginate_query, paginated_response
 from datetime import datetime, timedelta
 import pytz
 from sqlalchemy import func
+from sqlalchemy.orm import joinedload, selectinload
 
 # Crear blueprint para la API
 api = Blueprint('api', __name__, url_prefix='/api/v1')
@@ -27,7 +29,8 @@ def api_login():
     
     usuario = Usuario.query.filter_by(usuario=data['usuario']).first()
     
-    if not usuario or usuario.password != data['password']:
+    # Usar bcrypt para verificar contraseña de forma segura
+    if not usuario or not usuario.check_password(data['password']):
         return jsonify({'error': 'Credenciales inválidas'}), 401
     
     if not usuario.activo:
@@ -244,8 +247,11 @@ def api_obtener_prestamos():
     usuario_id = int(get_jwt_identity())
     cliente_id = request.args.get('cliente_id', type=int)
     
-    # Query base - préstamos del cobrador
-    query = Prestamo.query.filter(
+    # Query base optimizada con eager loading para evitar N+1
+    query = Prestamo.query.options(
+        joinedload(Prestamo.cliente),
+        joinedload(Prestamo.ruta)
+    ).filter(
         Prestamo.cobrador_id == usuario_id,
         Prestamo.estado == 'ACTIVO'
     )
@@ -254,9 +260,12 @@ def api_obtener_prestamos():
     if cliente_id:
         query = query.filter_by(cliente_id=cliente_id)
     
-    prestamos = query.order_by(Prestamo.fecha_inicio.desc()).all()
+    # Paginación - soporta ?page=1&per_page=20
+    query = query.order_by(Prestamo.fecha_inicio.desc())
+    result = paginate_query(query, default_per_page=50)
     
-    return jsonify([{
+    # Serializar préstamos
+    prestamos_data = [{
         'id': prestamo.id,
         'cliente': {
             'id': prestamo.cliente.id,
@@ -273,11 +282,13 @@ def api_obtener_prestamos():
         'numero_cuotas': prestamo.numero_cuotas,
         'cuotas_pagadas': prestamo.cuotas_pagadas,
         'cuotas_atrasadas': prestamo.cuotas_atrasadas,
-        'dias_atraso': 0, # TODO: Calcular dias reales si es necesario. Por ahora enviamos 0 para compatibilidad
+        'dias_atraso': 0,
         'fecha_inicio': prestamo.fecha_inicio.isoformat(),
         'fecha_ultimo_pago': prestamo.fecha_ultimo_pago.isoformat() if prestamo.fecha_ultimo_pago else None,
         'estado': prestamo.estado
-    } for prestamo in prestamos]), 200
+    } for prestamo in result['items']]
+    
+    return jsonify(paginated_response(prestamos_data, result['pagination'])), 200
 
 # ==================== PAGOS DE UN PRÉSTAMO ====================
 @api.route('/cobrador/prestamos/<int:prestamo_id>/pagos', methods=['GET'])

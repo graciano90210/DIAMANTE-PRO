@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nueva Sociedad - Diamante Pro</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark-theme.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+        }
+        .socio-card {
+            transition: all 0.3s ease;
+            border: 2px solid #dee2e6;
+        }
+        .socio-card:hover {
+            border-color: #0d6efd;
+        }
+        .socio-card .btn-remove {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .add-socio-btn {
+            border: 2px dashed #6c757d;
+            background: transparent;
+            transition: all 0.3s ease;
+        }
+        .add-socio-btn:hover {
+            border-color: #0d6efd;
+            background: rgba(13, 110, 253, 0.1);
+        }
+        .porcentaje-bar {
+            height: 30px;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/dashboard">
+                <i class="bi bi-gem"></i> DIAMANTE PRO
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="text-white me-3">
+                    <i class="bi bi-person-circle"></i> {{ nombre }}
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-lg-10 offset-lg-1">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h4 class="mb-0"><i class="bi bi-plus-circle"></i> Crear Nueva Sociedad</h4>
+                    </div>
+                    <div class="card-body">
+                        {% if error %}
+                        <div class="alert alert-danger">{{ error }}</div>
+                        {% endif %}
+
+                        <form method="POST" action="/sociedades/guardar" id="formSociedad">
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Nombre de la Sociedad *</label>
+                                    <input type="text" name="nombre" class="form-control" required 
+                                           placeholder="Ej: Sociedad Inversores 2024">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Fecha de Constitución</label>
+                                    <input type="date" name="fecha_constitucion" class="form-control" 
+                                           value="{{ fecha_hoy }}">
+                                </div>
+                            </div>
+
+                            <!-- Barra visual de distribución de porcentajes -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Distribución de Participación</label>
+                                <div class="progress" style="height: 30px;">
+                                    <div id="bar-dueno" class="progress-bar bg-primary porcentaje-bar" 
+                                         style="width: 100%">Dueño: 100%</div>
+                                </div>
+                                <div id="porcentaje-alert" class="alert alert-warning mt-2 d-none">
+                                    <i class="bi bi-exclamation-triangle"></i> 
+                                    Los porcentajes deben sumar exactamente 100%
+                                </div>
+                            </div>
+
+                            <!-- Container para socios dinámicos -->
+                            <div id="sociosContainer">
+                                <h5 class="mb-3">
+                                    <i class="bi bi-people-fill"></i> Socios Inversores
+                                    <span class="badge bg-secondary" id="contadorSocios">0 socios</span>
+                                </h5>
+                                
+                                <!-- Los socios se agregan dinámicamente aquí -->
+                            </div>
+
+                            <!-- Botón para agregar más socios -->
+                            <div class="text-center mb-4">
+                                <button type="button" class="btn add-socio-btn py-3 px-5" onclick="agregarSocio()">
+                                    <i class="bi bi-plus-circle fs-4"></i><br>
+                                    <span>Agregar Socio</span>
+                                </button>
+                            </div>
+
+                            <!-- Porcentaje del dueño -->
+                            <div class="alert alert-primary mb-4">
+                                <div class="row align-items-center">
+                                    <div class="col-md-8">
+                                        <strong><i class="bi bi-person-fill-gear"></i> Porcentaje del Dueño:</strong>
+                                        <span id="porcentaje_dueno" class="fs-4 fw-bold ms-2">100%</span>
+                                        <small class="d-block text-muted">Se calcula automáticamente (100% - suma de socios)</small>
+                                    </div>
+                                    <div class="col-md-4 text-end">
+                                        <input type="hidden" name="porcentaje_dueno" id="input_porcentaje_dueno" value="100">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Notas / Observaciones</label>
+                                <textarea name="notas" class="form-control" rows="3" 
+                                          placeholder="Acuerdos, condiciones, términos de la sociedad, etc."></textarea>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-success btn-lg" id="btnGuardar">
+                                    <i class="bi bi-check-circle"></i> Crear Sociedad
+                                </button>
+                                <a href="/sociedades" class="btn btn-outline-secondary">
+                                    Cancelar
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let socioIndex = 0;
+        const colores = ['bg-success', 'bg-info', 'bg-warning', 'bg-danger', 'bg-secondary', 'bg-dark'];
+        
+        function agregarSocio() {
+            socioIndex++;
+            const container = document.getElementById('sociosContainer');
+            const color = colores[(socioIndex - 1) % colores.length];
+            
+            const socioHTML = `
+                <div class="card socio-card mb-3 position-relative" id="socio-${socioIndex}" data-index="${socioIndex}">
+                    <button type="button" class="btn btn-sm btn-danger btn-remove" onclick="eliminarSocio(${socioIndex})">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                    <div class="card-header ${color} text-white">
+                        <h6 class="mb-0"><i class="bi bi-person-fill"></i> Socio ${socioIndex}</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Nombre Completo *</label>
+                                <input type="text" name="socio_nombre[]" class="form-control" required 
+                                       placeholder="Nombre del socio">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label fw-bold">Documento</label>
+                                <input type="text" name="socio_documento[]" class="form-control" 
+                                       placeholder="C.C. / NIT">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label fw-bold">Porcentaje (%) *</label>
+                                <input type="number" name="socio_porcentaje[]" class="form-control porcentaje-input" 
+                                       value="0" min="0.1" max="99" step="0.1" required 
+                                       onchange="recalcularPorcentajes()" oninput="recalcularPorcentajes()">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Teléfono</label>
+                                <input type="text" name="socio_telefono[]" class="form-control" 
+                                       placeholder="Ej: 3001234567">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="email" name="socio_email[]" class="form-control" 
+                                       placeholder="correo@ejemplo.com">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Tipo de Socio</label>
+                                <select name="socio_tipo[]" class="form-select">
+                                    <option value="INVERSIONISTA">Inversionista</option>
+                                    <option value="CAPITALISTA">Capitalista</option>
+                                    <option value="OPERADOR">Operador</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Monto Aportado</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" name="socio_monto[]" class="form-control" 
+                                           placeholder="0" min="0">
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Banco / Cuenta</label>
+                                <input type="text" name="socio_banco[]" class="form-control" 
+                                       placeholder="Banco y número de cuenta">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            container.insertAdjacentHTML('beforeend', socioHTML);
+            actualizarContador();
+            recalcularPorcentajes();
+        }
+        
+        function eliminarSocio(index) {
+            const socioCard = document.getElementById(`socio-${index}`);
+            if (socioCard) {
+                socioCard.remove();
+                actualizarContador();
+                recalcularPorcentajes();
+            }
+        }
+        
+        function actualizarContador() {
+            const count = document.querySelectorAll('.socio-card').length;
+            document.getElementById('contadorSocios').textContent = 
+                count === 1 ? '1 socio' : `${count} socios`;
+        }
+        
+        function recalcularPorcentajes() {
+            const inputs = document.querySelectorAll('input[name="socio_porcentaje[]"]');
+            let totalSocios = 0;
+            
+            inputs.forEach(input => {
+                totalSocios += parseFloat(input.value) || 0;
+            });
+            
+            const porcentajeDueno = 100 - totalSocios;
+            document.getElementById('porcentaje_dueno').textContent = porcentajeDueno.toFixed(1) + '%';
+            document.getElementById('input_porcentaje_dueno').value = porcentajeDueno.toFixed(1);
+            
+            // Actualizar barra visual
+            const barDueno = document.getElementById('bar-dueno');
+            barDueno.style.width = porcentajeDueno + '%';
+            barDueno.textContent = `Dueño: ${porcentajeDueno.toFixed(1)}%`;
+            
+            // Validar
+            const alert = document.getElementById('porcentaje-alert');
+            const btnGuardar = document.getElementById('btnGuardar');
+            
+            if (totalSocios > 100) {
+                alert.classList.remove('d-none');
+                alert.className = 'alert alert-danger mt-2';
+                alert.innerHTML = '<i class="bi bi-x-circle"></i> Los porcentajes de socios superan el 100%';
+                btnGuardar.disabled = true;
+            } else if (porcentajeDueno < 0) {
+                alert.classList.remove('d-none');
+                alert.className = 'alert alert-danger mt-2';
+                btnGuardar.disabled = true;
+            } else {
+                alert.classList.add('d-none');
+                btnGuardar.disabled = false;
+            }
+            
+            // Actualizar barras de cada socio
+            actualizarBarras(inputs, porcentajeDueno);
+        }
+        
+        function actualizarBarras(inputs, porcentajeDueno) {
+            const progressBar = document.querySelector('.progress');
+            let html = `<div id="bar-dueno" class="progress-bar bg-primary porcentaje-bar" style="width: ${porcentajeDueno}%">Dueño: ${porcentajeDueno.toFixed(1)}%</div>`;
+            
+            inputs.forEach((input, index) => {
+                const valor = parseFloat(input.value) || 0;
+                if (valor > 0) {
+                    const color = colores[index % colores.length];
+                    html += `<div class="progress-bar ${color} porcentaje-bar" style="width: ${valor}%">S${index+1}: ${valor}%</div>`;
+                }
+            });
+            
+            progressBar.innerHTML = html;
+        }
+        
+        // Inicializar con un socio
+        document.addEventListener('DOMContentLoaded', function() {
+            // Opcional: agregar un socio por defecto
+            // agregarSocio();
+        });
+    </script>
+</body>
+</html>
