@@ -45,39 +45,74 @@ def lista():
     """Lista de préstamos"""
     page = request.args.get('page', 1, type=int)
     usuario_id = session.get('usuario_id')
-    
-    # Estadísticas solo de sus préstamos
-    total_prestado = db.session.query(func.sum(Prestamo.monto_prestado)).filter(
-        Prestamo.estado == 'ACTIVO', 
-        Prestamo.cobrador_id == usuario_id
-    ).scalar() or 0
+    rol = session.get('rol')
 
-    total_cartera = db.session.query(func.sum(Prestamo.saldo_actual)).filter(
-        Prestamo.estado == 'ACTIVO', 
-        Prestamo.cobrador_id == usuario_id
-    ).scalar() or 0
+    # Filtro base según el rol del usuario
+    if rol in ['dueno', 'gerente']:
+        # DUENO y GERENTE ven todos los préstamos
+        filtro_usuario = True  # No filtrar por usuario
+    else:
+        # COBRADOR solo ve sus préstamos
+        filtro_usuario = (Prestamo.cobrador_id == usuario_id)
 
-    ganancia_esperada = db.session.query(
-        func.sum(Prestamo.monto_a_pagar - Prestamo.monto_prestado)
+    # Estadísticas agrupadas por moneda
+    query_por_moneda = db.session.query(
+        Prestamo.moneda,
+        func.sum(Prestamo.monto_prestado).label('total_prestado'),
+        func.sum(Prestamo.saldo_actual).label('total_cartera'),
+        func.sum(Prestamo.monto_a_pagar - Prestamo.monto_prestado).label('ganancia_esperada')
     ).filter(
-        Prestamo.estado == 'ACTIVO', 
-        Prestamo.cobrador_id == usuario_id
-    ).scalar() or 0
+        Prestamo.estado == 'ACTIVO'
+    )
+
+    if filtro_usuario is not True:
+        query_por_moneda = query_por_moneda.filter(filtro_usuario)
+
+    query_por_moneda = query_por_moneda.group_by(Prestamo.moneda).all()
+
+    # Crear diccionarios por moneda
+    stats_por_moneda = {}
+    for moneda, prestado, cartera, ganancia in query_por_moneda:
+        stats_por_moneda[moneda] = {
+            'total_prestado': prestado or 0,
+            'total_cartera': cartera or 0,
+            'ganancia_esperada': ganancia or 0
+        }
+
+    # Totales generales (para compatibilidad)
+    total_prestado = sum(s['total_prestado'] for s in stats_por_moneda.values())
+    total_cartera = sum(s['total_cartera'] for s in stats_por_moneda.values())
+    ganancia_esperada = sum(s['ganancia_esperada'] for s in stats_por_moneda.values())
 
     clientes = Cliente.query.order_by(Cliente.nombre).all()
     cobradores = Usuario.query.filter(Usuario.rol.in_(['admin', 'cobrador'])).all()
-    
+
+    # Obtener lista de préstamos según el rol
+    query_prestamos = Prestamo.query.order_by(Prestamo.fecha_inicio.desc())
+    if filtro_usuario is not True:
+        query_prestamos = query_prestamos.filter(filtro_usuario)
+    prestamos = query_prestamos.all()
+
+    # Contar préstamos activos
+    query_count_activos = Prestamo.query.filter_by(estado='ACTIVO')
+    if filtro_usuario is not True:
+        query_count_activos = query_count_activos.filter(filtro_usuario)
+    prestamos_activos = query_count_activos.count()
+
     return render_template('prestamos_lista.html',
         clientes=clientes,
         cobradores=cobradores,
+        prestamos=prestamos,
+        prestamos_activos=prestamos_activos,
         fecha_hoy=datetime.now().strftime('%Y-%m-%d'),
         nombre=session.get('nombre'),
-        rol=session.get('rol'),
-        usuario_id=session.get('usuario_id'),
+        rol=rol,
+        usuario_id=usuario_id,
         cliente_id_seleccionado=None,
         total_prestado=total_prestado,
         total_cartera=total_cartera,
-        ganancia_esperada=ganancia_esperada)
+        ganancia_esperada=ganancia_esperada,
+        stats_por_moneda=stats_por_moneda)
 
 
 @prestamos_bp.route('/guardar', methods=['POST'])

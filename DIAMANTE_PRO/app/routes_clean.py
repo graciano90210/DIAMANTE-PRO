@@ -7,9 +7,8 @@ Contiene solo rutas no migradas a blueprints:
 """
 from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
-from flask import render_template, request, redirect, url_for, session, flash, Blueprint
+from flask import render_template, request, redirect, url_for, session, flash, Blueprint, current_app
 from werkzeug.utils import secure_filename
-from werkzeug.security import generate_password_hash, check_password_hash
 from .models import Usuario, Cliente, Prestamo, Pago, Transaccion, Sociedad, Ruta, AporteCapital, Activo, db
 from datetime import datetime, timedelta
 from sqlalchemy import func, case
@@ -53,13 +52,58 @@ def dashboard():
         joinedload(Prestamo.cliente)
     ).order_by(Prestamo.fecha_inicio.desc()).limit(5).all()
     
+
+
+
+
+    # CÁLCULO DE TOTALES (Blindado contra filtros de ruta y rol)
+    from sqlalchemy import func  # Asegura el import
+    print("--- DEBUG: Calculando Totales ---")
+    if rol == 'dueno':
+        # Dueño: suma todos los préstamos activos
+        query_totales = db.session.query(
+            Prestamo.moneda,
+            func.sum(Prestamo.monto + Prestamo.interes).label('total_deuda')
+        ).filter(
+            Prestamo.estado == 'ACTIVO'
+        ).group_by(Prestamo.moneda)
+    elif rol == 'cobrador':
+        # Cobrador: solo sus préstamos activos
+        query_totales = db.session.query(
+            Prestamo.moneda,
+            func.sum(Prestamo.monto + Prestamo.interes).label('total_deuda')
+        ).filter(
+            Prestamo.usuario_id == usuario_id,
+            Prestamo.estado == 'ACTIVO'
+        ).group_by(Prestamo.moneda)
+    else:
+        # Otros roles: puedes ajustar según reglas de negocio
+        query_totales = db.session.query(
+            Prestamo.moneda,
+            func.sum(Prestamo.monto + Prestamo.interes).label('total_deuda')
+        ).filter(
+            Prestamo.estado == 'ACTIVO'
+        ).group_by(Prestamo.moneda)
+
+    estadisticas_moneda = {row.moneda: float(row.total_deuda or 0) for row in query_totales.all()}
+    print(f"--- DEBUG: Totales encontrados: {estadisticas_moneda} ---")
+
+    # DEBUG: Imprimir los diccionarios por moneda
+    current_app.logger.warning("=" * 60)
+    current_app.logger.warning("DEBUG - Datos por moneda enviados al template:")
+    current_app.logger.warning(f"cartera_por_moneda: {cartera_por_moneda}")
+    current_app.logger.warning(f"capital_prestado_por_moneda: {capital_prestado_por_moneda}")
+    current_app.logger.warning(f"flujo_cobro_por_moneda: {flujo_cobro_por_moneda}")
+    current_app.logger.warning(f"ganancia_esperada_por_moneda: {ganancia_esperada_por_moneda}")
+    current_app.logger.warning("=" * 60)
+
     return render_template('dashboard_new.html',
         nombre=session.get('nombre'),
         rol=rol,
         # Estadísticas de préstamos
         total_prestamos_activos=data['prestamos']['total_activos'],
         total_cartera=data['prestamos']['cartera_total'],
-        capital_prestado=data['prestamos']['capital_prestado'],
+        estadisticas_moneda=estadisticas_moneda,
         prestamos_al_dia=data['prestamos']['al_dia'],
         prestamos_atrasados=data['prestamos']['atrasados'],
         prestamos_mora=data['prestamos']['en_mora'],
@@ -176,11 +220,11 @@ def usuarios_guardar():
         nuevo_usuario = Usuario(
             nombre=request.form.get('nombre'),
             usuario=usuario,
-            password=generate_password_hash(request.form.get('password')),
             rol=request.form.get('rol'),
-            telefono=request.form.get('telefono'),
             activo=True
         )
+        # Usar el método seguro del modelo para hashing con bcrypt
+        nuevo_usuario.set_password(request.form.get('password'))
         db.session.add(nuevo_usuario)
         db.session.commit()
         return redirect(url_for('main.usuarios_lista'))
@@ -231,11 +275,11 @@ def usuarios_actualizar(usuario_id):
         usuario.nombre = request.form.get('nombre')
         usuario.usuario = nuevo_usuario_nombre
         usuario.rol = request.form.get('rol')
-        usuario.telefono = request.form.get('telefono')
-        
+
         nueva_password = request.form.get('password')
         if nueva_password and nueva_password.strip():
-            usuario.password = generate_password_hash(nueva_password)
+            # Usar el método seguro del modelo para hashing con bcrypt
+            usuario.set_password(nueva_password)
         
         activo = request.form.get('activo')
         usuario.activo = (activo == 'on')

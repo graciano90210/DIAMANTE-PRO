@@ -257,38 +257,41 @@
         <div class="card stat-card warning text-white">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="card-title mb-0">Flujo de Cobro</h6>
-                    <i class="bi bi-calendar-check fs-2"></i>
+                    <h6 class="card-title mb-0"><i class="bi bi-calendar-check me-2"></i>Flujo de Cobro</h6>
                 </div>
-                <div class="row text-center">
+                <div class="row text-center mt-2">
                     <div class="col-6 border-end" style="border-color: rgba(255,255,255,0.3) !important;">
-                        <small class="text-white-50">Hoy</small>
-                        {% if lista_monedas and lista_monedas|length > 1 %}
-                            <div class="text-start mt-1">
-                            {% for m in lista_monedas %}
-                                <div class="d-flex justify-content-between small border-bottom border-light border-opacity-25 pb-1 mb-1">
-                                    <span class="opacity-75">{{ m.moneda }}</span>
-                                    <span class="fw-bold">${{ "{:,.0f}".format(m.por_cobrar_hoy) }}</span>
+                        <small class="text-white-50 d-block mb-2">Hoy</small>
+                        {% if flujo_cobro_por_moneda and flujo_cobro_por_moneda|length > 0 %}
+                            <div class="text-start">
+                            {% for moneda, total in flujo_cobro_por_moneda.items() %}
+                                <div class="d-flex justify-content-between align-items-center small mb-2 {% if not loop.last %}border-bottom border-light border-opacity-25 pb-1{% endif %}">
+                                    <span class="badge bg-white bg-opacity-25 px-2" style="font-size: 0.65rem;">{{ moneda }}</span>
+                                    <span class="fw-bold">${{ "{:,.0f}".format(total) }}</span>
                                 </div>
                             {% endfor %}
                             </div>
                         {% else %}
-                            <h4 class="mb-0 fw-bold">${{ "{:,.0f}".format(por_cobrar_hoy) }}</h4>
+                            <div class="d-flex justify-content-center">
+                                <h5 class="mb-0 fw-bold">${{ "{:,.0f}".format(por_cobrar_hoy) }}</h5>
+                            </div>
                         {% endif %}
                     </div>
                     <div class="col-6">
-                        <small class="text-white-50">Mañana</small>
-                        {% if lista_monedas and lista_monedas|length > 1 %}
-                            <div class="text-start mt-1">
-                            {% for m in lista_monedas %}
-                                <div class="d-flex justify-content-between small border-bottom border-light border-opacity-25 pb-1 mb-1">
-                                    <span class="opacity-75">{{ m.moneda }}</span>
-                                    <span class="fw-bold">${{ "{:,.0f}".format(m.proyeccion_manana) }}</span>
+                        <small class="text-white-50 d-block mb-2">Mañana</small>
+                        {% if flujo_cobro_por_moneda and flujo_cobro_por_moneda|length > 0 %}
+                            <div class="text-start">
+                            {% for moneda, total in flujo_cobro_por_moneda.items() %}
+                                <div class="d-flex justify-content-between align-items-center small mb-2 {% if not loop.last %}border-bottom border-light border-opacity-25 pb-1{% endif %}">
+                                    <span class="badge bg-white bg-opacity-25 px-2" style="font-size: 0.65rem;">{{ moneda }}</span>
+                                    <span class="fw-bold">${{ "{:,.0f}".format(total) }}</span>
                                 </div>
                             {% endfor %}
                             </div>
                         {% else %}
-                            <h4 class="mb-0 fw-bold">${{ "{:,.0f}".format(proyeccion_manana) }}</h4>
+                            <div class="d-flex justify-content-center">
+                                <h5 class="mb-0 fw-bold">${{ "{:,.0f}".format(proyeccion_manana) }}</h5>
+                            </div>
                         {% endif %}
                     </div>
                 </div>
@@ -299,27 +302,25 @@
     <div class="col-md-3">
         <div class="card stat-card info text-white">
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div class="w-100">
-                        <h6 class="card-title">Total en Cartera</h6>
-                        {% if lista_monedas and lista_monedas|length > 1 %}
-                            <div class="mt-2">
-                            {% for m in lista_monedas %}
-                                <div class="d-flex justify-content-between align-items-center mb-1 border-bottom border-light border-opacity-25 pb-1">
-                                    <span class="badge bg-white text-info bg-opacity-25">{{ m.moneda }}</span>
-                                    <h5 class="mb-0 text-end">${{ "{:,.0f}".format(m.total_cartera) }}</h5>
-                                </div>
-                            {% endfor %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="card-title mb-0"><i class="bi bi-graph-up me-2"></i>Total en Cartera</h6>
+                </div>
+                <div class="mt-2">
+                    {% if cartera_por_moneda and cartera_por_moneda|length > 0 %}
+                        {% for moneda, total in cartera_por_moneda.items() %}
+                            <div class="d-flex justify-content-between align-items-center mb-2 pb-2 {% if not loop.last %}border-bottom border-light border-opacity-25{% endif %}">
+                                <span class="badge bg-white bg-opacity-25 px-3 py-1">{{ moneda }}</span>
+                                <h4 class="mb-0 text-end fw-bold">${{ "{:,.0f}".format(total) }}</h4>
                             </div>
-                        {% else %}
-                            <h2 class="mb-0">${{ "{:,.0f}".format(total_cartera) }}</h2>
-                            <small>Saldo por cobrar</small>
-                        {% endif %}
-                    </div>
-                    {% if not (lista_monedas and lista_monedas|length > 1) %}
-                    <i class="bi bi-graph-up fs-1"></i>
+                        {% endfor %}
+                    {% else %}
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge bg-white bg-opacity-25 px-3 py-1">COP</span>
+                            <h4 class="mb-0 text-end fw-bold">${{ "{:,.0f}".format(total_cartera) }}</h4>
+                        </div>
                     {% endif %}
                 </div>
+                <small class="stat-sublabel opacity-75 d-block mt-2">Saldo por cobrar</small>
             </div>
         </div>
     </div>
@@ -345,38 +346,54 @@
     <div class="col-md-3">
         <div class="card stat-card purple text-white">
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div class="w-100">
-                        <h6 class="stat-label">Capital Prestado</h6>
-                        {% if lista_monedas and lista_monedas|length > 1 %}
-                            <div class="mt-2">
-                            {% for m in lista_monedas %}
-                                <div class="d-flex justify-content-between align-items-center mb-1 border-bottom border-light border-opacity-25 pb-1">
-                                    <span class="badge bg-white text-info bg-opacity-25">{{ m.moneda }}</span>
-                                    <h5 class="stat-number mb-0 text-end">${{ "{:,.0f}".format(m.capital_prestado) }}</h5>
-                                </div>
-                            {% endfor %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="stat-label mb-0"><i class="bi bi-piggy-bank-fill me-2"></i>Capital Prestado</h6>
+                </div>
+                <div class="mt-2">
+                    <!-- DEBUG: capital_prestado_por_moneda = {{ capital_prestado_por_moneda }} -->
+                    <!-- DEBUG: length = {{ capital_prestado_por_moneda|length }} -->
+                    {% if capital_prestado_por_moneda and capital_prestado_por_moneda|length > 0 %}
+                        {% for moneda, total in capital_prestado_por_moneda.items() %}
+                            <div class="d-flex justify-content-between align-items-center mb-2 pb-2 {% if not loop.last %}border-bottom border-light border-opacity-25{% endif %}">
+                                <span class="badge bg-white bg-opacity-25 px-3 py-1">{{ moneda }}</span>
+                                <h4 class="mb-0 text-end fw-bold">${{ "{:,.0f}".format(total) }}</h4>
                             </div>
-                        {% else %}
-                            <h2 class="stat-number mb-0">${{ "{:,.0f}".format(capital_prestado/1000) }}K</h2>
-                            <small class="stat-sublabel">Dinero en la calle</small>
-                        {% endif %}
-                    </div>
-                    {% if not (lista_monedas and lista_monedas|length > 1) %}
-                    <i class="bi bi-piggy-bank-fill fs-1"></i>
+                        {% endfor %}
+                    {% else %}
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge bg-white bg-opacity-25 px-3 py-1">COP</span>
+                            <h4 class="mb-0 text-end fw-bold">${{ "{:,.0f}".format(capital_prestado) }}</h4>
+                        </div>
                     {% endif %}
                 </div>
+                <small class="stat-sublabel opacity-75 d-block mt-2">Dinero en la calle</small>
             </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card menu-card border-0 shadow-sm">
+        <div class="card stat-card success text-white">
             <div class="card-body">
-                <h6 class="card-title fw-bold mb-3"><i class="bi bi-graph-up text-success"></i> Ganancia Esperada</h6>
-                <h3 class="mb-1 fw-bold text-success">${{ "{:,.0f}".format(ganancia_esperada) }}</h3>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="kpi-badge bg-success text-white">+{{ "{:.1f}".format(porcentaje_ganancia) }}%</span>
-                    <small class="text-muted">ROI estimado</small>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="card-title mb-0"><i class="bi bi-graph-up me-2"></i>Ganancia Esperada</h6>
+                </div>
+                <div class="mt-2">
+                    {% if ganancia_esperada_por_moneda and ganancia_esperada_por_moneda|length > 0 %}
+                        {% for moneda, total in ganancia_esperada_por_moneda.items() %}
+                            <div class="d-flex justify-content-between align-items-center mb-2 pb-2 {% if not loop.last %}border-bottom border-light border-opacity-25{% endif %}">
+                                <span class="badge bg-white bg-opacity-25 px-3 py-1">{{ moneda }}</span>
+                                <h4 class="mb-0 text-end fw-bold">${{ "{:,.0f}".format(total) }}</h4>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge bg-white bg-opacity-25 px-3 py-1">COP</span>
+                            <h4 class="mb-0 text-end fw-bold">${{ "{:,.0f}".format(ganancia_esperada) }}</h4>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="d-flex align-items-center gap-2 mt-2">
+                    <span class="kpi-badge bg-white bg-opacity-25">+{{ "{:.1f}".format(porcentaje_ganancia) }}%</span>
+                    <small class="stat-sublabel opacity-75">ROI estimado</small>
                 </div>
             </div>
         </div>

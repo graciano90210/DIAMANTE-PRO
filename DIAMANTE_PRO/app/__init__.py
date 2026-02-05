@@ -3,7 +3,7 @@ from pathlib import Path
 
 from flask import Flask, request, g
 from flask_cors import CORS
-from .extensions import db, login_manager
+from .extensions import db, login_manager, limiter
 
 def create_app():
     app = Flask(__name__)
@@ -86,6 +86,9 @@ def create_app():
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
 
+    # Inicializar rate limiter para protección contra ataques
+    limiter.init_app(app)
+
     # User Loader (Obligatorio)
     from .models import Usuario
     @login_manager.user_loader
@@ -126,7 +129,11 @@ def create_app():
     
     from .blueprints.reportes import reportes_bp
     app.register_blueprint(reportes_bp)
-    
+
+    # Registrar API REST para aplicación móvil
+    from .api import api as api_blueprint
+    app.register_blueprint(api_blueprint)
+
     # Crear tablas
     with app.app_context():
         db.create_all()

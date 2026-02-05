@@ -6,6 +6,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from .models import Usuario, Cliente, Prestamo, Pago, Ruta, Transaccion, db
 from .utils.pagination import paginate_query, paginated_response
+from .extensions import limiter
 from datetime import datetime, timedelta
 import pytz
 from sqlalchemy import func
@@ -16,11 +17,14 @@ api = Blueprint('api', __name__, url_prefix='/api/v1')
 
 # ==================== AUTENTICACIÓN ====================
 @api.route('/login', methods=['POST'])
+@limiter.limit("5 per minute")  # Protección contra fuerza bruta: máx 5 intentos/min
 def api_login():
     """
     Login para la app móvil
     Body: {"usuario": "username", "password": "password"}
     Returns: {"access_token": "JWT_TOKEN", "usuario": {...}}
+
+    Rate Limit: 5 intentos por minuto por IP
     """
     data = request.get_json()
     
@@ -424,6 +428,7 @@ def api_ruta_cobro():
 # ==================== REGISTRAR PAGO ====================
 @api.route('/cobrador/registrar-pago', methods=['POST'])
 @jwt_required()
+@limiter.limit("30 per minute")  # Límite razonable para registros de pago
 def api_registrar_pago():
     """
     Registrar un pago desde la app móvil
@@ -572,6 +577,7 @@ def dashboard_stats():
 # ==================== REGISTRAR PAGO ====================
 @api.route('/cobros', methods=['POST'])
 @jwt_required()
+@limiter.limit("30 per minute")  # Límite razonable para registros de cobro
 def api_registrar_cobro():
     """
     Registrar un pago/abono a un préstamo

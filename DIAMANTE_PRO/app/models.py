@@ -407,7 +407,7 @@ class Transaccion(db.Model):
 class AporteCapital(db.Model):
     __tablename__ = 'aportes_capital'
     id = db.Column(db.Integer, primary_key=True)
-    sociedad_id = db.Column(db.Integer, db.ForeignKey('sociedades.id'), nullable=False)
+    sociedad_id = db.Column(db.Integer, db.ForeignKey('sociedades.id'), nullable=True)
     nombre_aportante = db.Column(db.String(100), nullable=False)  # Nombre del socio que aporta
     monto = db.Column(db.Float, nullable=False)
     moneda = db.Column(db.String(3), default='COP')  # COP, USD, BRL, PEN, ARS
@@ -416,10 +416,13 @@ class AporteCapital(db.Model):
     descripcion = db.Column(db.String(200))
     comprobante = db.Column(db.String(300))  # Ruta de imagen del comprobante
     registrado_por_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
-    
+    ruta_id = db.Column(db.Integer, db.ForeignKey('rutas.id'), nullable=True)
+
     # Relaciones con cascade
     sociedad = db.relationship('Sociedad', backref=db.backref('aportes', lazy='dynamic', cascade='all, delete-orphan'))
     registrado_por = db.relationship('Usuario', backref=db.backref('aportes_registrados', lazy='dynamic'))
+    ruta = db.relationship('Ruta', backref=db.backref('aportes', lazy='dynamic'))
+
 
 # 7. ACTIVOS FIJOS
 class Activo(db.Model):

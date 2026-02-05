@@ -38,10 +38,15 @@
     <div class="col-md-3">
         <div class="card stat-card h-100">
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <p class="text-muted mb-1">Total Prestado</p>
-                        <h3 class="mb-0 text-success">${{ "{:,.0f}".format(total_prestado) }}</h3>
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <p class="text-muted mb-2">Total Prestado</p>
+                        {% for moneda, stats in stats_por_moneda.items() %}
+                        <div class="mb-1">
+                            <small class="text-muted">{{ moneda }}</small>
+                            <h5 class="mb-0 text-success">{{ moneda }} ${{ "{:,.0f}".format(stats.total_prestado) }}</h5>
+                        </div>
+                        {% endfor %}
                     </div>
                     <div class="stat-icon bg-success bg-opacity-10 text-success">
                         <i class="bi bi-cash"></i>
@@ -53,10 +58,15 @@
     <div class="col-md-3">
         <div class="card stat-card h-100">
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <p class="text-muted mb-1">Total en Cartera</p>
-                        <h3 class="mb-0">${{ "{:,.0f}".format(total_cartera) }}</h3>
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <p class="text-muted mb-2">Total en Cartera</p>
+                        {% for moneda, stats in stats_por_moneda.items() %}
+                        <div class="mb-1">
+                            <small class="text-muted">{{ moneda }}</small>
+                            <h5 class="mb-0">{{ moneda }} ${{ "{:,.0f}".format(stats.total_cartera) }}</h5>
+                        </div>
+                        {% endfor %}
                     </div>
                     <div class="stat-icon bg-primary bg-opacity-10 text-primary">
                         <i class="bi bi-wallet2"></i>
@@ -83,10 +93,15 @@
     <div class="col-md-3">
         <div class="card stat-card h-100">
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <p class="text-muted mb-1">Ganancia Esperada</p>
-                        <h3 class="mb-0 text-info">${{ "{:,.0f}".format(ganancia_esperada) }}</h3>
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <p class="text-muted mb-2">Ganancia Esperada</p>
+                        {% for moneda, stats in stats_por_moneda.items() %}
+                        <div class="mb-1">
+                            <small class="text-muted">{{ moneda }}</small>
+                            <h5 class="mb-0 text-info">{{ moneda }} ${{ "{:,.0f}".format(stats.ganancia_esperada) }}</h5>
+                        </div>
+                        {% endfor %}
                     </div>
                     <div class="stat-icon bg-info bg-opacity-10 text-info">
                         <i class="bi bi-piggy-bank"></i>
@@ -191,7 +206,7 @@
                         </td>
                         <td class="text-center">
                             <div class="btn-group" role="group">
-                                <a href="{{ url_for('prestamos.ver', id=prestamo.id) }}" class="btn btn-sm btn-info" title="Ver Detalles">
+                                <a href="{{ url_for('prestamos.detalle', prestamo_id=prestamo.id) }}" class="btn btn-sm btn-info" title="Ver Detalles">
                                     <i class="bi bi-eye"></i>
                                 </a>
                                 {% if prestamo.estado == 'ACTIVO' %}
