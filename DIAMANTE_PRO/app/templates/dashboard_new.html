@@ -122,47 +122,229 @@
         margin: 0;
         font-weight: 600;
     }
+
+    /* Selector Moderno de Filtros */
+    .filter-selector-btn {
+        background: linear-gradient(135deg, #1D1E33 0%, #252744 100%);
+        border: 1px solid rgba(0, 229, 255, 0.4);
+        color: #fff;
+        padding: 8px 16px;
+        border-radius: 25px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+    .filter-selector-btn:hover, .filter-selector-btn:focus {
+        background: linear-gradient(135deg, #252744 0%, #2d2f54 100%);
+        border-color: #00E5FF;
+        color: #00E5FF;
+        box-shadow: 0 4px 15px rgba(0, 229, 255, 0.3);
+        transform: translateY(-1px);
+    }
+    .filter-selector-btn::after {
+        margin-left: 8px;
+    }
+    .filter-dropdown-menu {
+        background: linear-gradient(180deg, #1D1E33 0%, #151624 100%);
+        border: 1px solid rgba(0, 229, 255, 0.2);
+        border-radius: 12px;
+        padding: 8px 0;
+        min-width: 280px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    .filter-dropdown-menu .dropdown-item {
+        color: #E0E0E0;
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        transition: all 0.2s ease;
+        border-radius: 0;
+    }
+    .filter-dropdown-menu .dropdown-item:hover {
+        background: rgba(0, 229, 255, 0.1);
+        color: #00E5FF;
+    }
+    .filter-dropdown-menu .dropdown-item.active {
+        background: linear-gradient(90deg, rgba(0, 229, 255, 0.2) 0%, transparent 100%);
+        color: #00E5FF;
+        border-left: 3px solid #00E5FF;
+    }
+    .filter-dropdown-menu .dropdown-header {
+        color: #8D8E98;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 8px 16px;
+    }
+    .filter-dropdown-menu .dropdown-divider {
+        border-color: rgba(255, 255, 255, 0.08);
+        margin: 4px 0;
+    }
+    .filter-dropdown-menu::-webkit-scrollbar {
+        width: 6px;
+    }
+    .filter-dropdown-menu::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .filter-dropdown-menu::-webkit-scrollbar-thumb {
+        background: rgba(0, 229, 255, 0.3);
+        border-radius: 3px;
+    }
 </style>
 {% endblock %}
 
 {% block navbar_actions %}
-<!-- Selector de Ruta -->
-{% if rol in ['dueno', 'gerente'] and todas_las_rutas %}
-<select class="form-select form-select-sm d-none d-md-inline-block" 
-        onchange="window.location.href=this.value" 
-        style="width: auto; background: #1D1E33; color: #fff; border: 1px solid rgba(0,229,255,0.3); font-size: 0.85rem;">
-    <option value="/ver-todas-rutas" {% if not ruta_seleccionada %}selected{% endif %}>
-        📊 Todas las Rutas
-    </option>
-    {% for ruta in todas_las_rutas %}
-    <option value="/seleccionar-ruta/{{ ruta.id }}" 
-            {% if ruta_seleccionada and ruta_seleccionada.id == ruta.id %}selected{% endif %}>
-        🗺️ {{ ruta.nombre }}{% if ruta.cobrador %} - {{ ruta.cobrador.nombre }}{% endif %}
-    </option>
-    {% endfor %}
-</select>
+<!-- Selector Moderno de Oficinas y Rutas -->
+{% if rol in ['dueno', 'gerente'] %}
+<div class="dropdown d-none d-md-inline-block">
+    <button class="btn btn-sm dropdown-toggle filter-selector-btn" type="button"
+            id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="bi bi-funnel-fill me-1"></i>
+        {% if oficina_seleccionada %}
+            <i class="bi bi-building me-1"></i>{{ oficina_seleccionada.nombre }}
+        {% elif ruta_seleccionada %}
+            <i class="bi bi-signpost-2 me-1"></i>{{ ruta_seleccionada.nombre }}
+        {% else %}
+            <i class="bi bi-globe me-1"></i>Todo el Negocio
+        {% endif %}
+    </button>
+    <ul class="dropdown-menu dropdown-menu-dark filter-dropdown-menu" aria-labelledby="filterDropdown">
+        <!-- Ver Todo -->
+        <li>
+            <a class="dropdown-item {% if not oficina_seleccionada and not ruta_seleccionada %}active{% endif %}"
+               href="/ver-todas-rutas">
+                <i class="bi bi-globe me-2 text-info"></i>
+                <span>Todo el Negocio</span>
+                <small class="ms-auto text-muted">Global</small>
+            </a>
+        </li>
+
+        {% if todas_las_oficinas %}
+        <li><hr class="dropdown-divider"></li>
+        <li><h6 class="dropdown-header"><i class="bi bi-building me-2"></i>Oficinas</h6></li>
+        {% for oficina in todas_las_oficinas %}
+        <li>
+            <a class="dropdown-item {% if oficina_seleccionada and oficina_seleccionada.id == oficina.id %}active{% endif %}"
+               href="/seleccionar-oficina/{{ oficina.id }}">
+                <i class="bi bi-building me-2 text-warning"></i>
+                <span>{{ oficina.nombre }}</span>
+                <span class="badge bg-secondary ms-auto">{{ oficina.numero_rutas }} rutas</span>
+            </a>
+        </li>
+        {% endfor %}
+        {% endif %}
+
+        {% if todas_las_rutas %}
+        <li><hr class="dropdown-divider"></li>
+        <li><h6 class="dropdown-header"><i class="bi bi-signpost-2 me-2"></i>Rutas Individuales</h6></li>
+        {% for ruta in todas_las_rutas %}
+        <li>
+            <a class="dropdown-item {% if ruta_seleccionada and ruta_seleccionada.id == ruta.id %}active{% endif %}"
+               href="/seleccionar-ruta/{{ ruta.id }}">
+                <i class="bi bi-signpost-2 me-2 text-success"></i>
+                <span>{{ ruta.nombre }}</span>
+                {% if ruta.moneda == 'BRL' %}
+                <span class="badge bg-success ms-auto">BRL</span>
+                {% elif ruta.moneda == 'COP' %}
+                <span class="badge bg-primary ms-auto">COP</span>
+                {% endif %}
+            </a>
+        </li>
+        {% endfor %}
+        {% endif %}
+    </ul>
+</div>
 {% endif %}
 {% endblock %}
 
 {% block content %}
-<!-- Alerta de Ruta Seleccionada -->
-{% if ruta_seleccionada %}
-<div class="alert d-flex justify-content-between align-items-center mb-4" 
-     style="background: rgba(0, 229, 255, 0.1); border: 1px solid rgba(0, 229, 255, 0.3); color: #00E5FF;">
-    <div>
-        <i class="bi bi-funnel"></i>
-        <strong>Filtrado:</strong> {{ ruta_seleccionada.nombre }}
-        {% if ruta_seleccionada.cobrador %}({{ ruta_seleccionada.cobrador.nombre }}){% endif %}
-        {% if ruta_seleccionada.sociedad %}
-            - <span class="badge" style="background: rgba(0,229,255,0.2);">{{ ruta_seleccionada.sociedad.nombre }}</span>
-        {% else %}
-            - <span class="badge" style="background: rgba(0,255,153,0.2); color: #00FF99;">PROPIO</span>
-        {% endif %}
+<!-- Alerta de Filtro Activo -->
+{% if oficina_seleccionada or ruta_seleccionada %}
+<div class="filter-alert mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-3">
+            {% if oficina_seleccionada %}
+            <div class="filter-badge office">
+                <i class="bi bi-building-fill"></i>
+                <span>Oficina: <strong>{{ oficina_seleccionada.nombre }}</strong></span>
+                {% if oficina_seleccionada.ciudad %}
+                <small class="text-muted ms-2">{{ oficina_seleccionada.ciudad }}</small>
+                {% endif %}
+            </div>
+            <div class="filter-info">
+                <span class="badge bg-warning bg-opacity-25 text-warning">
+                    <i class="bi bi-signpost-2 me-1"></i>{{ oficina_seleccionada.numero_rutas }} rutas
+                </span>
+            </div>
+            {% elif ruta_seleccionada %}
+            <div class="filter-badge route">
+                <i class="bi bi-signpost-2-fill"></i>
+                <span>Ruta: <strong>{{ ruta_seleccionada.nombre }}</strong></span>
+                {% if ruta_seleccionada.cobrador %}
+                <small class="text-muted ms-2">({{ ruta_seleccionada.cobrador.nombre }})</small>
+                {% endif %}
+            </div>
+            <div class="filter-info">
+                {% if ruta_seleccionada.moneda == 'BRL' %}
+                <span class="badge bg-success bg-opacity-25 text-success">
+                    <i class="bi bi-currency-exchange me-1"></i>Reales (BRL)
+                </span>
+                {% else %}
+                <span class="badge bg-primary bg-opacity-25 text-primary">
+                    <i class="bi bi-currency-exchange me-1"></i>Pesos (COP)
+                </span>
+                {% endif %}
+                {% if ruta_seleccionada.oficina %}
+                <span class="badge bg-secondary bg-opacity-25 text-secondary ms-1">
+                    <i class="bi bi-building me-1"></i>{{ ruta_seleccionada.oficina.nombre }}
+                </span>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        <a href="/ver-todas-rutas" class="btn btn-sm clear-filter-btn">
+            <i class="bi bi-x-lg me-1"></i>Quitar Filtro
+        </a>
     </div>
-    <a href="/ver-todas-rutas" class="btn btn-sm" style="background: transparent; border: 1px solid #00E5FF; color: #00E5FF;">
-        <i class="bi bi-x"></i> Ver Todas
-    </a>
 </div>
+<style>
+.filter-alert {
+    background: linear-gradient(135deg, rgba(0, 229, 255, 0.08) 0%, rgba(0, 255, 153, 0.05) 100%);
+    border: 1px solid rgba(0, 229, 255, 0.25);
+    border-radius: 12px;
+    padding: 12px 20px;
+    backdrop-filter: blur(10px);
+}
+.filter-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #fff;
+    font-size: 0.9rem;
+}
+.filter-badge i {
+    font-size: 1.1rem;
+}
+.filter-badge.office i { color: #FFD700; }
+.filter-badge.route i { color: #00FF99; }
+.clear-filter-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #E0E0E0;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    transition: all 0.2s ease;
+}
+.clear-filter-btn:hover {
+    background: rgba(255, 51, 102, 0.2);
+    border-color: #FF3366;
+    color: #FF3366;
+}
+</style>
 {% endif %}
 
 <!-- Acciones Rápidas - Para usuarios web (Dueño, Gerente, Secretaria) -->

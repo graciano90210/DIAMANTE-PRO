@@ -1,0 +1,1382 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard BI - Inteligencia de Negocios | Diamante Pro{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ==================== DARK TECH THEME ====================  */
+    :root {
+        --bg-dark: #0A0E21;
+        --bg-card: #1D1E33;
+        --cyan-neon: #00E5FF;
+        --aqua: #00FFFF;
+        --gold: #FFD700;
+        --success-green: #00FF99;
+        --danger-red: #FF3366;
+        --purple-accent: #BB86FC;
+        --text-primary: #FFFFFF;
+        --text-secondary: #8D8E98;
+        --border-subtle: rgba(0, 229, 255, 0.15);
+    }
+
+    /* ==================== KPI CARDS ==================== */
+    .kpi-card {
+        background: linear-gradient(145deg, var(--bg-card) 0%, #141528 100%);
+        border-radius: 16px;
+        padding: 24px;
+        border: 1px solid var(--border-subtle);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--cyan-neon), var(--aqua));
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 40px rgba(0, 229, 255, 0.15);
+        border-color: var(--cyan-neon);
+    }
+
+    .kpi-card:hover::before {
+        opacity: 1;
+    }
+
+    .kpi-card.gold::before {
+        background: linear-gradient(90deg, var(--gold), #FFA500);
+    }
+
+    .kpi-card.gold:hover {
+        box-shadow: 0 12px 40px rgba(255, 215, 0, 0.15);
+        border-color: var(--gold);
+    }
+
+    .kpi-card.danger::before {
+        background: linear-gradient(90deg, var(--danger-red), #FF6B6B);
+    }
+
+    .kpi-card.danger:hover {
+        box-shadow: 0 12px 40px rgba(255, 51, 102, 0.15);
+        border-color: var(--danger-red);
+    }
+
+    .kpi-card.success::before {
+        background: linear-gradient(90deg, var(--success-green), #00E5FF);
+    }
+
+    .kpi-card.success:hover {
+        box-shadow: 0 12px 40px rgba(0, 255, 153, 0.15);
+        border-color: var(--success-green);
+    }
+
+    .kpi-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        background: rgba(0, 229, 255, 0.1);
+        color: var(--cyan-neon);
+    }
+
+    .kpi-icon.gold {
+        background: rgba(255, 215, 0, 0.1);
+        color: var(--gold);
+    }
+
+    .kpi-icon.danger {
+        background: rgba(255, 51, 102, 0.1);
+        color: var(--danger-red);
+    }
+
+    .kpi-icon.success {
+        background: rgba(0, 255, 153, 0.1);
+        color: var(--success-green);
+    }
+
+    .kpi-label {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 8px;
+    }
+
+    .kpi-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        font-family: 'Roboto Mono', monospace;
+    }
+
+    .kpi-value.gold {
+        color: var(--gold);
+        text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+    }
+
+    .kpi-value.cyan {
+        color: var(--cyan-neon);
+        text-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+    }
+
+    .kpi-value.danger {
+        color: var(--danger-red);
+    }
+
+    .kpi-value.success {
+        color: var(--success-green);
+    }
+
+    .kpi-subtitle {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        margin-top: 4px;
+    }
+
+    .kpi-change {
+        font-size: 0.85rem;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-weight: 600;
+    }
+
+    .kpi-change.positive {
+        background: rgba(0, 255, 153, 0.15);
+        color: var(--success-green);
+    }
+
+    .kpi-change.negative {
+        background: rgba(255, 51, 102, 0.15);
+        color: var(--danger-red);
+    }
+
+    /* ==================== CHART CONTAINERS ==================== */
+    .chart-container {
+        background: linear-gradient(145deg, var(--bg-card) 0%, #141528 100%);
+        border-radius: 16px;
+        padding: 24px;
+        border: 1px solid var(--border-subtle);
+        margin-bottom: 24px;
+    }
+
+    .chart-title {
+        color: var(--text-primary);
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .chart-title i {
+        color: var(--cyan-neon);
+    }
+
+    .chart-title .badge {
+        font-size: 0.7rem;
+        padding: 4px 10px;
+        background: rgba(0, 229, 255, 0.15);
+        color: var(--cyan-neon);
+        border-radius: 20px;
+        font-weight: 500;
+    }
+
+    /* ==================== FLUJO DE CAJA ==================== */
+    .flujo-caja-card {
+        background: linear-gradient(145deg, #0D1A2D 0%, var(--bg-card) 100%);
+        border: 1px solid var(--border-subtle);
+        border-radius: 16px;
+        padding: 28px;
+    }
+
+    .flujo-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .flujo-item:last-child {
+        border-bottom: none;
+        padding-top: 20px;
+        margin-top: 8px;
+        border-top: 2px solid var(--cyan-neon);
+    }
+
+    .flujo-label {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+    }
+
+    .flujo-label i {
+        font-size: 1.3rem;
+    }
+
+    .flujo-value {
+        font-size: 1.3rem;
+        font-weight: 700;
+        font-family: 'Roboto Mono', monospace;
+    }
+
+    .flujo-value.positive {
+        color: var(--success-green);
+    }
+
+    .flujo-value.negative {
+        color: var(--danger-red);
+    }
+
+    /* ==================== MOROSIDAD GAUGE ==================== */
+    .morosidad-container {
+        text-align: center;
+        padding: 20px;
+    }
+
+    .morosidad-gauge {
+        position: relative;
+        width: 200px;
+        height: 200px;
+        margin: 0 auto 20px;
+    }
+
+    .morosidad-stats {
+        display: flex;
+        justify-content: space-around;
+        margin-top: 20px;
+    }
+
+    .morosidad-stat {
+        text-align: center;
+    }
+
+    .morosidad-stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        font-family: 'Roboto Mono', monospace;
+    }
+
+    .morosidad-stat-label {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+    }
+
+    /* ==================== PROGRESS BARS ==================== */
+    .progress-bar-custom {
+        height: 10px;
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.1);
+        overflow: hidden;
+        margin-top: 8px;
+    }
+
+    .progress-bar-fill {
+        height: 100%;
+        border-radius: 5px;
+        transition: width 1s ease;
+    }
+
+    .progress-bar-fill.cyan {
+        background: linear-gradient(90deg, var(--cyan-neon), var(--aqua));
+        box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+    }
+
+    .progress-bar-fill.gold {
+        background: linear-gradient(90deg, var(--gold), #FFA500);
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+    }
+
+    .progress-bar-fill.success {
+        background: linear-gradient(90deg, var(--success-green), var(--cyan-neon));
+        box-shadow: 0 0 15px rgba(0, 255, 153, 0.4);
+    }
+
+    .progress-bar-fill.danger {
+        background: linear-gradient(90deg, var(--danger-red), #FF6B6B);
+        box-shadow: 0 0 15px rgba(255, 51, 102, 0.4);
+    }
+
+    /* ==================== TOP DEUDORES ==================== */
+    .deudor-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 16px;
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 10px;
+        margin-bottom: 10px;
+        border: 1px solid transparent;
+        transition: all 0.2s ease;
+    }
+
+    .deudor-item:hover {
+        background: rgba(0, 229, 255, 0.05);
+        border-color: var(--border-subtle);
+    }
+
+    .deudor-rank {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--cyan-neon), var(--aqua));
+        color: var(--bg-dark);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.85rem;
+    }
+
+    .deudor-info {
+        flex: 1;
+        margin-left: 14px;
+    }
+
+    .deudor-name {
+        color: var(--text-primary);
+        font-weight: 500;
+        font-size: 0.95rem;
+    }
+
+    .deudor-status {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+    }
+
+    .deudor-status.atrasado {
+        color: var(--danger-red);
+    }
+
+    .deudor-saldo {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--gold);
+        font-family: 'Roboto Mono', monospace;
+    }
+
+    /* ==================== FILTER PANEL ==================== */
+    .filter-panel {
+        background: linear-gradient(145deg, var(--bg-card) 0%, #141528 100%);
+        border-radius: 16px;
+        padding: 20px 24px;
+        border: 1px solid var(--border-subtle);
+        margin-bottom: 24px;
+    }
+
+    .filter-panel .form-control,
+    .filter-panel .form-select {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: var(--text-primary);
+        border-radius: 10px;
+        padding: 10px 16px;
+    }
+
+    .filter-panel .form-control:focus,
+    .filter-panel .form-select:focus {
+        background: rgba(0, 0, 0, 0.4);
+        border-color: var(--cyan-neon);
+        box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.1);
+    }
+
+    .filter-panel .btn-primary {
+        background: linear-gradient(135deg, var(--cyan-neon), var(--aqua));
+        border: none;
+        color: var(--bg-dark);
+        font-weight: 600;
+        padding: 10px 24px;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+    }
+
+    .filter-panel .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 229, 255, 0.3);
+    }
+
+    /* ==================== TABLE STYLES ==================== */
+    .table-dark-tech {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .table-dark-tech thead th {
+        background: rgba(0, 229, 255, 0.08);
+        color: var(--cyan-neon);
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 14px 16px;
+        border: none;
+    }
+
+    .table-dark-tech thead th:first-child {
+        border-radius: 10px 0 0 10px;
+    }
+
+    .table-dark-tech thead th:last-child {
+        border-radius: 0 10px 10px 0;
+    }
+
+    .table-dark-tech tbody td {
+        padding: 14px 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        color: var(--text-primary);
+        font-size: 0.9rem;
+    }
+
+    .table-dark-tech tbody tr:hover {
+        background: rgba(0, 229, 255, 0.03);
+    }
+
+    .table-dark-tech .text-gold {
+        color: var(--gold);
+        font-weight: 600;
+        font-family: 'Roboto Mono', monospace;
+    }
+
+    /* ==================== ANIMATIONS ==================== */
+    @keyframes pulse-glow {
+        0%, 100% { box-shadow: 0 0 20px rgba(0, 229, 255, 0.2); }
+        50% { box-shadow: 0 0 40px rgba(0, 229, 255, 0.4); }
+    }
+
+    @keyframes number-count {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-value {
+        animation: number-count 0.5s ease forwards;
+    }
+
+    /* ==================== LIVE INDICATOR ==================== */
+    .live-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.75rem;
+        color: var(--success-green);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .live-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--success-green);
+        animation: pulse-dot 2s infinite;
+    }
+
+    @keyframes pulse-dot {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(1.2); }
+    }
+
+    /* ==================== RESPONSIVE ==================== */
+    @media (max-width: 768px) {
+        .kpi-value {
+            font-size: 1.4rem;
+        }
+
+        .kpi-card {
+            padding: 18px;
+        }
+
+        .chart-container {
+            padding: 18px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block page_title %}
+<i class="bi bi-bar-chart-line-fill me-2" style="color: var(--cyan-neon);"></i>
+Dashboard de Inteligencia de Negocios
+<span class="live-indicator ms-3">
+    <span class="live-dot"></span>
+    En Vivo
+</span>
+{% endblock %}
+
+{% block navbar_actions %}
+<a href="/reporte/cuadre-pdf?fecha={{ fecha_fin }}" class="btn btn-action" target="_blank">
+    <i class="bi bi-file-pdf me-1"></i> Exportar PDF
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- ==================== FILTROS ==================== -->
+<div class="filter-panel">
+    <form method="GET" action="{{ url_for('reportes.reportes') }}">
+        <div class="row align-items-end g-3">
+            <div class="col-md-2">
+                <label class="form-label text-white-50 small">Fecha Inicio</label>
+                <input type="date" name="fecha_inicio" class="form-control" value="{{ fecha_inicio }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label text-white-50 small">Fecha Fin</label>
+                <input type="date" name="fecha_fin" class="form-control" value="{{ fecha_fin }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-white-50 small"><i class="bi bi-building me-1"></i>Oficina</label>
+                <select name="oficina_id" class="form-select" id="selectOficina">
+                    <option value="">Todas las Oficinas</option>
+                    {% for oficina in todas_las_oficinas %}
+                    <option value="{{ oficina.id }}" {% if oficina_seleccionada and oficina_seleccionada.id == oficina.id %}selected{% endif %}>
+                        {{ oficina.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-white-50 small"><i class="bi bi-signpost-2 me-1"></i>Ruta</label>
+                <select name="ruta_id" class="form-select" id="selectRuta">
+                    <option value="">Todas las Rutas</option>
+                    {% for ruta in todas_las_rutas %}
+                    <option value="{{ ruta.id }}" data-oficina="{{ ruta.oficina_id }}" {% if ruta_seleccionada and ruta_seleccionada.id == ruta.id %}selected{% endif %}>
+                        {{ ruta.nombre }} {% if ruta.moneda %}({{ ruta.moneda }}){% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel me-1"></i> Aplicar
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- ==================== KPIs PRINCIPALES ==================== -->
+<div class="row g-4 mb-4">
+    <!-- Capital Prestado -->
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <p class="kpi-label">Capital Prestado</p>
+                </div>
+                <div class="kpi-icon">
+                    <i class="bi bi-cash-stack"></i>
+                </div>
+            </div>
+            <div class="kpi-monedas">
+                {% if metricas.metricas_por_moneda and metricas.metricas_por_moneda|length > 0 %}
+                    {% for moneda, datos in metricas.metricas_por_moneda.items() %}
+                    <div class="d-flex justify-content-between align-items-center {% if not loop.last %}mb-2 pb-2{% endif %}" style="{% if not loop.last %}border-bottom: 1px solid rgba(255,255,255,0.1);{% endif %}">
+                        <span class="badge" style="background: rgba(0, 229, 255, 0.2); color: var(--cyan-neon);">{{ moneda }}</span>
+                        <span class="kpi-value cyan" style="font-size: 1.4rem;">${{ "{:,.0f}".format(datos.capital) }}</span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <h3 class="kpi-value cyan">$<span class="counter" data-target="{{ metricas.capital_prestado }}">{{ "{:,.0f}".format(metricas.capital_prestado) }}</span></h3>
+                {% endif %}
+            </div>
+            <p class="kpi-subtitle mt-2">{{ metricas.total_prestamos_activos }} préstamos activos</p>
+        </div>
+    </div>
+
+    <!-- Cartera Total -->
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card gold">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <p class="kpi-label">Cartera Total</p>
+                </div>
+                <div class="kpi-icon gold">
+                    <i class="bi bi-wallet2"></i>
+                </div>
+            </div>
+            <div class="kpi-monedas">
+                {% if metricas.metricas_por_moneda and metricas.metricas_por_moneda|length > 0 %}
+                    {% for moneda, datos in metricas.metricas_por_moneda.items() %}
+                    <div class="d-flex justify-content-between align-items-center {% if not loop.last %}mb-2 pb-2{% endif %}" style="{% if not loop.last %}border-bottom: 1px solid rgba(255,255,255,0.1);{% endif %}">
+                        <span class="badge" style="background: rgba(255, 215, 0, 0.2); color: var(--gold);">{{ moneda }}</span>
+                        <span class="kpi-value gold" style="font-size: 1.4rem;">${{ "{:,.0f}".format(datos.cartera) }}</span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <h3 class="kpi-value gold">$<span class="counter" data-target="{{ metricas.cartera_total }}">{{ "{:,.0f}".format(metricas.cartera_total) }}</span></h3>
+                {% endif %}
+            </div>
+            <p class="kpi-subtitle mt-2">Por cobrar actualmente</p>
+        </div>
+    </div>
+
+    <!-- Ganancia Esperada -->
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card success">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <p class="kpi-label">Ganancia Esperada</p>
+                </div>
+                <div class="kpi-icon success">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+            </div>
+            <div class="kpi-monedas">
+                {% if metricas.metricas_por_moneda and metricas.metricas_por_moneda|length > 0 %}
+                    {% for moneda, datos in metricas.metricas_por_moneda.items() %}
+                    <div class="d-flex justify-content-between align-items-center {% if not loop.last %}mb-2 pb-2{% endif %}" style="{% if not loop.last %}border-bottom: 1px solid rgba(255,255,255,0.1);{% endif %}">
+                        <span class="badge" style="background: rgba(0, 255, 153, 0.2); color: var(--success-green);">{{ moneda }}</span>
+                        <span class="kpi-value success" style="font-size: 1.4rem;">${{ "{:,.0f}".format(datos.ganancia) }}</span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <h3 class="kpi-value success">$<span class="counter" data-target="{{ metricas.ganancia_esperada }}">{{ "{:,.0f}".format(metricas.ganancia_esperada) }}</span></h3>
+                {% endif %}
+            </div>
+            <p class="kpi-subtitle mt-2">Intereses por cobrar</p>
+        </div>
+    </div>
+
+    <!-- Tasa de Morosidad -->
+    <div class="col-lg-3 col-md-6">
+        <div class="kpi-card {% if metricas.tasa_morosidad > 30 %}danger{% elif metricas.tasa_morosidad > 15 %}gold{% else %}success{% endif %}">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <p class="kpi-label">Tasa de Morosidad</p>
+                    <h3 class="kpi-value {% if metricas.tasa_morosidad > 30 %}danger{% elif metricas.tasa_morosidad > 15 %}gold{% else %}success{% endif %}">{{ metricas.tasa_morosidad }}%</h3>
+                    <p class="kpi-subtitle">{{ metricas.prestamos_atrasados }} clientes atrasados</p>
+                </div>
+                <div class="kpi-icon {% if metricas.tasa_morosidad > 30 %}danger{% elif metricas.tasa_morosidad > 15 %}gold{% else %}success{% endif %}">
+                    <i class="bi bi-exclamation-triangle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== FLUJO DE CAJA + GRÁFICO TENDENCIA ==================== -->
+<div class="row g-4 mb-4">
+    <!-- Flujo de Caja Diario -->
+    <div class="col-lg-4">
+        <div class="chart-container flujo-caja-card h-100">
+            <h5 class="chart-title">
+                <i class="bi bi-arrow-left-right"></i>
+                Flujo de Caja Hoy
+                <span class="badge">{{ now().strftime('%d/%m') if now is defined else '' }}</span>
+            </h5>
+
+            {% if metricas.metricas_por_moneda and metricas.metricas_por_moneda|length > 1 %}
+            <!-- Mostrar por cada moneda -->
+            {% for moneda, datos in metricas.metricas_por_moneda.items() %}
+            <div class="mb-3 pb-3" style="{% if not loop.last %}border-bottom: 1px solid rgba(0, 229, 255, 0.2);{% endif %}">
+                <div class="d-flex align-items-center mb-2">
+                    <span class="badge me-2" style="background: var(--cyan-neon); color: var(--bg-dark); font-size: 0.85rem; padding: 6px 12px;">{{ moneda }}</span>
+                    <small class="text-white-50">{% if moneda == 'COP' %}Pesos{% elif moneda == 'BRL' %}Reales{% else %}{{ moneda }}{% endif %}</small>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="small text-white-50"><i class="bi bi-arrow-down-circle-fill text-success me-1"></i>Ingresos</span>
+                    <span class="flujo-value positive" style="font-size: 1rem;">+${{ "{:,.0f}".format(datos.ingresos_hoy) }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="small text-white-50"><i class="bi bi-arrow-up-circle-fill text-danger me-1"></i>Egresos</span>
+                    <span class="flujo-value negative" style="font-size: 1rem;">-${{ "{:,.0f}".format(datos.egresos_hoy) }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="small fw-bold text-white"><i class="bi bi-bank text-info me-1"></i>Balance</span>
+                    <span class="flujo-value {% if datos.flujo_neto_hoy >= 0 %}positive{% else %}negative{% endif %}" style="font-size: 1.1rem;">
+                        {% if datos.flujo_neto_hoy >= 0 %}+{% endif %}${{ "{:,.0f}".format(datos.flujo_neto_hoy) }}
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <!-- Vista simple si hay una sola moneda -->
+            <div class="flujo-item">
+                <div class="flujo-label">
+                    <i class="bi bi-arrow-down-circle-fill text-success"></i>
+                    Ingresos (Cobros)
+                </div>
+                <div class="flujo-value positive">+${{ "{:,.0f}".format(metricas.ingresos_hoy) }}</div>
+            </div>
+
+            <div class="flujo-item">
+                <div class="flujo-label">
+                    <i class="bi bi-arrow-up-circle-fill text-danger"></i>
+                    Egresos (Préstamos)
+                </div>
+                <div class="flujo-value negative">-${{ "{:,.0f}".format(metricas.egresos_hoy) }}</div>
+            </div>
+
+            <div class="flujo-item">
+                <div class="flujo-label">
+                    <i class="bi bi-receipt text-warning"></i>
+                    Gastos Operativos
+                </div>
+                <div class="flujo-value negative">-${{ "{:,.0f}".format(metricas.gastos_hoy) }}</div>
+            </div>
+
+            <div class="flujo-item">
+                <div class="flujo-label">
+                    <i class="bi bi-bank text-info" style="font-size: 1.5rem;"></i>
+                    <strong style="color: white;">Balance Neto</strong>
+                </div>
+                <div class="flujo-value {% if metricas.flujo_caja_hoy >= 0 %}positive{% else %}negative{% endif %}" style="font-size: 1.6rem;">
+                    {% if metricas.flujo_caja_hoy >= 0 %}+{% endif %}${{ "{:,.0f}".format(metricas.flujo_caja_hoy) }}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Barra de progreso cobro del día -->
+            <div class="mt-4 pt-3" style="border-top: 1px solid rgba(255,255,255,0.1);">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-white-50 small">Tasa de Cobro Hoy</span>
+                    <span class="fw-bold" style="color: var(--cyan-neon);">{{ metricas.tasa_cobro_hoy }}%</span>
+                </div>
+                <div class="progress-bar-custom">
+                    <div class="progress-bar-fill {% if metricas.tasa_cobro_hoy >= 80 %}success{% elif metricas.tasa_cobro_hoy >= 50 %}cyan{% else %}danger{% endif %}"
+                         style="width: {{ metricas.tasa_cobro_hoy }}%;"></div>
+                </div>
+                <div class="d-flex justify-content-between mt-2">
+                    <small class="text-white-50">Cobrado: ${{ "{:,.0f}".format(metricas.ingresos_hoy) }}</small>
+                    <small class="text-white-50">Meta: ${{ "{:,.0f}".format(metricas.por_cobrar_hoy) }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico de Tendencia 30 días -->
+    <div class="col-lg-8">
+        <div class="chart-container h-100">
+            <h5 class="chart-title">
+                <i class="bi bi-graph-up"></i>
+                Tendencia de Cobros vs Préstamos
+                <span class="badge">Últimos 30 días</span>
+            </h5>
+            <div id="chartTendencia" style="height: 320px;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== DISTRIBUCIÓN DE CARTERA + MOROSIDAD ==================== -->
+<div class="row g-4 mb-4">
+    <!-- Distribución de Cartera por Estado -->
+    <div class="col-lg-4">
+        <div class="chart-container h-100">
+            <h5 class="chart-title">
+                <i class="bi bi-pie-chart-fill"></i>
+                Distribución de Cartera
+            </h5>
+            <div id="chartDistribucion" style="height: 280px;"></div>
+
+            <!-- Leyenda personalizada por moneda (siempre mostrar por moneda) -->
+            {% if metricas.metricas_por_moneda and metricas.metricas_por_moneda|length > 0 %}
+            {% for moneda, datos in metricas.metricas_por_moneda.items() %}
+            <div class="mb-2 p-2" style="background: rgba(0,0,0,0.2); border-radius: 8px;">
+                <div class="d-flex align-items-center mb-2">
+                    <span class="badge" style="background: var(--cyan-neon); color: var(--bg-dark);">{{ moneda }}</span>
+                    <small class="text-white-50 ms-2">{% if moneda == 'COP' %}Pesos{% elif moneda == 'BRL' %}Reales{% else %}{{ moneda }}{% endif %}</small>
+                </div>
+                <div class="row text-center">
+                    <div class="col-4">
+                        <div class="fw-bold small" style="color: var(--success-green);">${{ "{:,.0f}".format(datos.cartera_al_dia / 1000) }}K</div>
+                        <small class="text-white-50" style="font-size: 0.65rem;">Al Día</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="fw-bold small" style="color: var(--gold);">${{ "{:,.0f}".format(datos.cartera_atraso_leve / 1000) }}K</div>
+                        <small class="text-white-50" style="font-size: 0.65rem;">Atraso</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="fw-bold small" style="color: var(--danger-red);">${{ "{:,.0f}".format(datos.cartera_mora_grave / 1000) }}K</div>
+                        <small class="text-white-50" style="font-size: 0.65rem;">Mora</small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="row mt-3 text-center">
+                <div class="col-4">
+                    <div class="fw-bold" style="color: var(--success-green);">${{ "{:,.0f}".format(metricas.cartera_al_dia / 1000) }}K</div>
+                    <small class="text-white-50">Al Día</small>
+                </div>
+                <div class="col-4">
+                    <div class="fw-bold" style="color: var(--gold);">${{ "{:,.0f}".format(metricas.cartera_atraso_leve / 1000) }}K</div>
+                    <small class="text-white-50">Atraso Leve</small>
+                </div>
+                <div class="col-4">
+                    <div class="fw-bold" style="color: var(--danger-red);">${{ "{:,.0f}".format(metricas.cartera_mora_grave / 1000) }}K</div>
+                    <small class="text-white-50">Mora Grave</small>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Indicador de Morosidad -->
+    <div class="col-lg-4">
+        <div class="chart-container h-100">
+            <h5 class="chart-title">
+                <i class="bi bi-speedometer2"></i>
+                Indicador de Salud de Cartera
+            </h5>
+            <div id="chartMorosidad" style="height: 250px;"></div>
+
+            <div class="morosidad-stats">
+                <div class="morosidad-stat">
+                    <div class="morosidad-stat-value" style="color: var(--success-green);">{{ metricas.prestamos_al_dia }}</div>
+                    <div class="morosidad-stat-label">Al Día</div>
+                </div>
+                <div class="morosidad-stat">
+                    <div class="morosidad-stat-value" style="color: var(--gold);">{{ metricas.prestamos_atrasados - metricas.prestamos_mora_grave }}</div>
+                    <div class="morosidad-stat-label">Atrasados</div>
+                </div>
+                <div class="morosidad-stat">
+                    <div class="morosidad-stat-value" style="color: var(--danger-red);">{{ metricas.prestamos_mora_grave }}</div>
+                    <div class="morosidad-stat-label">En Mora</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Distribución por Frecuencia -->
+    <div class="col-lg-4">
+        <div class="chart-container h-100">
+            <h5 class="chart-title">
+                <i class="bi bi-calendar3"></i>
+                Préstamos por Frecuencia
+            </h5>
+            <div id="chartFrecuencia" style="height: 300px;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== TOP DEUDORES + RENDIMIENTO COBRADORES ==================== -->
+<div class="row g-4 mb-4">
+    <!-- Top 5 Deudores -->
+    <div class="col-lg-5">
+        <div class="chart-container h-100">
+            <h5 class="chart-title">
+                <i class="bi bi-trophy"></i>
+                Top 5 Mayores Deudores
+                <span class="badge" style="background: var(--gold); color: var(--bg-dark);">${{ "{:,.0f}".format(metricas.top_deudores|sum(attribute='saldo') if metricas.top_deudores else 0) }}</span>
+            </h5>
+
+            {% for deudor in metricas.top_deudores %}
+            <div class="deudor-item">
+                <div class="deudor-rank">{{ loop.index }}</div>
+                <div class="deudor-info">
+                    <div class="deudor-name">{{ deudor.nombre }}</div>
+                    <div class="deudor-status {% if deudor.atraso > 0 %}atrasado{% endif %}">
+                        {% if deudor.atraso > 0 %}
+                            <i class="bi bi-exclamation-circle me-1"></i>{{ deudor.atraso }} cuotas atrasadas
+                        {% else %}
+                            <i class="bi bi-check-circle me-1"></i>Al día
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="deudor-saldo">${{ "{:,.0f}".format(deudor.saldo) }}</div>
+            </div>
+            {% endfor %}
+
+            {% if not metricas.top_deudores %}
+            <div class="text-center text-white-50 py-5">
+                <i class="bi bi-inbox fs-1 mb-3 d-block"></i>
+                No hay deudores registrados
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Rendimiento por Cobrador -->
+    <div class="col-lg-7">
+        <div class="chart-container h-100">
+            <h5 class="chart-title">
+                <i class="bi bi-person-badge"></i>
+                Rendimiento por Cobrador
+                <span class="badge">Período seleccionado</span>
+            </h5>
+
+            {% if metricas.cobros_por_cobrador %}
+            <div class="table-responsive">
+                <table class="table-dark-tech">
+                    <thead>
+                        <tr>
+                            <th>Cobrador</th>
+                            <th class="text-center">Pagos</th>
+                            <th class="text-end">Total Cobrado</th>
+                            <th class="text-end">Promedio</th>
+                            <th>Rendimiento</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set max_cobrado = metricas.cobros_por_cobrador|map(attribute='total')|max if metricas.cobros_por_cobrador else 1 %}
+                        {% for cobrador in metricas.cobros_por_cobrador %}
+                        <tr>
+                            <td>
+                                <i class="bi bi-person-circle me-2" style="color: var(--cyan-neon);"></i>
+                                {{ cobrador.nombre }}
+                            </td>
+                            <td class="text-center">
+                                <span class="badge" style="background: rgba(0, 229, 255, 0.2); color: var(--cyan-neon);">
+                                    {{ cobrador.pagos }}
+                                </span>
+                            </td>
+                            <td class="text-end text-gold">${{ "{:,.0f}".format(cobrador.total) }}</td>
+                            <td class="text-end">${{ "{:,.0f}".format(cobrador.total / cobrador.pagos) if cobrador.pagos > 0 else 0 }}</td>
+                            <td style="width: 120px;">
+                                <div class="progress-bar-custom" style="height: 6px;">
+                                    <div class="progress-bar-fill gold" style="width: {{ (cobrador.total / max_cobrado * 100)|int }}%;"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center text-white-50 py-5">
+                <i class="bi bi-people fs-1 mb-3 d-block"></i>
+                Sin datos de cobradores para el período
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- ==================== RESUMEN POR MONEDA ==================== -->
+{% if metricas.metricas_por_moneda and metricas.metricas_por_moneda|length > 1 %}
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="chart-container">
+            <h5 class="chart-title">
+                <i class="bi bi-currency-exchange"></i>
+                Resumen Completo por Moneda
+            </h5>
+            <div class="row">
+                {% for moneda, datos in metricas.metricas_por_moneda.items() %}
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="p-4" style="background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid var(--border-subtle);">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="d-flex align-items-center">
+                                <span class="badge me-2" style="background: var(--cyan-neon); color: var(--bg-dark); font-size: 1rem; padding: 8px 14px;">{{ moneda }}</span>
+                                <span class="text-white-50 small">{% if moneda == 'COP' %}Pesos Colombianos{% elif moneda == 'BRL' %}Reales Brasileños{% else %}{{ moneda }}{% endif %}</span>
+                            </div>
+                        </div>
+                        <div class="row text-center mb-3">
+                            <div class="col-4">
+                                <div class="small text-white-50">Capital</div>
+                                <div class="fw-bold" style="color: var(--cyan-neon);">${{ "{:,.0f}".format(datos.capital) }}</div>
+                            </div>
+                            <div class="col-4">
+                                <div class="small text-white-50">Cartera</div>
+                                <div class="fw-bold" style="color: var(--gold);">${{ "{:,.0f}".format(datos.cartera) }}</div>
+                            </div>
+                            <div class="col-4">
+                                <div class="small text-white-50">Ganancia</div>
+                                <div class="fw-bold" style="color: var(--success-green);">${{ "{:,.0f}".format(datos.ganancia) }}</div>
+                            </div>
+                        </div>
+                        <hr style="border-color: rgba(255,255,255,0.1);">
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <div class="small text-white-50">Al Día</div>
+                                <div class="fw-bold small" style="color: var(--success-green);">${{ "{:,.0f}".format(datos.cartera_al_dia / 1000) }}K</div>
+                            </div>
+                            <div class="col-4">
+                                <div class="small text-white-50">Atraso</div>
+                                <div class="fw-bold small" style="color: var(--gold);">${{ "{:,.0f}".format(datos.cartera_atraso_leve / 1000) }}K</div>
+                            </div>
+                            <div class="col-4">
+                                <div class="small text-white-50">Mora</div>
+                                <div class="fw-bold small" style="color: var(--danger-red);">${{ "{:,.0f}".format(datos.monto_en_mora / 1000) }}K</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ==================== RESUMEN GENERAL ==================== -->
+<div class="row g-4">
+    <div class="col-12">
+        <div class="chart-container">
+            <h5 class="chart-title">
+                <i class="bi bi-clipboard-data"></i>
+                Resumen General del Negocio
+            </h5>
+            <div class="row text-center py-3">
+                <div class="col-md-2 col-6 mb-3">
+                    <h2 style="color: var(--cyan-neon); font-family: 'Roboto Mono', monospace;">{{ total_clientes }}</h2>
+                    <p class="text-white-50 mb-0 small">Total Clientes</p>
+                </div>
+                <div class="col-md-2 col-6 mb-3">
+                    <h2 style="color: var(--success-green); font-family: 'Roboto Mono', monospace;">{{ metricas.total_prestamos_activos }}</h2>
+                    <p class="text-white-50 mb-0 small">Préstamos Activos</p>
+                </div>
+                <div class="col-md-2 col-6 mb-3">
+                    <h2 style="color: var(--purple-accent); font-family: 'Roboto Mono', monospace;">{{ prestamos_cancelados }}</h2>
+                    <p class="text-white-50 mb-0 small">Finalizados</p>
+                </div>
+                <div class="col-md-2 col-6 mb-3">
+                    <h2 style="color: var(--gold); font-family: 'Roboto Mono', monospace;">${{ "{:,.0f}".format(metricas.capital_recuperado / 1000000) }}M</h2>
+                    <p class="text-white-50 mb-0 small">Capital Recuperado</p>
+                </div>
+                <div class="col-md-2 col-6 mb-3">
+                    {% if metricas.metricas_por_moneda and metricas.metricas_por_moneda|length > 1 %}
+                    <div>
+                        {% for moneda, datos in metricas.metricas_por_moneda.items() %}
+                        <div class="d-flex justify-content-center align-items-center gap-1 mb-1">
+                            <small class="badge" style="background: rgba(255, 51, 102, 0.3); font-size: 0.6rem;">{{ moneda }}</small>
+                            <span style="color: var(--danger-red); font-family: 'Roboto Mono', monospace; font-size: 1rem;">${{ "{:,.0f}".format(datos.monto_en_mora / 1000) }}K</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <h2 style="color: var(--danger-red); font-family: 'Roboto Mono', monospace;">${{ "{:,.0f}".format(metricas.monto_en_mora / 1000) }}K</h2>
+                    {% endif %}
+                    <p class="text-white-50 mb-0 small">En Mora</p>
+                </div>
+                <div class="col-md-2 col-6 mb-3">
+                    <h2 style="color: var(--aqua); font-family: 'Roboto Mono', monospace;">{{ metricas.tasa_mora_grave }}%</h2>
+                    <p class="text-white-50 mb-0 small">Mora Grave (&gt;3)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- ApexCharts Library -->
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.45.1/dist/apexcharts.min.js"></script>
+
+<script>
+// ==================== COLORES DARK TECH ====================
+const colors = {
+    cyan: '#00E5FF',
+    aqua: '#00FFFF',
+    gold: '#FFD700',
+    success: '#00FF99',
+    danger: '#FF3366',
+    purple: '#BB86FC',
+    bgCard: '#1D1E33',
+    bgDark: '#0A0E21',
+    textSecondary: '#8D8E98'
+};
+
+// ==================== CONFIGURACIÓN GLOBAL ====================
+Apex.chart = {
+    fontFamily: 'system-ui, -apple-system, sans-serif',
+    foreColor: colors.textSecondary,
+    toolbar: { show: false },
+    animations: {
+        enabled: true,
+        speed: 800,
+        animateGradually: { enabled: true, delay: 150 }
+    }
+};
+
+// ==================== GRÁFICO DE TENDENCIA 30 DÍAS ====================
+const tendenciaOptions = {
+    series: [
+        {
+            name: 'Cobros',
+            data: {{ metricas.tendencia_cobros | tojson }}
+        },
+        {
+            name: 'Préstamos',
+            data: {{ metricas.tendencia_prestamos | tojson }}
+        }
+    ],
+    chart: {
+        type: 'area',
+        height: 320,
+        background: 'transparent',
+        zoom: { enabled: false }
+    },
+    colors: [colors.cyan, colors.gold],
+    fill: {
+        type: 'gradient',
+        gradient: {
+            shadeIntensity: 1,
+            opacityFrom: 0.45,
+            opacityTo: 0.05,
+            stops: [0, 90, 100]
+        }
+    },
+    stroke: {
+        curve: 'smooth',
+        width: 3
+    },
+    dataLabels: { enabled: false },
+    xaxis: {
+        categories: {{ metricas.labels_tendencia | tojson }},
+        labels: {
+            style: { colors: colors.textSecondary },
+            rotate: -45,
+            rotateAlways: false
+        },
+        axisBorder: { show: false },
+        axisTicks: { show: false }
+    },
+    yaxis: {
+        labels: {
+            style: { colors: colors.textSecondary },
+            formatter: (val) => '$' + (val / 1000).toFixed(0) + 'K'
+        }
+    },
+    grid: {
+        borderColor: 'rgba(255, 255, 255, 0.05)',
+        strokeDashArray: 4
+    },
+    legend: {
+        position: 'top',
+        horizontalAlign: 'right',
+        labels: { colors: '#fff' }
+    },
+    tooltip: {
+        theme: 'dark',
+        y: { formatter: (val) => '$ ' + val.toLocaleString() }
+    }
+};
+new ApexCharts(document.querySelector("#chartTendencia"), tendenciaOptions).render();
+
+// ==================== GRÁFICO DE DISTRIBUCIÓN DE CARTERA ====================
+const distribucionOptions = {
+    series: [
+        {{ metricas.cartera_al_dia }},
+        {{ metricas.cartera_atraso_leve }},
+        {{ metricas.cartera_mora_grave }}
+    ],
+    chart: {
+        type: 'donut',
+        height: 280,
+        background: 'transparent'
+    },
+    colors: [colors.success, colors.gold, colors.danger],
+    labels: ['Al Día', 'Atraso Leve (1-3)', 'Mora Grave (+3)'],
+    plotOptions: {
+        pie: {
+            donut: {
+                size: '70%',
+                labels: {
+                    show: true,
+                    total: {
+                        show: true,
+                        label: 'Total Cartera',
+                        color: '#fff',
+                        formatter: () => '${{ "{:,.0f}".format(metricas.cartera_total / 1000) }}K'
+                    }
+                }
+            }
+        }
+    },
+    dataLabels: { enabled: false },
+    legend: { show: false },
+    stroke: { show: true, width: 3, colors: [colors.bgCard] },
+    tooltip: {
+        theme: 'dark',
+        y: { formatter: (val) => '$ ' + val.toLocaleString() }
+    }
+};
+new ApexCharts(document.querySelector("#chartDistribucion"), distribucionOptions).render();
+
+// ==================== GRÁFICO DE MOROSIDAD (RADIAL) ====================
+const saludCartera = 100 - {{ metricas.tasa_morosidad }};
+const morosidadOptions = {
+    series: [saludCartera],
+    chart: {
+        type: 'radialBar',
+        height: 250,
+        background: 'transparent'
+    },
+    plotOptions: {
+        radialBar: {
+            startAngle: -135,
+            endAngle: 135,
+            hollow: {
+                size: '65%',
+                background: 'transparent'
+            },
+            track: {
+                background: 'rgba(255, 255, 255, 0.1)',
+                strokeWidth: '100%'
+            },
+            dataLabels: {
+                name: {
+                    show: true,
+                    fontSize: '14px',
+                    color: colors.textSecondary,
+                    offsetY: -10
+                },
+                value: {
+                    show: true,
+                    fontSize: '32px',
+                    fontWeight: 700,
+                    color: saludCartera >= 70 ? colors.success : saludCartera >= 50 ? colors.gold : colors.danger,
+                    offsetY: 10,
+                    formatter: () => saludCartera.toFixed(0) + '%'
+                }
+            }
+        }
+    },
+    fill: {
+        type: 'gradient',
+        gradient: {
+            shade: 'dark',
+            type: 'horizontal',
+            colorStops: [
+                { offset: 0, color: colors.danger },
+                { offset: 50, color: colors.gold },
+                { offset: 100, color: colors.success }
+            ]
+        }
+    },
+    labels: ['Salud de Cartera'],
+    stroke: { lineCap: 'round' }
+};
+new ApexCharts(document.querySelector("#chartMorosidad"), morosidadOptions).render();
+
+// ==================== GRÁFICO DE FRECUENCIA ====================
+const frecuenciaData = {{ metricas.distribucion_frecuencia | tojson }};
+const frecuenciaOptions = {
+    series: [{
+        name: 'Préstamos',
+        data: frecuenciaData.map(f => f.cantidad)
+    }],
+    chart: {
+        type: 'bar',
+        height: 300,
+        background: 'transparent'
+    },
+    colors: [colors.cyan],
+    plotOptions: {
+        bar: {
+            borderRadius: 8,
+            columnWidth: '60%',
+            distributed: true,
+            dataLabels: { position: 'top' }
+        }
+    },
+    dataLabels: {
+        enabled: true,
+        formatter: (val) => val,
+        offsetY: -20,
+        style: { fontSize: '12px', colors: ['#fff'] }
+    },
+    xaxis: {
+        categories: frecuenciaData.map(f => f.frecuencia.replace('_', ' ')),
+        labels: { style: { colors: colors.textSecondary, fontSize: '11px' } },
+        axisBorder: { show: false },
+        axisTicks: { show: false }
+    },
+    yaxis: {
+        labels: { style: { colors: colors.textSecondary } }
+    },
+    grid: {
+        borderColor: 'rgba(255, 255, 255, 0.05)',
+        strokeDashArray: 4
+    },
+    legend: { show: false },
+    tooltip: {
+        theme: 'dark',
+        y: {
+            formatter: (val, { dataPointIndex }) => {
+                const monto = frecuenciaData[dataPointIndex]?.monto || 0;
+                return val + ' préstamos ($' + monto.toLocaleString() + ')';
+            }
+        }
+    }
+};
+new ApexCharts(document.querySelector("#chartFrecuencia"), frecuenciaOptions).render();
+
+// ==================== ANIMACIÓN DE CONTADORES ====================
+document.addEventListener('DOMContentLoaded', function() {
+    const counters = document.querySelectorAll('.counter');
+    counters.forEach(counter => {
+        const target = parseFloat(counter.getAttribute('data-target')) || 0;
+        const duration = 1500;
+        const start = 0;
+        const startTime = performance.now();
+
+        function updateCounter(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const easeOut = 1 - Math.pow(1 - progress, 3);
+            const current = start + (target - start) * easeOut;
+            counter.textContent = Math.floor(current).toLocaleString();
+
+            if (progress < 1) {
+                requestAnimationFrame(updateCounter);
+            }
+        }
+        requestAnimationFrame(updateCounter);
+    });
+});
+
+// ==================== FILTRO DE RUTAS POR OFICINA ====================
+document.addEventListener('DOMContentLoaded', function() {
+    const selectOficina = document.getElementById('selectOficina');
+    const selectRuta = document.getElementById('selectRuta');
+
+    if (selectOficina && selectRuta) {
+        // Guardar todas las opciones de ruta originales
+        const todasLasRutas = Array.from(selectRuta.options).map(opt => ({
+            value: opt.value,
+            text: opt.text,
+            oficina: opt.dataset.oficina
+        }));
+
+        selectOficina.addEventListener('change', function() {
+            const oficinaId = this.value;
+
+            // Limpiar selector de rutas
+            selectRuta.innerHTML = '<option value="">Todas las Rutas</option>';
+
+            // Filtrar rutas según la oficina seleccionada
+            todasLasRutas.forEach(ruta => {
+                if (ruta.value === '') return; // Skip la opción vacía
+
+                // Si no hay oficina seleccionada o la ruta pertenece a la oficina
+                if (!oficinaId || ruta.oficina === oficinaId) {
+                    const option = document.createElement('option');
+                    option.value = ruta.value;
+                    option.text = ruta.text;
+                    option.dataset.oficina = ruta.oficina;
+                    selectRuta.appendChild(option);
+                }
+            });
+        });
+    }
+});
+
+// ==================== AUTO-REFRESH CADA 5 MINUTOS ====================
+setInterval(() => {
+    fetch('/api/reportes/metricas')
+        .then(response => response.json())
+        .then(data => {
+            // Actualizar KPIs principales
+            console.log('Métricas actualizadas:', data);
+        })
+        .catch(err => console.log('Error actualizando métricas:', err));
+}, 300000);
+</script>
+{% endblock %}
