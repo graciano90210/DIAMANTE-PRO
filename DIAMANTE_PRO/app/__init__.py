@@ -128,7 +128,7 @@ def create_app():
     app.register_blueprint(finanzas_bp, url_prefix='/finanzas')
     
     from .blueprints.reportes import reportes_bp
-    app.register_blueprint(reportes_bp)
+    app.register_blueprint(reportes_bp)  # Incluye reporte_ruta, reporte_ruta_pdf
 
     # Registrar API REST para aplicación móvil
     from .api import api as api_blueprint

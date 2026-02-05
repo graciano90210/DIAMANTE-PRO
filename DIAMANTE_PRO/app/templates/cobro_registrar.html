@@ -199,10 +199,29 @@
                         </div>
                     </div>
 
+                    <!-- Método de Pago -->
+                    <div class="mb-4">
+                        <label class="form-label" style="color: rgba(255,255,255,0.8);">Método de Pago *</label>
+                        <div class="d-flex gap-2">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="metodo_pago" id="metodo_efectivo" value="EFECTIVO" checked>
+                                <label class="form-check-label" for="metodo_efectivo" style="color: #00FF99;">
+                                    <i class="bi bi-cash-stack me-1"></i>Efectivo
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="metodo_pago" id="metodo_pix_transfer" value="PIX">
+                                <label class="form-check-label" for="metodo_pix_transfer" style="color: #00E5FF;">
+                                    <i class="bi bi-qr-code me-1"></i>PIX / Transferencia
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Observaciones -->
                     <div class="mb-4">
                         <label class="form-label" style="color: rgba(255,255,255,0.8);">Observaciones (opcional)</label>
-                        <textarea name="observaciones" class="form-control" rows="2" 
+                        <textarea name="observaciones" class="form-control" rows="2"
                                   placeholder="Notas sobre este pago..."></textarea>
                     </div>
 

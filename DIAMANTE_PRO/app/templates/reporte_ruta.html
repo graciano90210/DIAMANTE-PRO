@@ -1,0 +1,722 @@
+{% extends "base.html" %}
+
+{% block title %}Reporte por Ruta - Diamante Pro{% endblock %}
+
+{% block page_title %}
+<i class="bi bi-file-earmark-bar-graph me-2"></i>Reporte por Ruta
+{% endblock %}
+
+{% block navbar_actions %}
+{% if metricas %}
+<button class="btn btn-action" onclick="window.print()">
+    <i class="bi bi-printer me-1"></i> Imprimir
+</button>
+<a href="{{ url_for('reportes.reporte_ruta_pdf', ruta_id=ruta_seleccionada_id, fecha=fecha_reporte) }}" class="btn btn-action">
+    <i class="bi bi-file-pdf me-1"></i> Descargar PDF
+</a>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ==================== ESTILOS REPORTE POR RUTA ==================== */
+    .filter-panel {
+        background: linear-gradient(135deg, #1D1E33 0%, #0A0E21 100%);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 25px;
+        border: 1px solid rgba(0, 229, 255, 0.15);
+    }
+
+    .filter-panel .form-label {
+        color: #00E5FF;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+
+    .filter-panel .form-control,
+    .filter-panel .form-select {
+        background: #0A0E21;
+        border: 1px solid rgba(0, 229, 255, 0.3);
+        color: #fff;
+        border-radius: 8px;
+    }
+
+    .filter-panel .form-control:focus,
+    .filter-panel .form-select:focus {
+        border-color: #00E5FF;
+        box-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+    }
+
+    .filter-panel .btn-aplicar {
+        background: linear-gradient(135deg, #00E5FF 0%, #00FFD4 100%);
+        color: #0A0E21;
+        font-weight: 600;
+        border: none;
+        padding: 10px 25px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .filter-panel .btn-aplicar:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(0, 229, 255, 0.4);
+    }
+
+    /* Header del reporte */
+    .report-header {
+        background: linear-gradient(135deg, #1D1E33 0%, #0A0E21 100%);
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 25px;
+        border-left: 5px solid #00E5FF;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .report-header .ruta-info h2 {
+        color: #00FF99;
+        font-size: 1.8rem;
+        margin-bottom: 5px;
+        font-weight: 700;
+    }
+
+    .report-header .ruta-info .cobrador {
+        color: #8D8E98;
+        font-size: 1rem;
+    }
+
+    .report-header .fecha-info {
+        text-align: right;
+    }
+
+    .report-header .fecha-info .fecha {
+        color: #00E5FF;
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+
+    /* Cuadre de Ruta */
+    .cuadre-ruta {
+        background: linear-gradient(135deg, rgba(0, 229, 255, 0.1) 0%, rgba(0, 255, 153, 0.1) 100%);
+        border: 2px solid #00E5FF;
+        border-radius: 15px;
+        padding: 25px;
+        text-align: center;
+        margin-bottom: 25px;
+    }
+
+    .cuadre-ruta h3 {
+        color: #00E5FF;
+        font-size: 1.1rem;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    .cuadre-ruta .cuadre-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .cuadre-ruta .cuadre-row:last-child {
+        border-bottom: none;
+    }
+
+    .cuadre-ruta .cuadre-label {
+        color: #8D8E98;
+    }
+
+    .cuadre-ruta .cuadre-value {
+        font-weight: 600;
+        color: #fff;
+    }
+
+    .cuadre-ruta .cuadre-value.positive {
+        color: #00FF99;
+    }
+
+    .cuadre-ruta .cuadre-value.negative {
+        color: #FF3366;
+    }
+
+    .cuadre-ruta .total-caja {
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 2px solid #00E5FF;
+    }
+
+    .cuadre-ruta .total-caja .value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #00FF99;
+    }
+
+    /* Secciones */
+    .section-card {
+        background: linear-gradient(135deg, #1D1E33 0%, #0A0E21 100%);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .section-card .section-title {
+        color: #00E5FF;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid rgba(0, 229, 255, 0.3);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .section-card .section-title i {
+        font-size: 1.3rem;
+    }
+
+    /* Stat Cards */
+    .stat-mini {
+        background: rgba(0, 229, 255, 0.08);
+        border-radius: 10px;
+        padding: 15px;
+        text-align: center;
+        border: 1px solid rgba(0, 229, 255, 0.2);
+    }
+
+    .stat-mini .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #00E5FF;
+    }
+
+    .stat-mini .stat-label {
+        color: #8D8E98;
+        font-size: 0.8rem;
+        margin-top: 5px;
+    }
+
+    .stat-mini.pix {
+        background: rgba(0, 229, 255, 0.15);
+        border-color: #00E5FF;
+    }
+
+    .stat-mini.efectivo {
+        background: rgba(0, 255, 153, 0.15);
+        border-color: #00FF99;
+    }
+
+    .stat-mini.efectivo .stat-value {
+        color: #00FF99;
+    }
+
+    .stat-mini.transfer {
+        background: rgba(255, 215, 0, 0.15);
+        border-color: #FFD700;
+    }
+
+    .stat-mini.transfer .stat-value {
+        color: #FFD700;
+    }
+
+    /* Tablas */
+    .table-dark-custom {
+        background: transparent;
+        color: #fff;
+    }
+
+    .table-dark-custom thead th {
+        background: #0A0E21;
+        color: #00E5FF;
+        font-weight: 600;
+        border-bottom: 2px solid #00E5FF;
+        padding: 12px;
+        font-size: 0.85rem;
+    }
+
+    .table-dark-custom tbody td {
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        vertical-align: middle;
+    }
+
+    .table-dark-custom tbody tr:hover {
+        background: rgba(0, 229, 255, 0.05);
+    }
+
+    /* Badges de m etodo de pago */
+    .badge-pix {
+        background: linear-gradient(135deg, #00E5FF 0%, #00B8D4 100%);
+        color: #0A0E21;
+        font-weight: 600;
+    }
+
+    .badge-efectivo {
+        background: linear-gradient(135deg, #00FF99 0%, #00CC7A 100%);
+        color: #0A0E21;
+        font-weight: 600;
+    }
+
+    .badge-transfer {
+        background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+        color: #0A0E21;
+        font-weight: 600;
+    }
+
+    /* Clientes sin pago */
+    .cliente-sin-pago {
+        background: rgba(255, 51, 102, 0.1);
+        border-left: 3px solid #FF3366;
+        padding: 10px 15px;
+        margin-bottom: 10px;
+        border-radius: 0 8px 8px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .cliente-sin-pago .cliente-info {
+        flex: 1;
+    }
+
+    .cliente-sin-pago .cliente-nombre {
+        color: #fff;
+        font-weight: 600;
+    }
+
+    .cliente-sin-pago .cliente-telefono {
+        color: #8D8E98;
+        font-size: 0.85rem;
+    }
+
+    .cliente-sin-pago .cliente-deuda {
+        text-align: right;
+    }
+
+    .cliente-sin-pago .cliente-deuda .monto {
+        color: #FF3366;
+        font-weight: 700;
+    }
+
+    /* Gráfico circular */
+    .chart-container {
+        position: relative;
+        height: 200px;
+    }
+
+    /* Sin datos */
+    .no-data {
+        text-align: center;
+        padding: 40px;
+        color: #8D8E98;
+    }
+
+    .no-data i {
+        font-size: 3rem;
+        margin-bottom: 15px;
+        color: rgba(0, 229, 255, 0.3);
+    }
+
+    /* Print Styles */
+    @media print {
+        .sidebar, .top-navbar, .filter-panel, .btn-action {
+            display: none !important;
+        }
+        .main-content {
+            margin-left: 0 !important;
+        }
+        .content-area {
+            padding: 0 !important;
+        }
+        body {
+            background: #fff !important;
+            color: #000 !important;
+        }
+        .section-card, .report-header, .cuadre-ruta {
+            background: #fff !important;
+            border: 1px solid #ddd !important;
+            color: #000 !important;
+        }
+        .section-title, .cuadre-ruta h3, .ruta-info h2 {
+            color: #000 !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Panel de Filtros -->
+<div class="filter-panel">
+    <form method="GET" action="{{ url_for('reportes.reporte_ruta') }}">
+        <div class="row align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">Oficina</label>
+                <select name="oficina_id" id="filtro_oficina" class="form-select" onchange="filtrarRutas()">
+                    <option value="">Todas las Oficinas</option>
+                    {% for oficina in todas_las_oficinas %}
+                    <option value="{{ oficina.id }}" {% if oficina_seleccionada_id == oficina.id %}selected{% endif %}>
+                        {{ oficina.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Ruta</label>
+                <select name="ruta_id" id="filtro_ruta" class="form-select" required>
+                    <option value="">Seleccione una ruta</option>
+                    {% for ruta in todas_las_rutas %}
+                    <option value="{{ ruta.id }}" data-oficina="{{ ruta.oficina_id or '' }}" {% if ruta_seleccionada_id == ruta.id %}selected{% endif %}>
+                        {{ ruta.nombre }} {% if ruta.cobrador %}({{ ruta.cobrador.nombre }}){% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Fecha del Reporte</label>
+                <input type="date" name="fecha" class="form-control" value="{{ fecha_reporte }}" max="{{ fecha_reporte }}">
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-aplicar w-100">
+                    <i class="bi bi-funnel me-2"></i>Aplicar
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+{% if metricas %}
+<!-- Header del Reporte -->
+<div class="report-header">
+    <div class="ruta-info">
+        <h2><i class="bi bi-signpost-2 me-2"></i>{{ metricas.ruta.nombre }}</h2>
+        <div class="cobrador">
+            <i class="bi bi-person-badge me-1"></i>Cobrador: <strong>{{ metricas.cobrador.nombre }}</strong>
+        </div>
+    </div>
+    <div class="fecha-info">
+        <div class="fecha">{{ metricas.fecha }}</div>
+        <div class="text-muted">Fecha del Reporte</div>
+    </div>
+</div>
+
+<!-- Cuadre de Ruta -->
+<div class="cuadre-ruta">
+    <h3><i class="bi bi-calculator me-2"></i>Cuadre de Ruta</h3>
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="cuadre-row">
+                <span class="cuadre-label">Total Abonos (Cobros)</span>
+                <span class="cuadre-value positive">{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(metricas.total_abonos) }}</span>
+            </div>
+            <div class="cuadre-row">
+                <span class="cuadre-label">(-) Desembolsos (Pr&eacute;stamos)</span>
+                <span class="cuadre-value negative">{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(metricas.total_desembolsos) }}</span>
+            </div>
+            <div class="cuadre-row">
+                <span class="cuadre-label">(-) Gastos</span>
+                <span class="cuadre-value negative">{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(metricas.total_gastos) }}</span>
+            </div>
+            {% if metricas.total_movimientos_entrada > 0 %}
+            <div class="cuadre-row">
+                <span class="cuadre-label">(+) Traslados Recibidos</span>
+                <span class="cuadre-value positive">{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(metricas.total_movimientos_entrada) }}</span>
+            </div>
+            {% endif %}
+            {% if metricas.total_movimientos_salida > 0 %}
+            <div class="cuadre-row">
+                <span class="cuadre-label">(-) Traslados Enviados</span>
+                <span class="cuadre-value negative">{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(metricas.total_movimientos_salida) }}</span>
+            </div>
+            {% endif %}
+            <div class="total-caja">
+                <div class="cuadre-label">TOTAL CAJA</div>
+                <div class="value {% if metricas.caja_dia >= 0 %}text-success{% else %}text-danger{% endif %}">
+                    {{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(metricas.caja_dia) }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Desglose de Abonos -->
+    <div class="col-md-6">
+        <div class="section-card">
+            <div class="section-title">
+                <i class="bi bi-cash-stack"></i>Abonos del D&iacute;a ({{ metricas.num_pagos }} pagos)
+            </div>
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <div class="stat-mini efectivo" style="background: #1D1E33; border-color: #00FF99;">
+                        <div class="stat-value" style="color: #00FF99; font-size: 2rem;">{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(metricas.abonos_efectivo) }}</div>
+                        <div class="stat-label" style="color: #8D8E98;">Efectivo</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="stat-mini pix" style="background: #1D1E33; border-color: #00E5FF;">
+                        <div class="stat-value" style="color: #00E5FF; font-size: 2rem;">
+                            {{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(metricas.abonos_pix_transferencia|default(0)) }}
+                        </div>
+                        <div class="stat-label" style="color: #8D8E98;">PIX / Transferencia</div>
+                    </div>
+                </div>
+            </div>
+
+            {% if metricas.detalle_pagos %}
+            <div style="max-height: 300px; overflow-y: auto;">
+                <table class="table table-dark-custom table-sm">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Monto</th>
+                            <th>M&eacute;todo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pago in metricas.detalle_pagos %}
+                        <tr>
+                            <td>{{ pago.cliente }}</td>
+                            <td>{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(pago.monto) }}</td>
+                            <td>
+                                {% if pago.metodo == 'PIX' %}
+                                <span class="badge badge-pix">PIX</span>
+                                {% elif pago.metodo == 'TRANSFERENCIA' %}
+                                <span class="badge badge-transfer">TRANS</span>
+                                {% else %}
+                                <span class="badge badge-efectivo">EFECT</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="no-data">
+                <i class="bi bi-inbox"></i>
+                <p>No hubo pagos este d&iacute;a</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Cr&eacute;ditos Otorgados -->
+    <div class="col-md-6">
+        <div class="section-card">
+            <div class="section-title">
+                <i class="bi bi-plus-circle"></i>Cr&eacute;ditos Otorgados ({{ metricas.num_creditos }})
+            </div>
+            <div class="text-center mb-3">
+                <div class="stat-mini" style="display: inline-block; min-width: 200px;">
+                    <div class="stat-value">{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(metricas.total_desembolsos) }}</div>
+                    <div class="stat-label">Total Desembolsado</div>
+                </div>
+            </div>
+
+            {% if metricas.creditos_otorgados %}
+            <div style="max-height: 250px; overflow-y: auto;">
+                <table class="table table-dark-custom table-sm">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Celular</th>
+                            <th>Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for credito in metricas.creditos_otorgados %}
+                        <tr>
+                            <td>{{ credito.cliente }}</td>
+                            <td>{{ credito.celular }}</td>
+                            <td>{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(credito.monto) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="no-data">
+                <i class="bi bi-inbox"></i>
+                <p>No se otorgaron cr&eacute;ditos este d&iacute;a</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Gastos y Movimientos -->
+    <div class="col-md-6">
+        <div class="section-card">
+            <div class="section-title">
+                <i class="bi bi-receipt"></i>Gastos y Movimientos
+            </div>
+
+            {% if metricas.detalle_gastos or metricas.detalle_movimientos %}
+            <div style="max-height: 300px; overflow-y: auto;">
+                <table class="table table-dark-custom table-sm">
+                    <thead>
+                        <tr>
+                            <th>Concepto</th>
+                            <th>Descripci&oacute;n</th>
+                            <th>Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for gasto in metricas.detalle_gastos %}
+                        <tr>
+                            <td><span class="badge bg-danger">{{ gasto.concepto }}</span></td>
+                            <td>{{ gasto.descripcion }}</td>
+                            <td class="text-danger">-{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(gasto.monto) }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% for mov in metricas.detalle_movimientos %}
+                        <tr>
+                            <td><span class="badge bg-info">{{ mov.concepto }}</span></td>
+                            <td>{{ mov.descripcion }}</td>
+                            <td class="{% if mov.tipo == 'ENTRADA' %}text-success{% else %}text-danger{% endif %}">
+                                {% if mov.tipo == 'ENTRADA' %}+{% else %}-{% endif %}{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(mov.monto) }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="no-data">
+                <i class="bi bi-inbox"></i>
+                <p>No hubo gastos ni movimientos este d&iacute;a</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Estad&iacute;sticas del D&iacute;a -->
+    <div class="col-md-6">
+        <div class="section-card">
+            <div class="section-title">
+                <i class="bi bi-graph-up"></i>Estad&iacute;sticas del D&iacute;a
+            </div>
+            <div class="row g-3">
+                <div class="col-6">
+                    <div class="stat-mini">
+                        <div class="stat-value">{{ metricas.total_clientes_activos }}</div>
+                        <div class="stat-label">Clientes Activos</div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="stat-mini efectivo">
+                        <div class="stat-value">{{ metricas.clientes_que_pagaron }}</div>
+                        <div class="stat-label">Clientes que Pagaron</div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="stat-mini">
+                        <div class="stat-value">{{ metricas.tasa_cobro_clientes }}%</div>
+                        <div class="stat-label">Tasa de Cobro</div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="stat-mini pix">
+                        <div class="stat-value">{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(metricas.por_cobrar_esperado) }}</div>
+                        <div class="stat-label">Esperado del D&iacute;a</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gr&aacute;fico de tasa de cobro -->
+            <div class="mt-4">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Progreso de Cobro</span>
+                    <span class="text-cyan">{{ metricas.tasa_cobro_monto }}%</span>
+                </div>
+                <div class="progress" style="height: 20px; background: #0A0E21;">
+                    <div class="progress-bar" role="progressbar"
+                         style="width: {{ [metricas.tasa_cobro_monto, 100]|min }}%; background: linear-gradient(135deg, #00E5FF 0%, #00FF99 100%);"
+                         aria-valuenow="{{ metricas.tasa_cobro_monto }}" aria-valuemin="0" aria-valuemax="100">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Clientes Sin Pago -->
+<div class="section-card">
+    <div class="section-title">
+        <i class="bi bi-person-x"></i>Clientes Sin Pago ({{ metricas.num_clientes_sin_pago }})
+        <span class="badge bg-danger ms-2">Llamar al cliente y verificar el cr&eacute;dito</span>
+    </div>
+
+    {% if metricas.clientes_sin_pago %}
+    <div class="row">
+        {% for cliente in metricas.clientes_sin_pago %}
+        <div class="col-md-6">
+            <div class="cliente-sin-pago">
+                <div class="cliente-info">
+                    <div class="cliente-nombre">{{ loop.index }}. {{ cliente.nombre }}</div>
+                    <div class="cliente-telefono">
+                        <i class="bi bi-telephone me-1"></i>{{ cliente.telefono }}
+                    </div>
+                </div>
+                <div class="cliente-deuda">
+                    <div class="monto">{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(cliente.valor_cuota) }}</div>
+                    <small class="text-muted">Cuota</small>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="no-data">
+        <i class="bi bi-emoji-smile"></i>
+        <p>Todos los clientes pagaron este d&iacute;a</p>
+    </div>
+    {% endif %}
+</div>
+
+{% else %}
+<!-- Sin ruta seleccionada -->
+<div class="section-card text-center py-5">
+    <i class="bi bi-file-earmark-bar-graph" style="font-size: 4rem; color: rgba(0, 229, 255, 0.3);"></i>
+    <h4 class="mt-3 text-muted">Seleccione una ruta para ver el reporte</h4>
+    <p class="text-muted">Use los filtros de arriba para seleccionar una ruta y fecha espec&iacute;fica.</p>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Filtrar rutas por oficina
+function filtrarRutas() {
+    const oficinaId = document.getElementById('filtro_oficina').value;
+    const rutaSelect = document.getElementById('filtro_ruta');
+    const opciones = rutaSelect.querySelectorAll('option[data-oficina]');
+
+    opciones.forEach(opcion => {
+        if (!oficinaId || opcion.dataset.oficina === oficinaId || opcion.dataset.oficina === '') {
+            opcion.style.display = '';
+        } else {
+            opcion.style.display = 'none';
+        }
+    });
+
+    // Resetear selecci&oacute;n si la ruta actual no pertenece a la oficina
+    const rutaActual = rutaSelect.querySelector('option:checked');
+    if (rutaActual && rutaActual.dataset.oficina && oficinaId && rutaActual.dataset.oficina !== oficinaId) {
+        rutaSelect.value = '';
+    }
+}
+
+// Ejecutar al cargar
+document.addEventListener('DOMContentLoaded', filtrarRutas);
+</script>
+{% endblock %}

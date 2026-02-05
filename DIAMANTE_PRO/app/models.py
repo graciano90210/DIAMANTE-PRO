@@ -379,6 +379,7 @@ class Pago(db.Model):
     fecha_pago = db.Column(db.DateTime, default=datetime.utcnow)
     observaciones = db.Column(db.String(500))
     tipo_pago = db.Column(db.String(20), default='NORMAL')  # NORMAL, ABONO, COMPLETO
+    metodo_pago = db.Column(db.String(20), default='EFECTIVO')  # EFECTIVO, PIX, TRANSFERENCIA
     
     # Relaciones con cascade
     prestamo = db.relationship('Prestamo', backref=db.backref('pagos', lazy='dynamic', cascade='all, delete-orphan'))

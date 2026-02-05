@@ -29,24 +29,30 @@ class ReporteService:
         # Cobros del día
         cobros = pagos_query.all()
         total_cobrado = sum(p.monto for p in cobros)
-        
+
+        # Unificar abonos PIX, Transferencia y Consignación
+        abonos_pix_transferencia = sum(p.monto for p in cobros if p.metodo in ['PIX', 'TRANSFERENCIA', 'CONSIGNACION'])
+        abonos_efectivo = sum(p.monto for p in cobros if p.metodo == 'EFECTIVO')
+
         # Préstamos del día
         prestamos_nuevos = prestamos_query.all()
         total_prestado = sum(p.monto_prestado for p in prestamos_nuevos)
-        
+
         # Gastos del día
         gastos = Transaccion.query.filter(
             func.date(Transaccion.fecha) == fecha,
             Transaccion.naturaleza == 'EGRESO'
         ).all()
         total_gastos = sum(g.monto for g in gastos)
-        
+
         return {
             'fecha': fecha,
             'cobros': {
                 'cantidad': len(cobros),
                 'total': total_cobrado,
-                'detalle': cobros
+                'detalle': cobros,
+                'abonos_pix_transferencia': abonos_pix_transferencia,
+                'abonos_efectivo': abonos_efectivo
             },
             'prestamos': {
                 'cantidad': len(prestamos_nuevos),

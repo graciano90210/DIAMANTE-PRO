@@ -493,6 +493,251 @@
         50% { opacity: 0.5; transform: scale(1.2); }
     }
 
+    /* ==================== ALERTAS ==================== */
+    .alert-panel {
+        margin-bottom: 24px;
+    }
+
+    .alert-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 20px;
+        border-radius: 12px;
+        margin-bottom: 10px;
+        border: 1px solid transparent;
+        animation: slideIn 0.3s ease forwards;
+    }
+
+    .alert-item.danger {
+        background: rgba(255, 51, 102, 0.1);
+        border-color: rgba(255, 51, 102, 0.3);
+    }
+
+    .alert-item.warning {
+        background: rgba(255, 215, 0, 0.1);
+        border-color: rgba(255, 215, 0, 0.3);
+    }
+
+    .alert-item.success {
+        background: rgba(0, 255, 153, 0.1);
+        border-color: rgba(0, 255, 153, 0.3);
+    }
+
+    .alert-icon {
+        font-size: 1.5rem;
+    }
+
+    .alert-item.danger .alert-icon { color: var(--danger-red); }
+    .alert-item.warning .alert-icon { color: var(--gold); }
+    .alert-item.success .alert-icon { color: var(--success-green); }
+
+    .alert-content {
+        flex: 1;
+    }
+
+    .alert-title {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 0.95rem;
+    }
+
+    .alert-message {
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+    }
+
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateX(-20px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+
+    /* ==================== VARIACIÓN BADGES ==================== */
+    .variation-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.75rem;
+        padding: 3px 8px;
+        border-radius: 20px;
+        font-weight: 600;
+    }
+
+    .variation-badge.positive {
+        background: rgba(0, 255, 153, 0.15);
+        color: var(--success-green);
+    }
+
+    .variation-badge.negative {
+        background: rgba(255, 51, 102, 0.15);
+        color: var(--danger-red);
+    }
+
+    .variation-badge.neutral {
+        background: rgba(141, 142, 152, 0.15);
+        color: var(--text-secondary);
+    }
+
+    /* ==================== EXPORT BUTTONS ==================== */
+    .export-dropdown {
+        position: relative;
+        display: inline-block;
+    }
+
+    .export-menu {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 10px;
+        padding: 8px 0;
+        min-width: 180px;
+        display: none;
+        z-index: 1000;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .export-dropdown:hover .export-menu {
+        display: block;
+    }
+
+    .export-menu a {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 16px;
+        color: var(--text-primary);
+        text-decoration: none;
+        transition: background 0.2s;
+    }
+
+    .export-menu a:hover {
+        background: rgba(0, 229, 255, 0.1);
+    }
+
+    .export-menu a i {
+        font-size: 1.1rem;
+        color: var(--cyan-neon);
+    }
+
+    /* ==================== MODO PRESENTACIÓN ==================== */
+    .presentation-mode .filter-panel,
+    .presentation-mode .alert-panel,
+    .presentation-mode .sidebar {
+        display: none !important;
+    }
+
+    .presentation-mode .main-content {
+        margin-left: 0 !important;
+        padding: 20px !important;
+    }
+
+    .presentation-mode .kpi-card {
+        transform: scale(1.02);
+    }
+
+    .btn-presentation {
+        background: transparent;
+        border: 1px solid var(--purple-accent);
+        color: var(--purple-accent);
+        padding: 8px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-presentation:hover {
+        background: var(--purple-accent);
+        color: var(--bg-dark);
+    }
+
+    /* ==================== FILTROS AVANZADOS ==================== */
+    .filter-advanced {
+        display: none;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .filter-advanced.show {
+        display: block;
+    }
+
+    .btn-toggle-filters {
+        background: transparent;
+        border: none;
+        color: var(--cyan-neon);
+        font-size: 0.85rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .btn-toggle-filters:hover {
+        text-decoration: underline;
+    }
+
+    /* ==================== HEATMAP ==================== */
+    .heatmap-bar {
+        height: 40px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--bg-dark);
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: transform 0.2s;
+    }
+
+    .heatmap-bar:hover {
+        transform: scaleY(1.1);
+    }
+
+    /* ==================== DRILL-DOWN MODAL ==================== */
+    .modal-dark {
+        background: rgba(10, 14, 33, 0.95);
+    }
+
+    .modal-content-dark {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 16px;
+    }
+
+    .modal-header-dark {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 20px 24px;
+    }
+
+    .modal-body-dark {
+        padding: 24px;
+    }
+
+    /* ==================== COMPARATIVA PERÍODO ==================== */
+    .comparativa-card {
+        background: linear-gradient(145deg, rgba(0, 229, 255, 0.05) 0%, rgba(0, 0, 0, 0.2) 100%);
+        border: 1px solid var(--border-subtle);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+
+    .comparativa-label {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .comparativa-value {
+        font-size: 1.2rem;
+        font-weight: 700;
+        font-family: 'Roboto Mono', monospace;
+    }
+
     /* ==================== RESPONSIVE ==================== */
     @media (max-width: 768px) {
         .kpi-value {
@@ -505,6 +750,11 @@
 
         .chart-container {
             padding: 18px;
+        }
+
+        .export-menu {
+            right: auto;
+            left: 0;
         }
     }
 </style>
@@ -520,15 +770,36 @@ Dashboard de Inteligencia de Negocios
 {% endblock %}
 
 {% block navbar_actions %}
-<a href="/reporte/cuadre-pdf?fecha={{ fecha_fin }}" class="btn btn-action" target="_blank">
-    <i class="bi bi-file-pdf me-1"></i> Exportar PDF
-</a>
+<div class="d-flex gap-2 align-items-center">
+    <!-- Botón Modo Presentación -->
+    <button class="btn-presentation" onclick="togglePresentationMode()" title="Modo Presentación">
+        <i class="bi bi-easel me-1"></i> <span class="d-none d-md-inline">Presentar</span>
+    </button>
+
+    <!-- Dropdown Exportar -->
+    <div class="export-dropdown">
+        <button class="btn btn-action">
+            <i class="bi bi-download me-1"></i> Exportar <i class="bi bi-chevron-down ms-1" style="font-size: 0.7rem;"></i>
+        </button>
+        <div class="export-menu">
+            <a href="{{ url_for('reportes.exportar_excel', fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, ruta_id=ruta_seleccionada.id if ruta_seleccionada else '', oficina_id=oficina_seleccionada.id if oficina_seleccionada else '') }}">
+                <i class="bi bi-file-earmark-excel"></i> Excel (.xlsx)
+            </a>
+            <a href="{{ url_for('reportes.exportar_csv', fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, ruta_id=ruta_seleccionada.id if ruta_seleccionada else '', oficina_id=oficina_seleccionada.id if oficina_seleccionada else '') }}">
+                <i class="bi bi-filetype-csv"></i> CSV (.csv)
+            </a>
+            <a href="/reporte/cuadre-pdf?fecha={{ fecha_fin }}" target="_blank">
+                <i class="bi bi-file-earmark-pdf"></i> PDF (.pdf)
+            </a>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block content %}
 <!-- ==================== FILTROS ==================== -->
 <div class="filter-panel">
-    <form method="GET" action="{{ url_for('reportes.reportes') }}">
+    <form method="GET" action="{{ url_for('reportes.reportes') }}" id="filterForm">
         <div class="row align-items-end g-3">
             <div class="col-md-2">
                 <label class="form-label text-white-50 small">Fecha Inicio</label>
@@ -538,7 +809,7 @@ Dashboard de Inteligencia de Negocios
                 <label class="form-label text-white-50 small">Fecha Fin</label>
                 <input type="date" name="fecha_fin" class="form-control" value="{{ fecha_fin }}">
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label text-white-50 small"><i class="bi bi-building me-1"></i>Oficina</label>
                 <select name="oficina_id" class="form-select" id="selectOficina">
                     <option value="">Todas las Oficinas</option>
@@ -549,7 +820,7 @@ Dashboard de Inteligencia de Negocios
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label text-white-50 small"><i class="bi bi-signpost-2 me-1"></i>Ruta</label>
                 <select name="ruta_id" class="form-select" id="selectRuta">
                     <option value="">Todas las Rutas</option>
@@ -565,8 +836,98 @@ Dashboard de Inteligencia de Negocios
                     <i class="bi bi-funnel me-1"></i> Aplicar
                 </button>
             </div>
+            <div class="col-md-2">
+                <button type="button" class="btn-toggle-filters" onclick="toggleAdvancedFilters()">
+                    <i class="bi bi-sliders"></i> Filtros Avanzados
+                </button>
+            </div>
+        </div>
+
+        <!-- Filtros Avanzados -->
+        <div class="filter-advanced" id="advancedFilters">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label text-white-50 small"><i class="bi bi-person-badge me-1"></i>Cobrador</label>
+                    <select name="cobrador_id" class="form-select">
+                        <option value="">Todos los Cobradores</option>
+                        {% for cobrador in todos_los_cobradores %}
+                        <option value="{{ cobrador.id }}" {% if cobrador_seleccionado and cobrador_seleccionado.id == cobrador.id %}selected{% endif %}>
+                            {{ cobrador.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label text-white-50 small"><i class="bi bi-cash me-1"></i>Monto Mín</label>
+                    <input type="number" name="monto_min" class="form-control" placeholder="0" value="{{ monto_min or '' }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label text-white-50 small"><i class="bi bi-cash-stack me-1"></i>Monto Máx</label>
+                    <input type="number" name="monto_max" class="form-control" placeholder="Sin límite" value="{{ monto_max or '' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-white-50 small"><i class="bi bi-tag me-1"></i>Estado</label>
+                    <select name="estado" class="form-select">
+                        <option value="ACTIVO" {% if estado_filtro == 'ACTIVO' %}selected{% endif %}>Activos</option>
+                        <option value="CANCELADO" {% if estado_filtro == 'CANCELADO' %}selected{% endif %}>Cancelados</option>
+                        <option value="TODOS" {% if estado_filtro == 'TODOS' %}selected{% endif %}>Todos</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                        <i class="bi bi-x-circle me-1"></i> Limpiar
+                    </button>
+                </div>
+            </div>
         </div>
     </form>
+</div>
+
+<!-- ==================== ALERTAS ==================== -->
+{% if metricas.alertas and metricas.alertas|length > 0 %}
+<div class="alert-panel">
+    {% for alerta in metricas.alertas %}
+    <div class="alert-item {{ alerta.tipo }}">
+        <i class="bi bi-{{ alerta.icono }} alert-icon"></i>
+        <div class="alert-content">
+            <div class="alert-title">{{ alerta.titulo }}</div>
+            <div class="alert-message">{{ alerta.mensaje }}</div>
+        </div>
+        <button type="button" class="btn-close btn-close-white" onclick="this.parentElement.remove()"></button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- ==================== COMPARATIVA PERÍODO ANTERIOR ==================== -->
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <div class="comparativa-card">
+            <div class="row align-items-center">
+                <div class="col-md-3">
+                    <div class="comparativa-label">Comparando con período anterior</div>
+                    <small class="text-white-50">{{ metricas.periodo_anterior.fecha_inicio_anterior }} - {{ metricas.periodo_anterior.fecha_fin_anterior }}</small>
+                </div>
+                <div class="col-md-3 text-center">
+                    <div class="comparativa-label">Cobrado Actual</div>
+                    <div class="comparativa-value" style="color: var(--cyan-neon);">${{ "{:,.0f}".format(metricas.cobrado_periodo) }}</div>
+                    <span class="variation-badge {% if metricas.variacion_cobros >= 0 %}positive{% else %}negative{% endif %}">
+                        <i class="bi bi-{% if metricas.variacion_cobros >= 0 %}arrow-up{% else %}arrow-down{% endif %}"></i>
+                        {{ metricas.variacion_cobros }}%
+                    </span>
+                </div>
+                <div class="col-md-3 text-center">
+                    <div class="comparativa-label">Cobrado Anterior</div>
+                    <div class="comparativa-value text-white-50">${{ "{:,.0f}".format(metricas.periodo_anterior.cobrado_anterior) }}</div>
+                </div>
+                <div class="col-md-3 text-center">
+                    <div class="comparativa-label">Meta Diaria Sugerida</div>
+                    <div class="comparativa-value" style="color: var(--gold);">${{ "{:,.0f}".format(metricas.meta_diaria_sugerida) }}</div>
+                    <small class="text-white-50">Basada en promedio +10%</small>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- ==================== KPIs PRINCIPALES ==================== -->
@@ -876,7 +1237,7 @@ Dashboard de Inteligencia de Negocios
             </h5>
 
             {% for deudor in metricas.top_deudores %}
-            <div class="deudor-item">
+            <div class="deudor-item" onclick="showDeudorDetail({{ deudor.id }})" style="cursor: pointer;" title="Click para ver detalle">
                 <div class="deudor-rank">{{ loop.index }}</div>
                 <div class="deudor-info">
                     <div class="deudor-name">{{ deudor.nombre }}</div>
@@ -889,6 +1250,7 @@ Dashboard de Inteligencia de Negocios
                     </div>
                 </div>
                 <div class="deudor-saldo">${{ "{:,.0f}".format(deudor.saldo) }}</div>
+                <i class="bi bi-chevron-right text-white-50 ms-2"></i>
             </div>
             {% endfor %}
 
@@ -1013,6 +1375,81 @@ Dashboard de Inteligencia de Negocios
     </div>
 </div>
 {% endif %}
+
+<!-- ==================== NUEVOS GRÁFICOS: PROYECCIÓN + HEATMAP + CICLO VIDA ==================== -->
+<div class="row g-4 mb-4">
+    <!-- Proyección de Cobros 7 días -->
+    <div class="col-lg-4">
+        <div class="chart-container h-100">
+            <h5 class="chart-title">
+                <i class="bi bi-calendar-check"></i>
+                Proyección Próximos 7 Días
+                <span class="badge" style="background: var(--success-green); color: var(--bg-dark);">Nuevo</span>
+            </h5>
+            <div id="chartProyeccion" style="height: 280px;"></div>
+            <div class="text-center mt-2">
+                <small class="text-white-50">Total esperado: </small>
+                <span class="fw-bold" style="color: var(--gold);">
+                    ${{ "{:,.0f}".format(metricas.proyeccion_cobros|sum(attribute='esperado') if metricas.proyeccion_cobros else 0) }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Heatmap por Día de Semana -->
+    <div class="col-lg-4">
+        <div class="chart-container h-100">
+            <h5 class="chart-title">
+                <i class="bi bi-calendar-week"></i>
+                Efectividad por Día
+                <span class="badge" style="background: var(--purple-accent); color: var(--bg-dark);">90 días</span>
+            </h5>
+            <div class="px-2 py-3">
+                {% set max_heatmap = metricas.heatmap_semanal|map(attribute='total')|max if metricas.heatmap_semanal else 1 %}
+                {% for dia in metricas.heatmap_semanal %}
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small class="text-white-50">{{ dia.dia }}</small>
+                        <small class="text-white">${{ "{:,.0f}".format(dia.total / 1000) }}K</small>
+                    </div>
+                    {% set pct = (dia.total / max_heatmap * 100) if max_heatmap > 0 else 0 %}
+                    <div class="heatmap-bar" style="width: {{ pct }}%; min-width: 30px; background: linear-gradient(90deg,
+                        {% if pct > 70 %}var(--success-green), var(--cyan-neon)
+                        {% elif pct > 40 %}var(--gold), var(--cyan-neon)
+                        {% else %}var(--danger-red), var(--gold){% endif %});">
+                        {{ dia.cantidad }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Ciclo de Vida de Préstamos -->
+    <div class="col-lg-4">
+        <div class="chart-container h-100">
+            <h5 class="chart-title">
+                <i class="bi bi-hourglass-split"></i>
+                Ciclo de Vida
+            </h5>
+            <div id="chartCicloVida" style="height: 200px;"></div>
+            <div class="row text-center mt-3 pt-3" style="border-top: 1px solid rgba(255,255,255,0.1);">
+                <div class="col-6">
+                    <div class="small text-white-50">Promedio Activo</div>
+                    <div class="fw-bold" style="color: var(--cyan-neon); font-size: 1.3rem;">
+                        {{ metricas.ciclo_vida.promedio_dias_activo }} días
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="small text-white-50">Tiempo Finalización</div>
+                    <div class="fw-bold" style="color: var(--gold); font-size: 1.3rem;">
+                        {{ metricas.ciclo_vida.tiempo_promedio_finalizacion }} días
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- ==================== RESUMEN GENERAL ==================== -->
 <div class="row g-4">
@@ -1368,15 +1805,309 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// ==================== AUTO-REFRESH CADA 5 MINUTOS ====================
-setInterval(() => {
-    fetch('/api/reportes/metricas')
+// ==================== GRÁFICO DE PROYECCIÓN DE COBROS ====================
+const proyeccionData = {{ metricas.proyeccion_cobros | tojson }};
+const proyeccionOptions = {
+    series: [{
+        name: 'Cobro Esperado',
+        data: proyeccionData.map(p => p.esperado)
+    }],
+    chart: {
+        type: 'bar',
+        height: 280,
+        background: 'transparent'
+    },
+    colors: [colors.success],
+    plotOptions: {
+        bar: {
+            borderRadius: 6,
+            columnWidth: '70%',
+            dataLabels: { position: 'top' }
+        }
+    },
+    dataLabels: {
+        enabled: true,
+        formatter: (val) => '$' + (val / 1000).toFixed(0) + 'K',
+        offsetY: -20,
+        style: { fontSize: '10px', colors: ['#fff'] }
+    },
+    xaxis: {
+        categories: proyeccionData.map(p => p.dia + '\n' + p.fecha),
+        labels: {
+            style: { colors: colors.textSecondary, fontSize: '10px' }
+        },
+        axisBorder: { show: false },
+        axisTicks: { show: false }
+    },
+    yaxis: {
+        labels: {
+            style: { colors: colors.textSecondary },
+            formatter: (val) => '$' + (val / 1000).toFixed(0) + 'K'
+        }
+    },
+    grid: {
+        borderColor: 'rgba(255, 255, 255, 0.05)',
+        strokeDashArray: 4
+    },
+    tooltip: {
+        theme: 'dark',
+        y: { formatter: (val) => '$ ' + val.toLocaleString() }
+    }
+};
+if (document.querySelector("#chartProyeccion")) {
+    new ApexCharts(document.querySelector("#chartProyeccion"), proyeccionOptions).render();
+}
+
+// ==================== GRÁFICO DE CICLO DE VIDA ====================
+const cicloVidaData = {{ metricas.ciclo_vida | tojson }};
+const cicloVidaOptions = {
+    series: [
+        cicloVidaData.antiguedad_0_30,
+        cicloVidaData.antiguedad_31_60,
+        cicloVidaData.antiguedad_61_90,
+        cicloVidaData.antiguedad_90_plus
+    ],
+    chart: {
+        type: 'donut',
+        height: 200,
+        background: 'transparent'
+    },
+    colors: [colors.success, colors.cyan, colors.gold, colors.danger],
+    labels: ['0-30 días', '31-60 días', '61-90 días', '+90 días'],
+    plotOptions: {
+        pie: {
+            donut: {
+                size: '60%',
+                labels: {
+                    show: true,
+                    total: {
+                        show: true,
+                        label: 'Total',
+                        color: '#fff',
+                        formatter: () => cicloVidaData.antiguedad_0_30 + cicloVidaData.antiguedad_31_60 + cicloVidaData.antiguedad_61_90 + cicloVidaData.antiguedad_90_plus
+                    }
+                }
+            }
+        }
+    },
+    dataLabels: { enabled: false },
+    legend: {
+        position: 'bottom',
+        labels: { colors: '#fff' },
+        fontSize: '11px'
+    },
+    stroke: { show: true, width: 2, colors: [colors.bgCard] },
+    tooltip: { theme: 'dark' }
+};
+if (document.querySelector("#chartCicloVida")) {
+    new ApexCharts(document.querySelector("#chartCicloVida"), cicloVidaOptions).render();
+}
+
+// ==================== FUNCIONES DE INTERACTIVIDAD ====================
+
+// Toggle filtros avanzados
+function toggleAdvancedFilters() {
+    const advancedFilters = document.getElementById('advancedFilters');
+    if (advancedFilters) {
+        advancedFilters.classList.toggle('show');
+    }
+}
+
+// Limpiar filtros
+function clearFilters() {
+    const form = document.getElementById('filterForm');
+    if (form) {
+        // Resetear selects
+        form.querySelectorAll('select').forEach(select => {
+            if (select.name !== 'estado') {
+                select.selectedIndex = 0;
+            }
+        });
+        // Resetear inputs numéricos
+        form.querySelectorAll('input[type="number"]').forEach(input => {
+            input.value = '';
+        });
+    }
+}
+
+// Modo presentación
+let isPresentationMode = false;
+function togglePresentationMode() {
+    isPresentationMode = !isPresentationMode;
+    document.body.classList.toggle('presentation-mode', isPresentationMode);
+
+    if (isPresentationMode) {
+        // Entrar en pantalla completa
+        if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen();
+        }
+    } else {
+        // Salir de pantalla completa
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+    }
+}
+
+// Escuchar tecla ESC para salir del modo presentación
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && isPresentationMode) {
+        togglePresentationMode();
+    }
+});
+
+// ==================== DRILL-DOWN EN DEUDORES ====================
+function showDeudorDetail(clienteId) {
+    fetch(`/api/reportes/deudores/${clienteId}`)
         .then(response => response.json())
         .then(data => {
-            // Actualizar KPIs principales
-            console.log('Métricas actualizadas:', data);
+            // Crear modal dinámico
+            const modalHtml = `
+                <div class="modal fade modal-dark" id="deudorModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content modal-content-dark">
+                            <div class="modal-header modal-header-dark">
+                                <h5 class="modal-title" style="color: var(--cyan-neon);">
+                                    <i class="bi bi-person-circle me-2"></i>${data.cliente.nombre}
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body modal-body-dark">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <small class="text-white-50">Teléfono:</small>
+                                        <p class="mb-0">${data.cliente.telefono || 'N/A'}</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <small class="text-white-50">Dirección:</small>
+                                        <p class="mb-0">${data.cliente.direccion || 'N/A'}</p>
+                                    </div>
+                                </div>
+                                <hr style="border-color: rgba(255,255,255,0.1);">
+                                <h6 style="color: var(--gold);">Préstamos</h6>
+                                ${data.prestamos.map(p => `
+                                    <div class="p-3 mb-2" style="background: rgba(0,0,0,0.2); border-radius: 8px;">
+                                        <div class="d-flex justify-content-between">
+                                            <span>Préstamo #${p.id}</span>
+                                            <span class="badge ${p.estado === 'ACTIVO' ? 'bg-success' : 'bg-secondary'}">${p.estado}</span>
+                                        </div>
+                                        <div class="row mt-2">
+                                            <div class="col-4">
+                                                <small class="text-white-50">Monto:</small>
+                                                <div style="color: var(--cyan-neon);">$${p.monto_prestado.toLocaleString()}</div>
+                                            </div>
+                                            <div class="col-4">
+                                                <small class="text-white-50">Saldo:</small>
+                                                <div style="color: var(--gold);">$${p.saldo_actual.toLocaleString()}</div>
+                                            </div>
+                                            <div class="col-4">
+                                                <small class="text-white-50">Atraso:</small>
+                                                <div style="color: ${p.cuotas_atrasadas > 0 ? 'var(--danger-red)' : 'var(--success-green)'};">${p.cuotas_atrasadas} cuotas</div>
+                                            </div>
+                                        </div>
+                                        ${p.ultimos_pagos.length > 0 ? `
+                                            <div class="mt-2">
+                                                <small class="text-white-50">Últimos pagos:</small>
+                                                <div class="d-flex gap-2 flex-wrap mt-1">
+                                                    ${p.ultimos_pagos.slice(0, 5).map(pago => `
+                                                        <span class="badge" style="background: rgba(0, 255, 153, 0.2); color: var(--success-green);">
+                                                            ${pago.fecha}: $${pago.monto.toLocaleString()}
+                                                        </span>
+                                                    `).join('')}
+                                                </div>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Remover modal anterior si existe
+            const existingModal = document.getElementById('deudorModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            // Agregar nuevo modal
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+            // Mostrar modal
+            const modal = new bootstrap.Modal(document.getElementById('deudorModal'));
+            modal.show();
         })
-        .catch(err => console.log('Error actualizando métricas:', err));
-}, 300000);
+        .catch(err => console.error('Error cargando detalles:', err));
+}
+
+// ==================== AUTO-REFRESH MEJORADO ====================
+let autoRefreshInterval;
+const AUTO_REFRESH_TIME = 300000; // 5 minutos
+
+function startAutoRefresh() {
+    autoRefreshInterval = setInterval(() => {
+        fetch('/api/reportes/metricas')
+            .then(response => response.json())
+            .then(data => {
+                // Actualizar indicador de última actualización
+                const now = new Date();
+                console.log(`Métricas actualizadas: ${now.toLocaleTimeString()}`);
+
+                // Actualizar valores de KPIs dinámicamente (opcional)
+                updateKPIValues(data);
+            })
+            .catch(err => console.log('Error actualizando métricas:', err));
+    }, AUTO_REFRESH_TIME);
+}
+
+function updateKPIValues(data) {
+    // Actualización dinámica de valores (sin recargar página)
+    // Esto actualiza los contadores animados
+    document.querySelectorAll('.counter').forEach(counter => {
+        const key = counter.dataset.key;
+        if (key && data[key] !== undefined) {
+            animateValue(counter, parseFloat(counter.textContent.replace(/,/g, '')), data[key], 1000);
+        }
+    });
+}
+
+function animateValue(element, start, end, duration) {
+    const startTime = performance.now();
+    function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const current = start + (end - start) * progress;
+        element.textContent = Math.floor(current).toLocaleString();
+        if (progress < 1) {
+            requestAnimationFrame(update);
+        }
+    }
+    requestAnimationFrame(update);
+}
+
+// Iniciar auto-refresh
+startAutoRefresh();
+
+// Detener auto-refresh cuando la página no está visible
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+        clearInterval(autoRefreshInterval);
+    } else {
+        startAutoRefresh();
+    }
+});
+
+// ==================== INICIALIZACIÓN ====================
+document.addEventListener('DOMContentLoaded', function() {
+    // Verificar si hay filtros avanzados activos
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('cobrador_id') || urlParams.get('monto_min') || urlParams.get('monto_max') || urlParams.get('estado') !== 'ACTIVO') {
+        const advancedFilters = document.getElementById('advancedFilters');
+        if (advancedFilters) {
+            advancedFilters.classList.add('show');
+        }
+    }
+});
 </script>
 {% endblock %}

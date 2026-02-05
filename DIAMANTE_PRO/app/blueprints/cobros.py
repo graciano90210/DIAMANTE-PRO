@@ -108,6 +108,9 @@ def guardar():
             if cuotas_pagadas == 0 and monto > 0:
                 cuotas_pagadas = 1
 
+        # Obtener método de pago (EFECTIVO, PIX, TRANSFERENCIA)
+        metodo_pago = request.form.get('metodo_pago', 'EFECTIVO')
+
         nuevo_pago = Pago(
             prestamo_id=prestamo_id,
             cobrador_id=session.get('usuario_id'),
@@ -117,6 +120,7 @@ def guardar():
             saldo_nuevo=nuevo_saldo,
             observaciones=request.form.get('observaciones'),
             tipo_pago=tipo_pago,
+            metodo_pago=metodo_pago,
             fecha_pago=datetime.now()
         )
 
