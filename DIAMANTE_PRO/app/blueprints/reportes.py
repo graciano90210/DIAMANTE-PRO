@@ -1418,13 +1418,30 @@ def calcular_metricas_ruta_diaria(ruta_id, fecha_reporte):
         if debio_pagar and prestamo.cliente_id not in clientes_que_pagaron_ids:
             cliente = prestamo.cliente
             if cliente:
+                # Calcular último pago y días de atraso
+                ultimo_pago_fecha = None
+                dias_atraso = 0
+                if prestamo.fecha_ultimo_pago:
+                    if hasattr(prestamo.fecha_ultimo_pago, 'date'):
+                        ultimo_pago_fecha = prestamo.fecha_ultimo_pago.date()
+                    else:
+                        ultimo_pago_fecha = prestamo.fecha_ultimo_pago
+                    dias_atraso = (fecha_reporte - ultimo_pago_fecha).days
+                else:
+                    # Si nunca ha pagado, contar desde inicio del préstamo
+                    if prestamo.fecha_inicio:
+                        fi = prestamo.fecha_inicio.date() if hasattr(prestamo.fecha_inicio, 'date') else prestamo.fecha_inicio
+                        dias_atraso = (fecha_reporte - fi).days
+
                 clientes_sin_pago.append({
                     'id': cliente.id,
                     'nombre': cliente.nombre,
                     'telefono': cliente.telefono or '',
                     'saldo_pendiente': float(prestamo.saldo_actual),
                     'cuotas_atrasadas': prestamo.cuotas_atrasadas,
-                    'valor_cuota': float(prestamo.valor_cuota) if prestamo.valor_cuota else 0
+                    'valor_cuota': float(prestamo.valor_cuota) if prestamo.valor_cuota else 0,
+                    'ultimo_pago': ultimo_pago_fecha.strftime('%d/%m') if ultimo_pago_fecha else 'Nunca',
+                    'dias_atraso': dias_atraso
                 })
 
     # ==================== ESTADÍSTICAS RESUMEN ====================
@@ -1466,6 +1483,7 @@ def calcular_metricas_ruta_diaria(ruta_id, fecha_reporte):
         'abonos_pix': total_pix,
         'abonos_efectivo': total_efectivo,
         'abonos_transferencia': total_transferencia,
+        'abonos_pix_transferencia': total_pix + total_transferencia,
         'detalle_pagos': detalle_pagos,
         'num_pagos': len(pagos_del_dia),
 
@@ -1547,185 +1565,422 @@ def reporte_ruta():
     )
 
 
+def generar_pdf_ruta_reportlab(metricas, fecha_generacion):
+    """Genera PDF Dark Mode profesional con ReportLab - Alto contraste y alineación perfecta."""
+    import io
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import cm
+    from reportlab.lib.colors import HexColor
+    from reportlab.lib.styles import ParagraphStyle
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.enums import TA_LEFT, TA_RIGHT, TA_CENTER
+
+    # ============================================================
+    # PALETA DE COLORES DARK MODE
+    # ============================================================
+    BG_PAGE = HexColor('#1E1E1E')       # Fondo de página
+    BG_SECTION = HexColor('#2C2C2C')    # Fondo de secciones
+    BG_HEADER = HexColor('#252525')     # Fondo header tabla
+    BG_ROW_ALT = HexColor('#333333')    # Fila alternada
+    CYAN = HexColor('#00BCD4')          # Acento principal
+    GREEN = HexColor('#00E676')         # Positivo / Efectivo
+    RED = HexColor('#FF5252')           # Negativo / Sin pago
+    GOLD = HexColor('#FFD740')          # Destacado
+    WHITE = HexColor('#FFFFFF')         # Texto principal
+    LIGHT_GRAY = HexColor('#DDDDDD')    # Texto etiquetas
+    MID_GRAY = HexColor('#AAAAAA')      # Texto secundario
+    BORDER = HexColor('#555555')        # Líneas de tabla
+    BORDER_SUBTLE = HexColor('#444444') # Líneas sutiles
+
+    simbolo = metricas['ruta']['simbolo']
+    def fmt(n):
+        return f"{simbolo}{n:,.0f}"
+
+    # ============================================================
+    # ESTILOS DE PÁRRAFO (Definidos al inicio para consistencia)
+    # ============================================================
+    # --- Header ---
+    sTitle = ParagraphStyle('sTitle', fontName='Helvetica-Bold', fontSize=20, textColor=CYAN, alignment=TA_LEFT, leading=24)
+    sSub = ParagraphStyle('sSub', fontName='Helvetica', fontSize=9, textColor=MID_GRAY, alignment=TA_LEFT)
+    sFecha = ParagraphStyle('sFecha', fontName='Helvetica-Bold', fontSize=14, textColor=CYAN, alignment=TA_RIGHT, leading=18)
+    sFechaLbl = ParagraphStyle('sFechaLbl', fontName='Helvetica', fontSize=8, textColor=MID_GRAY, alignment=TA_RIGHT)
+
+    # --- Info Ruta ---
+    sRuta = ParagraphStyle('sRuta', fontName='Helvetica-Bold', fontSize=15, textColor=GREEN, alignment=TA_LEFT, leading=18)
+    sCobrador = ParagraphStyle('sCobrador', fontName='Helvetica', fontSize=10, textColor=LIGHT_GRAY, alignment=TA_LEFT)
+
+    # --- Títulos de sección ---
+    sSecTitle = ParagraphStyle('sSecTitle', fontName='Helvetica-Bold', fontSize=11, textColor=CYAN, alignment=TA_LEFT, leading=14)
+
+    # --- Cuadre de Ruta ---
+    sCuadreTitle = ParagraphStyle('sCuadreTitle', fontName='Helvetica-Bold', fontSize=13, textColor=CYAN, alignment=TA_CENTER, leading=16)
+    sLabelL = ParagraphStyle('sLabelL', fontName='Helvetica', fontSize=11, textColor=WHITE, alignment=TA_LEFT, leading=14)
+    sValGreen = ParagraphStyle('sValGreen', fontName='Helvetica-Bold', fontSize=12, textColor=GREEN, alignment=TA_RIGHT, leading=15)
+    sValRed = ParagraphStyle('sValRed', fontName='Helvetica-Bold', fontSize=12, textColor=RED, alignment=TA_RIGHT, leading=15)
+    sValWhite = ParagraphStyle('sValWhite', fontName='Helvetica-Bold', fontSize=12, textColor=WHITE, alignment=TA_RIGHT, leading=15)
+    sTotalLbl = ParagraphStyle('sTotalLbl', fontName='Helvetica-Bold', fontSize=11, textColor=CYAN, alignment=TA_CENTER)
+    sTotalPos = ParagraphStyle('sTotalPos', fontName='Helvetica-Bold', fontSize=24, textColor=GREEN, alignment=TA_CENTER, leading=28)
+    sTotalNeg = ParagraphStyle('sTotalNeg', fontName='Helvetica-Bold', fontSize=24, textColor=RED, alignment=TA_CENTER, leading=28)
+
+    # --- Stats boxes ---
+    sStatGreen = ParagraphStyle('sStatGreen', fontName='Helvetica-Bold', fontSize=18, textColor=GREEN, alignment=TA_CENTER, leading=22)
+    sStatCyan = ParagraphStyle('sStatCyan', fontName='Helvetica-Bold', fontSize=18, textColor=CYAN, alignment=TA_CENTER, leading=22)
+    sStatLbl = ParagraphStyle('sStatLbl', fontName='Helvetica', fontSize=9, textColor=LIGHT_GRAY, alignment=TA_CENTER)
+
+    # --- Tablas de datos ---
+    sTh = ParagraphStyle('sTh', fontName='Helvetica-Bold', fontSize=9, textColor=CYAN, alignment=TA_LEFT, leading=12)
+    sThR = ParagraphStyle('sThR', fontName='Helvetica-Bold', fontSize=9, textColor=CYAN, alignment=TA_RIGHT, leading=12)
+    sTd = ParagraphStyle('sTd', fontName='Helvetica', fontSize=10, textColor=WHITE, alignment=TA_LEFT, leading=13)
+    sTdBold = ParagraphStyle('sTdBold', fontName='Helvetica-Bold', fontSize=10, textColor=WHITE, alignment=TA_LEFT, leading=13)
+    sTdR = ParagraphStyle('sTdR', fontName='Helvetica', fontSize=10, textColor=WHITE, alignment=TA_RIGHT, leading=13)
+    sTdRed = ParagraphStyle('sTdRed', fontName='Helvetica-Bold', fontSize=10, textColor=RED, alignment=TA_RIGHT, leading=13)
+    sTdGreen = ParagraphStyle('sTdGreen', fontName='Helvetica-Bold', fontSize=10, textColor=GREEN, alignment=TA_RIGHT, leading=13)
+    sTdGray = ParagraphStyle('sTdGray', fontName='Helvetica', fontSize=10, textColor=MID_GRAY, alignment=TA_LEFT, leading=13)
+
+    # --- Footer / No data ---
+    sFooter = ParagraphStyle('sFooter', fontName='Helvetica', fontSize=8, textColor=MID_GRAY, alignment=TA_CENTER)
+    sNoData = ParagraphStyle('sNoData', fontName='Helvetica-Oblique', fontSize=10, textColor=MID_GRAY, alignment=TA_CENTER)
+    sNoDataOk = ParagraphStyle('sNoDataOk', fontName='Helvetica-Bold', fontSize=10, textColor=GREEN, alignment=TA_CENTER)
+
+    # ============================================================
+    # HELPERS para estilos de tabla reutilizables
+    # ============================================================
+    def data_table_style(num_rows, has_data=True):
+        """Retorna TableStyle para tablas de datos con header oscuro y filas alternadas."""
+        style = [
+            ('BACKGROUND', (0, 0), (-1, 0), BG_HEADER),
+            ('TEXTCOLOR', (0, 0), (-1, 0), CYAN),
+            ('LINEBELOW', (0, 0), (-1, 0), 1.5, CYAN),
+            ('TOPPADDING', (0, 0), (-1, -1), 7),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 7),
+            ('LEFTPADDING', (0, 0), (-1, -1), 10),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ]
+        if has_data:
+            for i in range(1, num_rows):
+                bg = BG_SECTION if i % 2 == 1 else BG_ROW_ALT
+                style.append(('BACKGROUND', (0, i), (-1, i), bg))
+                if i < num_rows - 1:
+                    style.append(('LINEBELOW', (0, i), (-1, i), 0.5, BORDER_SUBTLE))
+        else:
+            style.append(('BACKGROUND', (0, 1), (-1, -1), BG_SECTION))
+        return TableStyle(style)
+
+    def section_wrapper_style():
+        return TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), BG_SECTION),
+            ('BOX', (0, 0), (-1, -1), 0.5, BORDER),
+            ('TOPPADDING', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, -1), (-1, -1), 10),
+            ('LEFTPADDING', (0, 0), (-1, -1), 12),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 12),
+            ('LINEBELOW', (0, 0), (-1, 0), 1, CYAN),
+        ])
+
+    # ============================================================
+    # CONSTRUIR DOCUMENTO
+    # ============================================================
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4,
+                            leftMargin=1.2*cm, rightMargin=1.2*cm,
+                            topMargin=1*cm, bottomMargin=1*cm)
+    pw = A4[0] - 2.4 * cm  # ancho útil
+    elements = []
+
+    def draw_bg(canvas, doc):
+        canvas.saveState()
+        canvas.setFillColor(BG_PAGE)
+        canvas.rect(0, 0, A4[0], A4[1], fill=1, stroke=0)
+        canvas.restoreState()
+
+    # ============================================================
+    # 1. HEADER
+    # ============================================================
+    hdr = Table([[
+        [Paragraph("&#9670; DIAMANTE PRO", sTitle),
+         Paragraph("Sistema de Gesti&oacute;n de Cr&eacute;ditos", sSub)],
+        [Paragraph(metricas['fecha'], sFecha),
+         Paragraph("Fecha del Reporte", sFechaLbl)]
+    ]], colWidths=[pw * 0.6, pw * 0.4])
+    hdr.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), BG_SECTION),
+        ('BOX', (0, 0), (-1, -1), 0.5, BORDER),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('LEFTPADDING', (0, 0), (0, 0), 14),
+        ('RIGHTPADDING', (1, 0), (1, 0), 14),
+        ('TOPPADDING', (0, 0), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+        ('LINEBEFORE', (0, 0), (0, -1), 4, CYAN),
+    ]))
+    elements.append(hdr)
+    elements.append(Spacer(1, 10))
+
+    # ============================================================
+    # 2. RUTA + COBRADOR
+    # ============================================================
+    elements.append(Paragraph(metricas['ruta']['nombre'], sRuta))
+    elements.append(Paragraph(
+        f"Cobrador: <b><font color='#FFFFFF'>{metricas['cobrador']['nombre']}</font></b>", sCobrador))
+    elements.append(Spacer(1, 12))
+
+    # ============================================================
+    # 3. CUADRE DE RUTA
+    # ============================================================
+    cuadre_data = [
+        [Paragraph("Total Abonos (Cobros)", sLabelL),
+         Paragraph(fmt(metricas['total_abonos']), sValGreen)],
+        [Paragraph("(-) Desembolsos (Pr\u00e9stamos)", sLabelL),
+         Paragraph(fmt(metricas['total_desembolsos']), sValRed)],
+        [Paragraph("(-) Gastos", sLabelL),
+         Paragraph(fmt(metricas['total_gastos']), sValRed)],
+    ]
+    if metricas['total_movimientos_entrada'] > 0:
+        cuadre_data.append([Paragraph("(+) Traslados Recibidos", sLabelL),
+                            Paragraph(fmt(metricas['total_movimientos_entrada']), sValGreen)])
+    if metricas['total_movimientos_salida'] > 0:
+        cuadre_data.append([Paragraph("(-) Traslados Enviados", sLabelL),
+                            Paragraph(fmt(metricas['total_movimientos_salida']), sValRed)])
+
+    iw = pw * 0.75
+    cuadre_tbl = Table(cuadre_data, colWidths=[iw * 0.62, iw * 0.38])
+    cuadre_tbl.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), BG_HEADER),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('LEFTPADDING', (0, 0), (0, -1), 14),
+        ('RIGHTPADDING', (1, 0), (1, -1), 14),
+        ('LINEBELOW', (0, 0), (-1, -2), 0.5, BORDER_SUBTLE),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+
+    total_s = sTotalPos if metricas['caja_dia'] >= 0 else sTotalNeg
+    total_tbl = Table([
+        [Paragraph("TOTAL CAJA", sTotalLbl)],
+        [Paragraph(fmt(metricas['caja_dia']), total_s)],
+    ], colWidths=[iw])
+    total_tbl.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), BG_PAGE),
+        ('TOPPADDING', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, -1), (-1, -1), 10),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('LINEABOVE', (0, 0), (-1, 0), 2, CYAN),
+    ]))
+
+    cuadre_wrap = Table([
+        [Paragraph("CUADRE DE RUTA", sCuadreTitle)],
+        [cuadre_tbl],
+        [total_tbl],
+    ], colWidths=[pw])
+    cuadre_wrap.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), BG_HEADER),
+        ('BOX', (0, 0), (-1, -1), 2, CYAN),
+        ('TOPPADDING', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, -1), (-1, -1), 10),
+        ('LEFTPADDING', (0, 0), (-1, -1), 12),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 12),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+    ]))
+    elements.append(cuadre_wrap)
+    elements.append(Spacer(1, 12))
+
+    # ============================================================
+    # 4. ABONOS DEL DIA
+    # ============================================================
+    stat_row = [[
+        [Paragraph(fmt(metricas['abonos_efectivo']), sStatGreen),
+         Paragraph("Efectivo", sStatLbl)],
+        [Paragraph(fmt(metricas.get('abonos_pix_transferencia', 0)), sStatCyan),
+         Paragraph("PIX / Transferencia", sStatLbl)],
+    ]]
+    stat_tbl = Table(stat_row, colWidths=[pw * 0.46, pw * 0.46], hAlign='CENTER')
+    stat_tbl.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, 0), HexColor('#1B3D2A')),
+        ('BACKGROUND', (1, 0), (1, 0), HexColor('#1A2D3D')),
+        ('BOX', (0, 0), (0, 0), 2, GREEN),
+        ('BOX', (1, 0), (1, 0), 2, CYAN),
+        ('TOPPADDING', (0, 0), (-1, -1), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+
+    abonos_wrap = Table([
+        [Paragraph(f"ABONOS DEL D\u00cdA ({metricas['num_pagos']} pagos)", sSecTitle)],
+        [Spacer(1, 4)],
+        [stat_tbl],
+    ], colWidths=[pw])
+    abonos_wrap.setStyle(section_wrapper_style())
+    elements.append(abonos_wrap)
+    elements.append(Spacer(1, 10))
+
+    # ============================================================
+    # 5. CREDITOS OTORGADOS
+    # ============================================================
+    cr_rows = [[Paragraph("Cliente", sTh), Paragraph("Celular", sTh), Paragraph("Valor", sThR)]]
+    has_cred = bool(metricas['creditos_otorgados'])
+    if has_cred:
+        for c in metricas['creditos_otorgados']:
+            cr_rows.append([Paragraph(c['cliente'], sTd), Paragraph(c['celular'], sTdGray), Paragraph(fmt(c['monto']), sTdR)])
+    else:
+        cr_rows.append([Paragraph("Sin cr\u00e9ditos otorgados", sNoData), '', ''])
+
+    cr_tbl = Table(cr_rows, colWidths=[pw * 0.40, pw * 0.30, pw * 0.25])
+    cr_style = data_table_style(len(cr_rows), has_cred)
+    if not has_cred:
+        cr_style.add('SPAN', (0, 1), (-1, 1))
+    cr_tbl.setStyle(cr_style)
+
+    stat_des = Table([
+        [Paragraph(fmt(metricas['total_desembolsos']), sStatCyan)],
+        [Paragraph("Total Desembolsado", sStatLbl)],
+    ], colWidths=[pw * 0.6], hAlign='CENTER')
+    stat_des.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), HexColor('#1A2D3D')),
+        ('BOX', (0, 0), (-1, -1), 1, CYAN),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+    ]))
+
+    cred_wrap = Table([
+        [Paragraph(f"CR\u00c9DITOS OTORGADOS ({metricas['num_creditos']})", sSecTitle)],
+        [Spacer(1, 4)],
+        [stat_des],
+        [Spacer(1, 4)],
+        [cr_tbl],
+    ], colWidths=[pw])
+    cred_wrap.setStyle(section_wrapper_style())
+    elements.append(cred_wrap)
+    elements.append(Spacer(1, 10))
+
+    # ============================================================
+    # 6. GASTOS Y MOVIMIENTOS
+    # ============================================================
+    g_rows = [[Paragraph("Concepto", sTh), Paragraph("Descripci\u00f3n", sTh), Paragraph("Monto", sThR)]]
+    has_g = bool(metricas['detalle_gastos'] or metricas['detalle_movimientos'])
+    if has_g:
+        for g in metricas['detalle_gastos']:
+            g_rows.append([Paragraph(g['concepto'], sTd), Paragraph(g['descripcion'], sTdGray),
+                           Paragraph(f"-{fmt(g['monto'])}", sTdRed)])
+        for m in metricas['detalle_movimientos']:
+            cs = sTdGreen if m['tipo'] == 'ENTRADA' else sTdRed
+            pf = "+" if m['tipo'] == 'ENTRADA' else "-"
+            g_rows.append([Paragraph(m['concepto'], sTd), Paragraph(m['descripcion'], sTdGray),
+                           Paragraph(f"{pf}{fmt(m['monto'])}", cs)])
+    else:
+        g_rows.append([Paragraph("Sin gastos ni movimientos", sNoData), '', ''])
+
+    g_tbl = Table(g_rows, colWidths=[pw * 0.28, pw * 0.47, pw * 0.20])
+    g_style = data_table_style(len(g_rows), has_g)
+    if not has_g:
+        g_style.add('SPAN', (0, 1), (-1, 1))
+    g_tbl.setStyle(g_style)
+
+    gastos_wrap = Table([
+        [Paragraph("GASTOS Y MOVIMIENTOS", sSecTitle)],
+        [Spacer(1, 4)],
+        [g_tbl],
+    ], colWidths=[pw])
+    gastos_wrap.setStyle(section_wrapper_style())
+    elements.append(gastos_wrap)
+    elements.append(Spacer(1, 10))
+
+    # ============================================================
+    # 7. CLIENTES SIN PAGO (5 columnas: #, Cliente, Teléfono, Último Pago, Días Atraso)
+    # ============================================================
+    # Estilos centrados para las columnas de Teléfono, Último Pago y Días Atraso
+    sThC = ParagraphStyle('sThC', fontName='Helvetica-Bold', fontSize=9, textColor=CYAN, alignment=TA_CENTER, leading=12)
+    sTdC = ParagraphStyle('sTdC', fontName='Helvetica', fontSize=10, textColor=WHITE, alignment=TA_CENTER, leading=13)
+    sTdCGray = ParagraphStyle('sTdCGray', fontName='Helvetica', fontSize=10, textColor=MID_GRAY, alignment=TA_CENTER, leading=13)
+    sTdCRed = ParagraphStyle('sTdCRed', fontName='Helvetica-Bold', fontSize=10, textColor=RED, alignment=TA_CENTER, leading=13)
+
+    sp_rows = [[
+        Paragraph("#", sThC),
+        Paragraph("Cliente", sTh),
+        Paragraph("Tel\u00e9fono", sThC),
+        Paragraph("\u00daltimo Pago", sThC),
+        Paragraph("D\u00edas Atraso", sThC),
+    ]]
+    has_sp = bool(metricas['clientes_sin_pago'])
+    if has_sp:
+        for i, c in enumerate(metricas['clientes_sin_pago'], 1):
+            dias = c.get('dias_atraso', 0)
+            # Color de días: rojo si >= 3, amarillo si 1-2, gris si 0
+            if dias >= 3:
+                dias_style = sTdCRed
+            elif dias >= 1:
+                dias_p_style = ParagraphStyle('sDiasWarn', fontName='Helvetica-Bold', fontSize=10, textColor=GOLD, alignment=TA_CENTER, leading=13)
+                dias_style = dias_p_style
+            else:
+                dias_style = sTdC
+
+            sp_rows.append([
+                Paragraph(str(i), sTdC),
+                Paragraph(c['nombre'], sTdBold),
+                Paragraph(c['telefono'], sTdCGray),
+                Paragraph(c.get('ultimo_pago', '—'), sTdC),
+                Paragraph(str(dias), dias_style),
+            ])
+    else:
+        sp_rows.append([Paragraph("Todos los clientes pagaron", sNoDataOk), '', '', '', ''])
+
+    sp_tbl = Table(sp_rows, colWidths=[pw * 0.06, pw * 0.34, pw * 0.24, pw * 0.18, pw * 0.18])
+    sp_style = data_table_style(len(sp_rows), has_sp)
+    if not has_sp:
+        sp_style.add('SPAN', (0, 1), (-1, 1))
+    sp_tbl.setStyle(sp_style)
+
+    sp_wrap = Table([
+        [Paragraph(f"CLIENTES SIN PAGO ({metricas['num_clientes_sin_pago']})", sSecTitle)],
+        [Spacer(1, 4)],
+        [sp_tbl],
+    ], colWidths=[pw])
+    sp_wrap.setStyle(section_wrapper_style())
+    elements.append(sp_wrap)
+    elements.append(Spacer(1, 15))
+
+    # ============================================================
+    # 8. FOOTER
+    # ============================================================
+    elements.append(Paragraph(
+        f"Reporte generado el {fecha_generacion}  |  DIAMANTE PRO  |  Sistema de Gesti\u00f3n de Cr\u00e9ditos",
+        sFooter))
+
+    # ============================================================
+    # BUILD
+    # ============================================================
+    doc.build(elements, onFirstPage=draw_bg, onLaterPages=draw_bg)
+    return buffer.getvalue()
+
+
 @reportes_bp.route('/reportes/ruta/pdf')
 @login_required
 def reporte_ruta_pdf():
-    """Genera PDF del reporte por ruta"""
+    """Genera PDF del reporte por ruta con ReportLab."""
     ruta_id = request.args.get('ruta_id', type=int)
     fecha_str = request.args.get('fecha')
 
     if not ruta_id:
         return jsonify({'error': 'Debe seleccionar una ruta'}), 400
 
-    # Fecha por defecto: ayer
     if fecha_str:
         fecha_reporte = datetime.strptime(fecha_str, '%Y-%m-%d').date()
     else:
         fecha_reporte = (datetime.now() - timedelta(days=1)).date()
 
-    # Calcular métricas
     metricas = calcular_metricas_ruta_diaria(ruta_id, fecha_reporte)
-
     if not metricas:
         return jsonify({'error': 'Ruta no encontrada'}), 404
 
-    # Generar HTML para el PDF
-    html_content = render_template('reporte_ruta_pdf.html',
-        metricas=metricas,
-        fecha_display=fecha_reporte.strftime('%d/%m/%Y'),
-        fecha_generacion=datetime.now().strftime('%d/%m/%Y %H:%M')
-    )
+    fecha_generacion = datetime.now().strftime('%d/%m/%Y %H:%M')
+    pdf = generar_pdf_ruta_reportlab(metricas, fecha_generacion)
 
-    # Intentar usar weasyprint para generar PDF
-    try:
-        from weasyprint import HTML, CSS
-        from weasyprint.text.fonts import FontConfiguration
-
-        font_config = FontConfiguration()
-
-        # CSS para el PDF con tema Dark Tech
-        pdf_css = CSS(string='''
-            @page {
-                size: A4;
-                margin: 1cm;
-                background-color: #0A0E21;
-            }
-            body {
-                font-family: 'Segoe UI', Tahoma, sans-serif;
-                background-color: #0A0E21;
-                color: #FFFFFF;
-                font-size: 10pt;
-            }
-            .header {
-                background: linear-gradient(135deg, #1D1E33 0%, #0A0E21 100%);
-                padding: 15px;
-                border-radius: 8px;
-                margin-bottom: 15px;
-                border-left: 4px solid #00E5FF;
-            }
-            .logo-text {
-                color: #00E5FF;
-                font-size: 24pt;
-                font-weight: bold;
-            }
-            .ruta-name {
-                color: #00FF99;
-                font-size: 16pt;
-            }
-            .section {
-                background: #1D1E33;
-                padding: 12px;
-                border-radius: 8px;
-                margin-bottom: 12px;
-            }
-            .section-title {
-                color: #00E5FF;
-                font-size: 12pt;
-                font-weight: bold;
-                border-bottom: 1px solid #00E5FF;
-                padding-bottom: 5px;
-                margin-bottom: 10px;
-            }
-            .stat-row {
-                display: flex;
-                justify-content: space-between;
-                padding: 5px 0;
-                border-bottom: 1px solid #2D2E43;
-            }
-            .stat-label {
-                color: #8D8E98;
-            }
-            .stat-value {
-                color: #FFFFFF;
-                font-weight: bold;
-            }
-            .stat-value.positive {
-                color: #00FF99;
-            }
-            .stat-value.negative {
-                color: #FF3366;
-            }
-            .stat-value.highlight {
-                color: #00E5FF;
-            }
-            table {
-                width: 100%;
-                border-collapse: collapse;
-                margin-top: 8px;
-            }
-            th {
-                background: #0A0E21;
-                color: #00E5FF;
-                padding: 8px;
-                text-align: left;
-                font-size: 9pt;
-            }
-            td {
-                padding: 6px 8px;
-                border-bottom: 1px solid #2D2E43;
-                font-size: 9pt;
-            }
-            .cuadre-box {
-                background: linear-gradient(135deg, #00E5FF20 0%, #00FF9920 100%);
-                border: 2px solid #00E5FF;
-                border-radius: 10px;
-                padding: 15px;
-                text-align: center;
-                margin: 15px 0;
-            }
-            .cuadre-title {
-                color: #00E5FF;
-                font-size: 11pt;
-                margin-bottom: 5px;
-            }
-            .cuadre-value {
-                color: #00FF99;
-                font-size: 20pt;
-                font-weight: bold;
-            }
-            .badge {
-                display: inline-block;
-                padding: 2px 8px;
-                border-radius: 10px;
-                font-size: 8pt;
-            }
-            .badge-pix {
-                background: #00E5FF;
-                color: #0A0E21;
-            }
-            .badge-efectivo {
-                background: #00FF99;
-                color: #0A0E21;
-            }
-            .badge-transfer {
-                background: #FFD700;
-                color: #0A0E21;
-            }
-            .footer {
-                text-align: center;
-                color: #8D8E98;
-                font-size: 8pt;
-                margin-top: 20px;
-                padding-top: 10px;
-                border-top: 1px solid #2D2E43;
-            }
-        ''', font_config=font_config)
-
-        html = HTML(string=html_content)
-        pdf = html.write_pdf(stylesheets=[pdf_css], font_config=font_config)
-
-        response = make_response(pdf)
-        response.headers['Content-Type'] = 'application/pdf'
-        response.headers['Content-Disposition'] = f'attachment; filename=reporte_ruta_{metricas["ruta"]["nombre"]}_{fecha_reporte.strftime("%Y%m%d")}.pdf'
-
-        return response
-
-    except ImportError:
-        # Si weasyprint no está disponible, generar HTML descargable
-        response = make_response(html_content)
-        response.headers['Content-Type'] = 'text/html'
-        response.headers['Content-Disposition'] = f'attachment; filename=reporte_ruta_{metricas["ruta"]["nombre"]}_{fecha_reporte.strftime("%Y%m%d")}.html'
-        return response
+    response = make_response(pdf)
+    response.headers['Content-Type'] = 'application/pdf'
+    nombre_ruta = metricas['ruta']['nombre'].replace(' ', '_')
+    response.headers['Content-Disposition'] = f'attachment; filename=reporte_{nombre_ruta}_{fecha_reporte.strftime("%Y%m%d")}.pdf'
+    return response
 
 
 @reportes_bp.route('/api/reportes/ruta/metricas')

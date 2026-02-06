@@ -4,453 +4,431 @@
     <meta charset="UTF-8">
     <title>Reporte {{ metricas.ruta.nombre }} - {{ metricas.fecha }}</title>
     <style>
-        /* Reset y base */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        @page {
+            size: A4;
+            margin: 1.2cm;
+            background-color: #0A0E21;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #0A0E21 !important;
-            color: #FFFFFF !important;
-            font-size: 10pt;
-            line-height: 1.4;
-            padding: 20px;
+            font-family: Helvetica, Arial, sans-serif;
+            background-color: #0A0E21;
+            color: #FFFFFF;
+            font-size: 11pt;
+            margin: 0;
+            padding: 0;
         }
 
-        /* Header con logo */
-        .header {
-            background: linear-gradient(135deg, #1D1E33 0%, #0A0E21 100%);
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            border-left: 5px solid #00E5FF;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        /* ===== HEADER COMPACTO ===== */
+        .header-table {
+            width: 100%;
+            background-color: #1D1E33;
+            border-left: 4px solid #00E5FF;
+            margin-bottom: 10px;
         }
 
-        .logo-section {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .logo-diamond {
-            width: 50px;
-            height: 50px;
+        .header-table td {
+            padding: 8px 12px;
         }
 
         .logo-text {
-            color: #00E5FF;
-            font-size: 24pt;
-            font-weight: bold;
-            letter-spacing: 2px;
-        }
-
-        .ruta-info h2 {
-            color: #00FF99;
-            font-size: 18pt;
-            margin-bottom: 5px;
-        }
-
-        .ruta-info .cobrador {
-            color: #8D8E98;
-            font-size: 11pt;
-        }
-
-        .fecha-section {
-            text-align: right;
-        }
-
-        .fecha-section .fecha {
             color: #00E5FF;
             font-size: 16pt;
             font-weight: bold;
         }
 
-        .fecha-section .label {
+        .logo-sub {
             color: #8D8E98;
-            font-size: 9pt;
+            font-size: 8pt;
         }
 
-        /* Cuadre de Ruta */
+        .fecha-text {
+            color: #00E5FF;
+            font-size: 13pt;
+            font-weight: bold;
+            text-align: right;
+        }
+
+        .fecha-label {
+            color: #8D8E98;
+            font-size: 8pt;
+            text-align: right;
+        }
+
+        /* ===== RUTA INFO ===== */
+        .ruta-nombre {
+            color: #00FF99;
+            font-size: 14pt;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+
+        .cobrador-text {
+            color: #8D8E98;
+            font-size: 10pt;
+            margin-bottom: 12px;
+        }
+
+        .cobrador-text strong {
+            color: #FFFFFF;
+        }
+
+        /* ===== CUADRE DE RUTA ===== */
         .cuadre-box {
-            background: linear-gradient(135deg, rgba(0, 229, 255, 0.1) 0%, rgba(0, 255, 153, 0.1) 100%);
-            border: 2px solid #00E5FF !important;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
+            width: 100%;
+            background-color: #0F1830;
+            border: 2px solid #00E5FF;
+            padding: 12px;
+            margin-bottom: 12px;
             text-align: center;
         }
 
-        .cuadre-box h3 {
+        .cuadre-title {
             color: #00E5FF;
             font-size: 12pt;
+            font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 2px;
-            margin-bottom: 15px;
+            margin-bottom: 8px;
         }
 
-        .cuadre-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 20%;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        .cuadre-table {
+            width: 70%;
+            margin: 0 auto;
+        }
+
+        .cuadre-table td {
+            padding: 7px 10px;
+            border-bottom: 1px solid #1D2845;
+            background-color: #0F1830;
         }
 
         .cuadre-label {
-            color: #8D8E98;
+            color: #C0C0C8;
+            text-align: left;
+            font-size: 11pt;
+            background-color: #0F1830;
         }
 
         .cuadre-value {
+            text-align: right;
             font-weight: bold;
+            font-size: 12pt;
+            background-color: #0F1830;
         }
 
-        .cuadre-value.positive {
-            color: #00FF99 !important;
-        }
+        .positive { color: #00FF99; }
+        .negative { color: #FF3366; }
+        .cyan { color: #00E5FF; }
+        .white { color: #FFFFFF; }
 
-        .cuadre-value.negative {
-            color: #FF3366 !important;
-        }
-
-        .total-caja {
-            margin-top: 15px;
-            padding-top: 15px;
+        .total-line {
+            background-color: #0A0E21;
             border-top: 2px solid #00E5FF;
+            padding: 10px;
+            margin-top: 8px;
         }
 
-        .total-caja .label {
+        .total-label {
             color: #00E5FF;
             font-size: 10pt;
-        }
-
-        .total-caja .value {
-            font-size: 24pt;
             font-weight: bold;
-            color: #00FF99 !important;
         }
 
-        /* Secciones */
+        .total-value {
+            font-size: 20pt;
+            font-weight: bold;
+        }
+
+        /* ===== SECTIONS ===== */
         .section {
-            background: #1D1E33 !important;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
+            background-color: #1D1E33;
+            padding: 10px 12px;
+            margin-bottom: 10px;
         }
 
         .section-title {
-            color: #00E5FF !important;
+            color: #00E5FF;
             font-size: 11pt;
             font-weight: bold;
-            padding-bottom: 10px;
-            margin-bottom: 10px;
-            border-bottom: 1px solid rgba(0, 229, 255, 0.3);
+            border-bottom: 1px solid #00E5FF;
+            padding-bottom: 5px;
+            margin-bottom: 8px;
         }
 
-        /* Stats en fila */
-        .stats-row {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 15px;
+        /* ===== STATS BOXES ===== */
+        .stats-table {
+            width: 100%;
+            margin-bottom: 8px;
         }
 
-        .stat-box {
-            flex: 1;
-            background: rgba(0, 229, 255, 0.1);
-            border: 1px solid rgba(0, 229, 255, 0.3);
-            border-radius: 8px;
-            padding: 12px;
+        .stat-box-efectivo {
+            background-color: #0D2818;
+            border: 2px solid #00FF99;
             text-align: center;
+            padding: 10px;
+            width: 48%;
         }
 
-        .stat-box.efectivo {
-            background: rgba(0, 255, 153, 0.15);
-            border-color: #00FF99 !important;
+        .stat-box-pix {
+            background-color: #0A1A2E;
+            border: 2px solid #00E5FF;
+            text-align: center;
+            padding: 10px;
+            width: 48%;
         }
 
-        .stat-box.pix-transfer {
-            background: rgba(0, 229, 255, 0.15);
-            border-color: #00E5FF !important;
+        .stat-box-default {
+            background-color: #0A1A2E;
+            border: 1px solid #00E5FF;
+            text-align: center;
+            padding: 8px;
         }
 
-        .stat-value {
-            font-size: 14pt;
-            font-weight: bold;
-            color: #00E5FF;
-        }
-
-        .stat-box.efectivo .stat-value {
-            color: #00FF99;
-        }
+        .stat-number-green { color: #00FF99; font-size: 15pt; font-weight: bold; }
+        .stat-number-cyan { color: #00E5FF; font-size: 15pt; font-weight: bold; }
 
         .stat-label {
-            color: #8D8E98 !important;
-            font-size: 8pt;
-            margin-top: 3px;
+            color: #8D8E98;
+            font-size: 9pt;
+            margin-top: 2px;
         }
 
-        /* Tablas */
-        table {
+        /* ===== TABLAS DE DATOS ===== */
+        table.data-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
         }
 
-        th {
-            background: #0A0E21;
+        table.data-table th {
+            background-color: #0A0E21;
             color: #00E5FF;
-            padding: 10px 8px;
+            padding: 6px 8px;
             text-align: left;
             font-size: 9pt;
-            font-weight: 600;
-        }
-
-        td {
-            padding: 8px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            font-size: 9pt;
-        }
-
-        /* Clientes sin pago */
-        .cliente-item {
-            background: rgba(255, 51, 102, 0.1);
-            border-left: 3px solid #FF3366;
-            padding: 8px 12px;
-            margin-bottom: 8px;
-            border-radius: 0 6px 6px 0;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .cliente-nombre {
-            color: #fff;
-            font-weight: 600;
-        }
-
-        .cliente-telefono {
-            color: #8D8E98;
-            font-size: 8pt;
-        }
-
-        .cliente-monto {
-            color: #FF3366;
             font-weight: bold;
+            border-bottom: 2px solid #00E5FF;
         }
 
-        /* Grid de dos columnas */
-        .two-columns {
-            display: flex;
-            gap: 15px;
+        table.data-table td {
+            padding: 5px 8px;
+            border-bottom: 1px solid #2D2E43;
+            font-size: 10pt;
+            color: #FFFFFF;
         }
 
-        .two-columns > div {
-            flex: 1;
+        /* ===== DOS COLUMNAS ===== */
+        .two-col-table {
+            width: 100%;
         }
 
-        /* Footer */
+        .two-col-table > tbody > tr > td {
+            width: 49%;
+            vertical-align: top;
+        }
+
+        /* ===== FOOTER ===== */
         .footer {
             text-align: center;
             color: #8D8E98;
             font-size: 8pt;
-            margin-top: 20px;
-            padding-top: 15px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 12px;
+            padding-top: 8px;
+            border-top: 1px solid #2D2E43;
         }
 
-        /* Forzar colores oscuros en PDF */
-        @page {
-            background-color: #0A0E21;
-            margin: 1cm;
+        .no-data {
+            text-align: center;
+            color: #8D8E98;
+            padding: 10px;
+            font-size: 9pt;
         }
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <div class="header">
-        <div class="logo-section">
-            <svg class="logo-diamond" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                    <linearGradient id="diamondGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" style="stop-color:#00E5FF"/>
-                        <stop offset="100%" style="stop-color:#00FF99"/>
-                    </linearGradient>
-                </defs>
-                <polygon points="50,5 95,35 50,95 5,35" fill="url(#diamondGrad)" opacity="0.9"/>
-                <polygon points="50,5 50,95 5,35" fill="#00E5FF" opacity="0.6"/>
-                <polygon points="50,5 95,35 50,35" fill="#fff" opacity="0.3"/>
-            </svg>
-            <div>
-                <div class="logo-text">DIAMANTE PRO</div>
-                <div style="color: #8D8E98; font-size: 9pt;">Sistema de Gesti&oacute;n de Cr&eacute;ditos</div>
-            </div>
-        </div>
-        <div class="fecha-section">
-            <div class="fecha">{{ metricas.fecha }}</div>
-            <div class="label">Fecha del Reporte</div>
-        </div>
-    </div>
+    <!-- HEADER COMPACTO -->
+    <table class="header-table" cellpadding="0" cellspacing="0">
+        <tr>
+            <td style="width: 60%;">
+                <span class="logo-text">&#9670; DIAMANTE PRO</span>
+                <br><span class="logo-sub">Sistema de Gesti&oacute;n de Cr&eacute;ditos</span>
+            </td>
+            <td style="width: 40%;">
+                <div class="fecha-text">{{ metricas.fecha }}</div>
+                <div class="fecha-label">Fecha del Reporte</div>
+            </td>
+        </tr>
+    </table>
 
-    <!-- Info de Ruta -->
-    <div class="ruta-info" style="margin-bottom: 20px;">
-        <h2 style="color: #00FF99; font-size: 16pt;">{{ metricas.ruta.nombre }}</h2>
-        <div class="cobrador" style="color: #8D8E98;">
-            Cobrador: <strong style="color: #fff;">{{ metricas.cobrador.nombre }}</strong>
-        </div>
-    </div>
+    <!-- RUTA INFO -->
+    <div class="ruta-nombre">{{ metricas.ruta.nombre }}</div>
+    <div class="cobrador-text">Cobrador: <strong>{{ metricas.cobrador.nombre }}</strong></div>
 
-    <!-- Cuadre de Ruta -->
+    <!-- CUADRE DE RUTA -->
     <div class="cuadre-box">
-        <h3>CUADRE DE RUTA</h3>
-        <div class="cuadre-row">
-            <span class="cuadre-label">Total Abonos (Cobros)</span>
-            <span class="cuadre-value positive">{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(metricas.total_abonos) }}</span>
-        </div>
-        <div class="cuadre-row">
-            <span class="cuadre-label">(-) Desembolsos (Pr&eacute;stamos)</span>
-            <span class="cuadre-value negative">{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(metricas.total_desembolsos) }}</span>
-        </div>
-        <div class="cuadre-row">
-            <span class="cuadre-label">(-) Gastos</span>
-            <span class="cuadre-value negative">{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(metricas.total_gastos) }}</span>
-        </div>
-        {% if metricas.total_movimientos_entrada > 0 %}
-        <div class="cuadre-row">
-            <span class="cuadre-label">(+) Traslados Recibidos</span>
-            <span class="cuadre-value positive">{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(metricas.total_movimientos_entrada) }}</span>
-        </div>
-        {% endif %}
-        {% if metricas.total_movimientos_salida > 0 %}
-        <div class="cuadre-row">
-            <span class="cuadre-label">(-) Traslados Enviados</span>
-            <span class="cuadre-value negative">{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(metricas.total_movimientos_salida) }}</span>
-        </div>
-        {% endif %}
-        <div class="total-caja">
-            <div class="label">TOTAL CAJA</div>
-            <div class="value" style="color: {% if metricas.caja_dia >= 0 %}#00FF99{% else %}#FF3366{% endif %}">
+        <div class="cuadre-title">CUADRE DE RUTA</div>
+        <table class="cuadre-table" cellpadding="0" cellspacing="0">
+            <tr>
+                <td class="cuadre-label">Total Abonos (Cobros)</td>
+                <td class="cuadre-value positive">{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(metricas.total_abonos) }}</td>
+            </tr>
+            <tr>
+                <td class="cuadre-label">(-) Desembolsos (Pr&eacute;stamos)</td>
+                <td class="cuadre-value negative">{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(metricas.total_desembolsos) }}</td>
+            </tr>
+            <tr>
+                <td class="cuadre-label">(-) Gastos</td>
+                <td class="cuadre-value negative">{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(metricas.total_gastos) }}</td>
+            </tr>
+            {% if metricas.total_movimientos_entrada > 0 %}
+            <tr>
+                <td class="cuadre-label">(+) Traslados Recibidos</td>
+                <td class="cuadre-value positive">{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(metricas.total_movimientos_entrada) }}</td>
+            </tr>
+            {% endif %}
+            {% if metricas.total_movimientos_salida > 0 %}
+            <tr>
+                <td class="cuadre-label">(-) Traslados Enviados</td>
+                <td class="cuadre-value negative">{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(metricas.total_movimientos_salida) }}</td>
+            </tr>
+            {% endif %}
+        </table>
+        <div class="total-line">
+            <div class="total-label">TOTAL CAJA</div>
+            <div class="total-value {% if metricas.caja_dia >= 0 %}positive{% else %}negative{% endif %}">
                 {{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(metricas.caja_dia) }}
             </div>
         </div>
     </div>
 
-    <!-- Desglose de Abonos (solo totales, sin lista de clientes) -->
+    <!-- ABONOS DEL DIA -->
     <div class="section">
         <div class="section-title">ABONOS DEL D&Iacute;A ({{ metricas.num_pagos }} pagos)</div>
-        <div class="stats-row">
-            <div class="stat-box efectivo">
-                <div class="stat-value">{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(metricas.abonos_efectivo) }}</div>
-                <div class="stat-label">Efectivo</div>
-            </div>
-            <div class="stat-box pix-transfer">
-                <div class="stat-value">{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(metricas.abonos_pix_transferencia|default(0)) }}</div>
-                <div class="stat-label">PIX / Transferencia</div>
-            </div>
-        </div>
-        <!-- Solo totales, sin lista de clientes -->
-        {% if metricas.num_pagos == 0 %}
-        <p style="text-align: center; color: #8D8E98; padding: 10px;">No hubo pagos este d&iacute;a</p>
-        {% endif %}
+        <table class="stats-table" cellpadding="0" cellspacing="8">
+            <tr>
+                <td class="stat-box-efectivo">
+                    <div class="stat-number-green">{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(metricas.abonos_efectivo) }}</div>
+                    <div class="stat-label">Efectivo</div>
+                </td>
+                <td class="stat-box-pix">
+                    <div class="stat-number-cyan">{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(metricas.abonos_pix_transferencia|default(0)) }}</div>
+                    <div class="stat-label">PIX / Transferencia</div>
+                </td>
+            </tr>
+        </table>
     </div>
 
-    <!-- Dos columnas: Cr&eacute;ditos y Gastos -->
-    <div class="two-columns">
-        <!-- Cr&eacute;ditos Otorgados -->
-        <div class="section">
-            <div class="section-title">CR&Eacute;DITOS OTORGADOS ({{ metricas.num_creditos }})</div>
-            <div class="stat-box" style="margin-bottom: 10px;">
-                <div class="stat-value">{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(metricas.total_desembolsos) }}</div>
-                <div class="stat-label">Total Desembolsado</div>
-            </div>
-            {% if metricas.creditos_otorgados %}
-            <table>
-                <thead>
-                    <tr>
-                        <th>Cliente</th>
-                        <th>Celular</th>
-                        <th>Valor</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for credito in metricas.creditos_otorgados %}
-                    <tr>
-                        <td>{{ credito.cliente }}</td>
-                        <td>{{ credito.celular }}</td>
-                        <td>{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(credito.monto) }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <p style="text-align: center; color: #8D8E98;">Sin cr&eacute;ditos</p>
-            {% endif %}
-        </div>
-
-        <!-- Gastos y Movimientos -->
-        <div class="section">
-            <div class="section-title">GASTOS Y MOVIMIENTOS</div>
-            {% if metricas.detalle_gastos or metricas.detalle_movimientos %}
-            <table>
-                <thead>
-                    <tr>
-                        <th>Concepto</th>
-                        <th>Descripci&oacute;n</th>
-                        <th>Monto</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for gasto in metricas.detalle_gastos %}
-                    <tr>
-                        <td>{{ gasto.concepto }}</td>
-                        <td>{{ gasto.descripcion }}</td>
-                        <td style="color: #FF3366;">-{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(gasto.monto) }}</td>
-                    </tr>
-                    {% endfor %}
-                    {% for mov in metricas.detalle_movimientos %}
-                    <tr>
-                        <td>{{ mov.concepto }}</td>
-                        <td>{{ mov.descripcion }}</td>
-                        <td style="color: {% if mov.tipo == 'ENTRADA' %}#00FF99{% else %}#FF3366{% endif %};">
-                            {% if mov.tipo == 'ENTRADA' %}+{% else %}-{% endif %}{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(mov.monto) }}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <p style="text-align: center; color: #8D8E98;">Sin gastos ni movimientos</p>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Clientes Sin Pago -->
-    <div class="section">
-        <div class="section-title">CLIENTES SIN PAGO ({{ metricas.num_clientes_sin_pago }}) - Llamar al cliente y verificar el cr&eacute;dito</div>
-        {% if metricas.clientes_sin_pago %}
-        <div class="two-columns" style="flex-wrap: wrap;">
-            {% for cliente in metricas.clientes_sin_pago %}
-            <div style="width: 48%; margin-bottom: 8px;">
-                <div class="cliente-item">
-                    <div>
-                        <div class="cliente-nombre">{{ loop.index }}. {{ cliente.nombre }}</div>
-                        <div class="cliente-telefono">{{ cliente.telefono }}</div>
-                    </div>
-                    <div class="cliente-monto">{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(cliente.valor_cuota) }}</div>
+    <!-- DOS COLUMNAS: CREDITOS Y GASTOS -->
+    <table class="two-col-table" cellpadding="0" cellspacing="0">
+        <tr>
+            <td style="padding-right: 5px;">
+                <div class="section">
+                    <div class="section-title">CR&Eacute;DITOS OTORGADOS ({{ metricas.num_creditos }})</div>
+                    <table cellpadding="0" cellspacing="0" style="width: 80%; margin: 0 auto; margin-bottom: 6px;">
+                        <tr>
+                            <td class="stat-box-default">
+                                <div class="stat-number-cyan">{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(metricas.total_desembolsos) }}</div>
+                                <div class="stat-label">Total Desembolsado</div>
+                            </td>
+                        </tr>
+                    </table>
+                    {% if metricas.creditos_otorgados %}
+                    <table class="data-table" cellpadding="0" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Celular</th>
+                                <th>Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for credito in metricas.creditos_otorgados %}
+                            <tr>
+                                <td>{{ credito.cliente }}</td>
+                                <td>{{ credito.celular }}</td>
+                                <td>{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(credito.monto) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="no-data">Sin cr&eacute;ditos</div>
+                    {% endif %}
                 </div>
-            </div>
-            {% endfor %}
-        </div>
+            </td>
+            <td style="padding-left: 5px;">
+                <div class="section">
+                    <div class="section-title">GASTOS Y MOVIMIENTOS</div>
+                    {% if metricas.detalle_gastos or metricas.detalle_movimientos %}
+                    <table class="data-table" cellpadding="0" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>Concepto</th>
+                                <th>Descripci&oacute;n</th>
+                                <th>Monto</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for gasto in metricas.detalle_gastos %}
+                            <tr>
+                                <td>{{ gasto.concepto }}</td>
+                                <td>{{ gasto.descripcion }}</td>
+                                <td class="negative">-{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(gasto.monto) }}</td>
+                            </tr>
+                            {% endfor %}
+                            {% for mov in metricas.detalle_movimientos %}
+                            <tr>
+                                <td>{{ mov.concepto }}</td>
+                                <td>{{ mov.descripcion }}</td>
+                                <td class="{% if mov.tipo == 'ENTRADA' %}positive{% else %}negative{% endif %}">
+                                    {% if mov.tipo == 'ENTRADA' %}+{% else %}-{% endif %}{{ metricas.ruta.simbolo }}{{ '{:,.0f}'.format(mov.monto) }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="no-data">Sin gastos ni movimientos</div>
+                    {% endif %}
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- CLIENTES SIN PAGO -->
+    <div class="section">
+        <div class="section-title">CLIENTES SIN PAGO ({{ metricas.num_clientes_sin_pago }})</div>
+        {% if metricas.clientes_sin_pago %}
+        <table class="data-table" cellpadding="0" cellspacing="0">
+            <thead>
+                <tr>
+                    <th style="width: 6%; text-align: center;">#</th>
+                    <th style="width: 34%;">Cliente</th>
+                    <th style="width: 24%; text-align: center;">Tel&eacute;fono</th>
+                    <th style="width: 18%; text-align: center;">&Uacute;ltimo Pago</th>
+                    <th style="width: 18%; text-align: center;">D&iacute;as Atraso</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cliente in metricas.clientes_sin_pago %}
+                <tr>
+                    <td style="text-align: center;">{{ loop.index }}</td>
+                    <td><strong>{{ cliente.nombre }}</strong></td>
+                    <td style="color: #C0C0C8; text-align: center;">{{ cliente.telefono }}</td>
+                    <td style="text-align: center;">{{ cliente.ultimo_pago|default('—') }}</td>
+                    <td style="text-align: center; font-weight: bold; color: {% if cliente.dias_atraso|default(0) >= 3 %}#FF3366{% elif cliente.dias_atraso|default(0) >= 1 %}#FFD740{% else %}#FFFFFF{% endif %};">{{ cliente.dias_atraso|default(0) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
         {% else %}
-        <p style="text-align: center; color: #00FF99; padding: 20px;">Todos los clientes pagaron este d&iacute;a</p>
+        <div class="no-data" style="color: #00FF99;">Todos los clientes pagaron</div>
         {% endif %}
     </div>
 
-    <!-- Footer -->
+    <!-- FOOTER -->
     <div class="footer">
-        <p>Reporte generado el {{ fecha_generacion }} | DIAMANTE PRO - Sistema de Gesti&oacute;n de Cr&eacute;ditos</p>
+        Reporte generado el {{ fecha_generacion }} | DIAMANTE PRO
     </div>
 </body>
 </html>
