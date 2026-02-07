@@ -7,123 +7,247 @@
 {% block extra_css %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-    /* Dashboard - Tema Dark Tech */
-    .stat-card {
-        border-radius: 15px;
+    /* ==================== CURRENCY TOGGLE ==================== */
+    .currency-toggle {
+        display: inline-flex;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 25px;
+        padding: 3px;
+        border: 1px solid rgba(0, 229, 255, 0.25);
+    }
+    .currency-toggle .ct-btn {
+        padding: 6px 14px;
+        border-radius: 22px;
         border: none;
-        transition: all 0.3s ease;
-        overflow: hidden;
-    }
-    .stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 229, 255, 0.15) !important;
-    }
-    .stat-card.primary {
-        background: linear-gradient(135deg, #0A0E21 0%, #1e3c72 100%) !important;
-        border-left: 4px solid #00E5FF;
-    }
-    .stat-card.success {
-        background: linear-gradient(135deg, #0A0E21 0%, #0d4d2a 100%) !important;
-        border-left: 4px solid #00FF99;
-    }
-    .stat-card.warning {
-        background: linear-gradient(135deg, #0A0E21 0%, #4d3800 100%) !important;
-        border-left: 4px solid #FFD700;
-    }
-    .stat-card.info {
-        background: linear-gradient(135deg, #0A0E21 0%, #0d4d5f 100%) !important;
-        border-left: 4px solid #00E5FF;
-    }
-    .stat-card.danger {
-        background: linear-gradient(135deg, #0A0E21 0%, #5f0d1f 100%) !important;
-        border-left: 4px solid #FF3366;
-    }
-    .stat-card.purple {
-        background: linear-gradient(135deg, #0A0E21 0%, #4a1d7a 100%) !important;
-        border-left: 4px solid #BB86FC;
-    }
-    .menu-card {
-        border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        transition: all 0.3s ease;
-        cursor: pointer;
-        background: #1D1E33 !important;
-    }
-    .menu-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 229, 255, 0.2) !important;
-        border-color: #00E5FF !important;
-    }
-    .menu-card .card-body {
-        padding: 25px;
-    }
-    .menu-icon {
-        font-size: 2.5rem;
-        color: #00E5FF !important;
-    }
-    .chart-container {
-        position: relative;
-        height: 300px;
-        background: #1D1E33 !important;
-        border-radius: 15px;
-        padding: 20px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-    }
-    .table-widget {
-        background: #1D1E33 !important;
-        border-radius: 15px;
-        padding: 20px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
-        max-height: 400px;
-        overflow-y: auto;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-    }
-    .kpi-badge {
-        font-size: 0.85rem;
-        padding: 8px 16px;
-        border-radius: 20px;
-        font-weight: 600;
-        display: inline-block;
-    }
-    .stat-number {
-        font-size: 2.5rem;
-        font-weight: 700;
-        line-height: 1;
-    }
-    .stat-label {
-        font-size: 0.9rem;
-        opacity: 0.95;
-        font-weight: 500;
-    }
-    .stat-sublabel {
+        background: transparent;
+        color: #8D8E98;
         font-size: 0.8rem;
-        opacity: 0.85;
-    }
-    .quick-action-card {
-        background: linear-gradient(135deg, #1D1E33 0%, #252744 100%) !important;
-        border: 1px solid rgba(0, 229, 255, 0.2);
-        border-radius: 12px;
-        padding: 20px;
-        text-align: center;
-        transition: all 0.3s ease;
-        cursor: pointer;
-    }
-    .quick-action-card:hover {
-        transform: translateY(-5px);
-        border-color: #00E5FF;
-        box-shadow: 0 8px 25px rgba(0, 229, 255, 0.2);
-    }
-    .quick-action-card i {
-        font-size: 2rem;
-        margin-bottom: 10px;
-    }
-    .quick-action-card h6 {
-        margin: 0;
         font-weight: 600;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        white-space: nowrap;
+    }
+    .currency-toggle .ct-btn.active {
+        background: linear-gradient(135deg, #00E5FF 0%, #00D67F 100%);
+        color: #0A0E21;
+        box-shadow: 0 2px 12px rgba(0, 229, 255, 0.4);
+    }
+    .currency-toggle .ct-btn:hover:not(.active) {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.08);
     }
 
-    /* Selector Moderno de Filtros */
+    /* ==================== COMMAND TOOLBAR ==================== */
+    .command-toolbar {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .cmd-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        border: none;
+    }
+    .cmd-btn:hover {
+        transform: translateY(-2px);
+        text-decoration: none;
+    }
+    .cmd-btn i { font-size: 1.1rem; }
+    .cmd-primary {
+        background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+        color: #fff !important;
+        box-shadow: 0 4px 15px rgba(37, 99, 235, 0.35);
+    }
+    .cmd-primary:hover {
+        box-shadow: 0 6px 25px rgba(37, 99, 235, 0.5);
+        color: #fff !important;
+    }
+    .cmd-warning {
+        background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+        color: #0A0E21 !important;
+        box-shadow: 0 4px 15px rgba(245, 158, 11, 0.35);
+    }
+    .cmd-warning:hover {
+        box-shadow: 0 6px 25px rgba(245, 158, 11, 0.5);
+        color: #0A0E21 !important;
+    }
+    .cmd-outline {
+        background: transparent;
+        color: #00E5FF !important;
+        border: 1px solid rgba(0, 229, 255, 0.4);
+    }
+    .cmd-outline:hover {
+        background: rgba(0, 229, 255, 0.1);
+        border-color: #00E5FF;
+        box-shadow: 0 4px 15px rgba(0, 229, 255, 0.2);
+        color: #00E5FF !important;
+    }
+
+    /* ==================== KPI CARDS ==================== */
+    .kpi-card {
+        background: #161B22;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 14px;
+        padding: 20px;
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    .kpi-card:hover {
+        border-color: rgba(0, 229, 255, 0.2);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+    .kpi-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+    .kpi-label {
+        color: #8B949E;
+        font-size: 0.78rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .kpi-icon {
+        font-size: 1.3rem;
+        opacity: 0.6;
+    }
+    .kpi-value {
+        font-size: 1.7rem;
+        font-weight: 700;
+        color: #fff;
+        line-height: 1.2;
+        margin-bottom: 8px;
+    }
+    .kpi-detail {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.78rem;
+        font-weight: 500;
+    }
+    .kpi-detail.positive { color: #00D67F; }
+    .kpi-detail.negative { color: #FF4757; }
+    .kpi-detail.neutral { color: #8B949E; }
+    .kpi-accent-green { border-left: 3px solid #00D67F; }
+    .kpi-accent-blue { border-left: 3px solid #2563EB; }
+    .kpi-accent-red { border-left: 3px solid #FF4757; }
+    .kpi-accent-yellow { border-left: 3px solid #F59E0B; }
+
+    /* Progress bar mini */
+    .kpi-progress {
+        height: 6px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 3px;
+        overflow: hidden;
+        margin-top: 10px;
+    }
+    .kpi-progress-bar {
+        height: 100%;
+        border-radius: 3px;
+        background: linear-gradient(90deg, #00E5FF, #00D67F);
+        transition: width 0.6s ease;
+    }
+
+    /* ==================== CHART SECTION ==================== */
+    .panel-card {
+        background: #161B22;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 14px;
+        padding: 20px;
+    }
+    .panel-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #E0E0E0;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .panel-title i { color: #00E5FF; font-size: 1rem; }
+    .chart-wrapper {
+        position: relative;
+        height: 260px;
+    }
+
+    /* ==================== EXPENSE FEED ==================== */
+    .expense-feed {
+        max-height: 320px;
+        overflow-y: auto;
+    }
+    .expense-feed::-webkit-scrollbar { width: 4px; }
+    .expense-feed::-webkit-scrollbar-thumb {
+        background: rgba(0, 229, 255, 0.2);
+        border-radius: 2px;
+    }
+    .expense-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .expense-item:last-child { border-bottom: none; }
+    .expense-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+        flex-shrink: 0;
+        background: rgba(255, 71, 87, 0.15);
+        color: #FF4757;
+    }
+    .expense-info { flex: 1; min-width: 0; }
+    .expense-concept {
+        color: #E0E0E0;
+        font-size: 0.82rem;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .expense-meta {
+        color: #8B949E;
+        font-size: 0.72rem;
+    }
+    .expense-amount {
+        color: #FF4757;
+        font-weight: 700;
+        font-size: 0.85rem;
+        white-space: nowrap;
+    }
+    .feed-empty {
+        text-align: center;
+        padding: 30px 0;
+        color: #8B949E;
+    }
+    .feed-empty i { font-size: 2rem; margin-bottom: 8px; display: block; opacity: 0.4; }
+    .feed-link {
+        display: block;
+        text-align: center;
+        padding: 10px;
+        color: #00E5FF !important;
+        font-size: 0.8rem;
+        font-weight: 500;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        margin-top: 8px;
+    }
+    .feed-link:hover { text-decoration: underline !important; }
+
+    /* ==================== FILTER STYLES ==================== */
     .filter-selector-btn {
         background: linear-gradient(135deg, #1D1E33 0%, #252744 100%);
         border: 1px solid rgba(0, 229, 255, 0.4);
@@ -140,11 +264,8 @@
         border-color: #00E5FF;
         color: #00E5FF;
         box-shadow: 0 4px 15px rgba(0, 229, 255, 0.3);
-        transform: translateY(-1px);
     }
-    .filter-selector-btn::after {
-        margin-left: 8px;
-    }
+    .filter-selector-btn::after { margin-left: 8px; }
     .filter-dropdown-menu {
         background: linear-gradient(180deg, #1D1E33 0%, #151624 100%);
         border: 1px solid rgba(0, 229, 255, 0.2);
@@ -161,7 +282,6 @@
         display: flex;
         align-items: center;
         transition: all 0.2s ease;
-        border-radius: 0;
     }
     .filter-dropdown-menu .dropdown-item:hover {
         background: rgba(0, 229, 255, 0.1);
@@ -183,21 +303,25 @@
         border-color: rgba(255, 255, 255, 0.08);
         margin: 4px 0;
     }
-    .filter-dropdown-menu::-webkit-scrollbar {
-        width: 6px;
-    }
-    .filter-dropdown-menu::-webkit-scrollbar-track {
-        background: transparent;
-    }
+    .filter-dropdown-menu::-webkit-scrollbar { width: 6px; }
     .filter-dropdown-menu::-webkit-scrollbar-thumb {
         background: rgba(0, 229, 255, 0.3);
         border-radius: 3px;
+    }
+
+    /* ==================== RESPONSIVE ==================== */
+    @media (max-width: 768px) {
+        .command-toolbar { gap: 8px; }
+        .cmd-btn { padding: 8px 14px; font-size: 0.8rem; }
+        .cmd-btn span { display: none; }
+        .kpi-value { font-size: 1.3rem; }
+        .currency-toggle .ct-btn { padding: 5px 10px; font-size: 0.75rem; }
     }
 </style>
 {% endblock %}
 
 {% block navbar_actions %}
-<!-- Selector Moderno de Oficinas y Rutas -->
+<!-- Selector de Oficinas y Rutas -->
 {% if rol in ['dueno', 'gerente'] %}
 <div class="dropdown d-none d-md-inline-block">
     <button class="btn btn-sm dropdown-toggle filter-selector-btn" type="button"
@@ -212,7 +336,6 @@
         {% endif %}
     </button>
     <ul class="dropdown-menu dropdown-menu-dark filter-dropdown-menu" aria-labelledby="filterDropdown">
-        <!-- Ver Todo -->
         <li>
             <a class="dropdown-item {% if not oficina_seleccionada and not ruta_seleccionada %}active{% endif %}"
                href="/ver-todas-rutas">
@@ -221,7 +344,6 @@
                 <small class="ms-auto text-muted">Global</small>
             </a>
         </li>
-
         {% if todas_las_oficinas %}
         <li><hr class="dropdown-divider"></li>
         <li><h6 class="dropdown-header"><i class="bi bi-building me-2"></i>Oficinas</h6></li>
@@ -236,20 +358,17 @@
         </li>
         {% endfor %}
         {% endif %}
-
         {% if todas_las_rutas %}
         <li><hr class="dropdown-divider"></li>
-        <li><h6 class="dropdown-header"><i class="bi bi-signpost-2 me-2"></i>Rutas Individuales</h6></li>
+        <li><h6 class="dropdown-header"><i class="bi bi-signpost-2 me-2"></i>Rutas</h6></li>
         {% for ruta in todas_las_rutas %}
         <li>
             <a class="dropdown-item {% if ruta_seleccionada and ruta_seleccionada.id == ruta.id %}active{% endif %}"
                href="/seleccionar-ruta/{{ ruta.id }}">
                 <i class="bi bi-signpost-2 me-2 text-success"></i>
                 <span>{{ ruta.nombre }}</span>
-                {% if ruta.moneda == 'BRL' %}
-                <span class="badge bg-success ms-auto">BRL</span>
-                {% elif ruta.moneda == 'COP' %}
-                <span class="badge bg-primary ms-auto">COP</span>
+                {% if ruta.moneda %}
+                <span class="badge bg-{% if ruta.moneda == 'BRL' %}success{% else %}primary{% endif %} ms-auto">{{ ruta.moneda }}</span>
                 {% endif %}
             </a>
         </li>
@@ -258,516 +377,224 @@
     </ul>
 </div>
 {% endif %}
+
+<!-- Toggle de Moneda Global -->
+{% if monedas_activas|length > 1 %}
+<div class="currency-toggle" id="currencyToggle">
+    {% for moneda in monedas_activas %}
+    <button class="ct-btn {% if loop.first %}active{% endif %}"
+            data-currency="{{ moneda }}"
+            onclick="switchCurrency('{{ moneda }}')">
+        {{ simbolos_moneda.get(moneda, '$') }} {{ moneda }}
+    </button>
+    {% endfor %}
+</div>
+{% endif %}
 {% endblock %}
 
 {% block content %}
 <!-- Alerta de Filtro Activo -->
 {% if oficina_seleccionada or ruta_seleccionada %}
-<div class="filter-alert mb-4">
+<div class="mb-4" style="background: linear-gradient(135deg, rgba(0, 229, 255, 0.08) 0%, rgba(0, 255, 153, 0.05) 100%); border: 1px solid rgba(0, 229, 255, 0.25); border-radius: 12px; padding: 12px 20px;">
     <div class="d-flex justify-content-between align-items-center">
-        <div class="d-flex align-items-center gap-3">
+        <div class="d-flex align-items-center gap-2">
             {% if oficina_seleccionada %}
-            <div class="filter-badge office">
-                <i class="bi bi-building-fill"></i>
-                <span>Oficina: <strong>{{ oficina_seleccionada.nombre }}</strong></span>
-                {% if oficina_seleccionada.ciudad %}
-                <small class="text-muted ms-2">{{ oficina_seleccionada.ciudad }}</small>
-                {% endif %}
-            </div>
-            <div class="filter-info">
-                <span class="badge bg-warning bg-opacity-25 text-warning">
-                    <i class="bi bi-signpost-2 me-1"></i>{{ oficina_seleccionada.numero_rutas }} rutas
-                </span>
-            </div>
+            <i class="bi bi-building-fill" style="color: #FFD700;"></i>
+            <span class="text-white" style="font-size: 0.9rem;">Oficina: <strong>{{ oficina_seleccionada.nombre }}</strong></span>
             {% elif ruta_seleccionada %}
-            <div class="filter-badge route">
-                <i class="bi bi-signpost-2-fill"></i>
-                <span>Ruta: <strong>{{ ruta_seleccionada.nombre }}</strong></span>
+            <i class="bi bi-signpost-2-fill" style="color: #00FF99;"></i>
+            <span class="text-white" style="font-size: 0.9rem;">Ruta: <strong>{{ ruta_seleccionada.nombre }}</strong>
                 {% if ruta_seleccionada.cobrador %}
-                <small class="text-muted ms-2">({{ ruta_seleccionada.cobrador.nombre }})</small>
+                <small class="text-muted">({{ ruta_seleccionada.cobrador.nombre }})</small>
                 {% endif %}
-            </div>
-            <div class="filter-info">
-                {% if ruta_seleccionada.moneda == 'BRL' %}
-                <span class="badge bg-success bg-opacity-25 text-success">
-                    <i class="bi bi-currency-exchange me-1"></i>Reales (BRL)
-                </span>
-                {% else %}
-                <span class="badge bg-primary bg-opacity-25 text-primary">
-                    <i class="bi bi-currency-exchange me-1"></i>Pesos (COP)
-                </span>
-                {% endif %}
-                {% if ruta_seleccionada.oficina %}
-                <span class="badge bg-secondary bg-opacity-25 text-secondary ms-1">
-                    <i class="bi bi-building me-1"></i>{{ ruta_seleccionada.oficina.nombre }}
-                </span>
-                {% endif %}
-            </div>
+            </span>
             {% endif %}
         </div>
-        <a href="/ver-todas-rutas" class="btn btn-sm clear-filter-btn">
-            <i class="bi bi-x-lg me-1"></i>Quitar Filtro
+        <a href="/ver-todas-rutas" class="btn btn-sm" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: #E0E0E0; border-radius: 20px; padding: 4px 12px; font-size: 0.78rem;">
+            <i class="bi bi-x-lg me-1"></i>Quitar
         </a>
     </div>
 </div>
-<style>
-.filter-alert {
-    background: linear-gradient(135deg, rgba(0, 229, 255, 0.08) 0%, rgba(0, 255, 153, 0.05) 100%);
-    border: 1px solid rgba(0, 229, 255, 0.25);
-    border-radius: 12px;
-    padding: 12px 20px;
-    backdrop-filter: blur(10px);
-}
-.filter-badge {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #fff;
-    font-size: 0.9rem;
-}
-.filter-badge i {
-    font-size: 1.1rem;
-}
-.filter-badge.office i { color: #FFD700; }
-.filter-badge.route i { color: #00FF99; }
-.clear-filter-btn {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #E0E0E0;
-    border-radius: 20px;
-    padding: 6px 14px;
-    font-size: 0.8rem;
-    transition: all 0.2s ease;
-}
-.clear-filter-btn:hover {
-    background: rgba(255, 51, 102, 0.2);
-    border-color: #FF3366;
-    color: #FF3366;
-}
-</style>
 {% endif %}
 
-<!-- Acciones Rápidas - Para usuarios web (Dueño, Gerente, Secretaria) -->
-<!-- Nota: Los cobradores solo usan la app móvil -->
-<div class="row mb-4">
-    <div class="col-12">
-        <h5 class="fw-bold mb-3" style="color: #00E5FF;">
-            <i class="bi bi-lightning-charge"></i> Acciones Rápidas
-        </h5>
-    </div>
-    
-    <!-- ACCIONES PARA DUEÑO/GERENTE/SECRETARIA (usuarios web) -->
-    <div class="col-6 col-md-2 mb-3">
-        <div class="quick-action-card" onclick="window.location.href='{{ url_for('reportes.reportes') }}'">
-            <i class="bi bi-bar-chart-line-fill" style="color: #00E5FF;"></i>
-            <h6 class="text-white">Análisis General</h6>
+<!-- ==================== ZONA 1: BARRA DE COMANDO ==================== -->
+<div class="command-toolbar mb-4">
+    <a href="{{ url_for('reportes.reporte_ruta') }}" class="cmd-btn cmd-primary">
+        <i class="bi bi-person-badge"></i>
+        <span>Reporte por Recaudador</span>
+    </a>
+    <a href="{{ url_for('finanzas.caja_gastos') }}" class="cmd-btn cmd-warning">
+        <i class="bi bi-receipt-cutoff"></i>
+        <span>Registrar Gasto</span>
+    </a>
+    <a href="{{ url_for('finanzas.caja_inicio') }}" class="cmd-btn cmd-outline">
+        <i class="bi bi-safe"></i>
+        <span>Caja General</span>
+    </a>
+</div>
+
+<!-- ==================== ZONA 2: KPIs DE SUPERVISION ==================== -->
+<div class="row g-3 mb-4">
+    <!-- KPI 1: Balance del Día -->
+    <div class="col-6 col-lg-3">
+        <div class="kpi-card kpi-accent-green">
+            <div class="kpi-header">
+                <span class="kpi-label">Balance del Dia</span>
+                <i class="bi bi-wallet2 kpi-icon" style="color: #00D67F;"></i>
+            </div>
+            {% for m in monedas_activas %}
+            <div class="cv {% if not loop.first %}d-none{% endif %}" data-currency="{{ m }}">
+                <div class="kpi-value {% if balance_dia_por_moneda.get(m, 0) >= 0 %}" style="color: #00D67F;"{% else %}" style="color: #FF4757;"{% endif %}>
+                    {{ simbolos_moneda.get(m, '$') }} {{ "{:,.0f}".format(balance_dia_por_moneda.get(m, 0)) }}
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="kpi-detail positive">
+                        <i class="bi bi-arrow-up-short"></i>{{ simbolos_moneda.get(m, '$') }} {{ "{:,.0f}".format(cobrado_hoy_por_moneda.get(m, 0)) }}
+                    </span>
+                    <span class="kpi-detail negative">
+                        <i class="bi bi-arrow-down-short"></i>{{ simbolos_moneda.get(m, '$') }} {{ "{:,.0f}".format(gastos_hoy_por_moneda.get(m, 0)) }}
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
         </div>
     </div>
-    <div class="col-6 col-md-2 mb-3">
-        <div class="quick-action-card" onclick="window.location.href='{{ url_for('admin_bp.capital_aportes') }}'">
-            <i class="bi bi-piggy-bank-fill" style="color: #00FF99;"></i>
-            <h6 class="text-white">Capital y Aportes</h6>
+
+    <!-- KPI 2: Eficacia de Cobro -->
+    <div class="col-6 col-lg-3">
+        <div class="kpi-card kpi-accent-blue">
+            <div class="kpi-header">
+                <span class="kpi-label">Eficacia de Cobro</span>
+                <i class="bi bi-speedometer2 kpi-icon" style="color: #2563EB;"></i>
+            </div>
+            {% for m in monedas_activas %}
+            <div class="cv {% if not loop.first %}d-none{% endif %}" data-currency="{{ m }}">
+                <div class="kpi-value">{{ "{:.1f}".format(tasa_cobro_por_moneda.get(m, 0)) }}%</div>
+                <div class="kpi-detail neutral">
+                    {{ simbolos_moneda.get(m, '$') }} {{ "{:,.0f}".format(cobrado_hoy_por_moneda.get(m, 0)) }} de {{ simbolos_moneda.get(m, '$') }} {{ "{:,.0f}".format(flujo_cobro_por_moneda.get(m, 0)) }}
+                </div>
+                <div class="kpi-progress">
+                    <div class="kpi-progress-bar" style="width: {{ [tasa_cobro_por_moneda.get(m, 0), 100]|min }}%;"></div>
+                </div>
+            </div>
+            {% endfor %}
         </div>
     </div>
-    <div class="col-6 col-md-2 mb-3">
-        <div class="quick-action-card" onclick="window.location.href='{{ url_for('rutas.lista') }}'">
-            <i class="bi bi-signpost-2-fill" style="color: #FFD700;"></i>
-            <h6 class="text-white">Gestión Rutas</h6>
+
+    <!-- KPI 3: Capital en Riesgo -->
+    <div class="col-6 col-lg-3">
+        <div class="kpi-card kpi-accent-red">
+            <div class="kpi-header">
+                <span class="kpi-label">Capital en Riesgo</span>
+                <i class="bi bi-exclamation-triangle kpi-icon" style="color: #FF4757;"></i>
+            </div>
+            {% for m in monedas_activas %}
+            <div class="cv {% if not loop.first %}d-none{% endif %}" data-currency="{{ m }}">
+                <div class="kpi-value" style="{% if mora_por_moneda.get(m, 0) > 0 %}color: #FF4757;{% endif %}">
+                    {{ mora_por_moneda.get(m, 0) }}
+                </div>
+                <div class="kpi-detail {% if mora_por_moneda.get(m, 0) > 0 %}negative{% else %}positive{% endif %}">
+                    {% if mora_por_moneda.get(m, 0) > 0 %}
+                    <i class="bi bi-exclamation-circle"></i>{{ simbolos_moneda.get(m, '$') }} {{ "{:,.0f}".format(monto_mora_por_moneda.get(m, 0)) }} en mora
+                    {% else %}
+                    <i class="bi bi-check-circle"></i>Sin mora activa
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
         </div>
     </div>
-    <div class="col-6 col-md-2 mb-3">
-        <div class="quick-action-card" onclick="window.location.href='{{ url_for('sociedades.lista') }}'">
-            <i class="bi bi-people-fill" style="color: #BB86FC;"></i>
-            <h6 class="text-white">Sociedades</h6>
-        </div>
-    </div>
-    {% if rol in ['dueno', 'gerente'] %}
-    <div class="col-6 col-md-2 mb-3">
-        <div class="quick-action-card" onclick="window.location.href='{{ url_for('admin_bp.usuarios_lista') }}'">
-            <i class="bi bi-person-gear" style="color: #FF6B6B;"></i>
-            <h6 class="text-white">Usuarios</h6>
-        </div>
-    </div>
-    {% else %}
-    <!-- Secretaria ve Clientes en lugar de Usuarios -->
-    <div class="col-6 col-md-2 mb-3">
-        <div class="quick-action-card" onclick="window.location.href='{{ url_for('clientes.lista') }}'">
-            <i class="bi bi-person-lines-fill" style="color: #FF6B6B;"></i>
-            <h6 class="text-white">Clientes</h6>
-        </div>
-    </div>
-    {% endif %}
-    <div class="col-6 col-md-2 mb-3">
-        <div class="quick-action-card" onclick="window.location.href='{{ url_for('finanzas.caja_inicio') }}'">
-            <i class="bi bi-safe-fill" style="color: #03DAC6;"></i>
-            <h6 class="text-white">Caja General</h6>
+
+    <!-- KPI 4: Utilidad Estimada -->
+    <div class="col-6 col-lg-3">
+        <div class="kpi-card kpi-accent-yellow">
+            <div class="kpi-header">
+                <span class="kpi-label">Utilidad Estimada</span>
+                <i class="bi bi-graph-up-arrow kpi-icon" style="color: #F59E0B;"></i>
+            </div>
+            {% for m in monedas_activas %}
+            <div class="cv {% if not loop.first %}d-none{% endif %}" data-currency="{{ m }}">
+                <div class="kpi-value" style="color: #F59E0B;">
+                    {{ simbolos_moneda.get(m, '$') }} {{ "{:,.0f}".format(ganancia_esperada_por_moneda.get(m, 0)) }}
+                </div>
+                <div class="kpi-detail positive">
+                    <i class="bi bi-trending-up"></i>+{{ "{:.1f}".format(porcentaje_ganancia_por_moneda.get(m, 0)) }}% ROI
+                </div>
+            </div>
+            {% endfor %}
         </div>
     </div>
 </div>
 
-<!-- Stats Cards - Primera Fila -->
-<div class="row g-4 mb-4">
-    <div class="col-md-3">
-        <div class="card stat-card primary text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-title">Préstamos Activos</h6>
-                        <h2 class="mb-0">{{ total_prestamos_activos }}</h2>
-                        <small>{{ prestamos_al_dia }} al día | {{ prestamos_atrasados }} atrasados</small>
-                    </div>
-                    <i class="bi bi-cash-stack fs-1"></i>
-                </div>
+<!-- ==================== ZONA 3: ANALISIS RAPIDO ==================== -->
+<div class="row g-3">
+    <!-- Gráfico de Cobros 7 Días (60%) -->
+    <div class="col-lg-7">
+        <div class="panel-card">
+            <div class="panel-title">
+                <i class="bi bi-graph-up"></i>
+                <span>Cobros - Ultimos 7 Dias</span>
+                {% for m in monedas_activas %}
+                <span class="cv badge ms-auto {% if not loop.first %}d-none{% endif %}" data-currency="{{ m }}"
+                      style="background: rgba(0, 229, 255, 0.15); color: #00E5FF; font-size: 0.7rem;">
+                    {{ simbolos_moneda.get(m, '$') }} {{ m }}
+                </span>
+                {% endfor %}
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="cobrosChart"></canvas>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card stat-card success text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-title">Clientes</h6>
-                        <h2 class="mb-0">{{ total_clientes }}</h2>
-                        <small>{% if clientes_vip > 0 %}{{ clientes_vip }} VIP{% else %}Todos regulares{% endif %}</small>
-                    </div>
-                    <i class="bi bi-people fs-1"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card stat-card warning text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="card-title mb-0"><i class="bi bi-calendar-check me-2"></i>Flujo de Cobro</h6>
-                </div>
-                <div class="row text-center mt-2">
-                    <div class="col-6 border-end" style="border-color: rgba(255,255,255,0.3) !important;">
-                        <small class="text-white-50 d-block mb-2">Hoy</small>
-                        {% if flujo_cobro_por_moneda and flujo_cobro_por_moneda|length > 0 %}
-                            <div class="text-start">
-                            {% for moneda, total in flujo_cobro_por_moneda.items() %}
-                                <div class="d-flex justify-content-between align-items-center small mb-2 {% if not loop.last %}border-bottom border-light border-opacity-25 pb-1{% endif %}">
-                                    <span class="badge bg-white bg-opacity-25 px-2" style="font-size: 0.65rem;">{{ moneda }}</span>
-                                    <span class="fw-bold">${{ "{:,.0f}".format(total) }}</span>
-                                </div>
-                            {% endfor %}
-                            </div>
-                        {% else %}
-                            <div class="d-flex justify-content-center">
-                                <h5 class="mb-0 fw-bold">${{ "{:,.0f}".format(por_cobrar_hoy) }}</h5>
-                            </div>
-                        {% endif %}
-                    </div>
-                    <div class="col-6">
-                        <small class="text-white-50 d-block mb-2">Mañana</small>
-                        {% if flujo_cobro_por_moneda and flujo_cobro_por_moneda|length > 0 %}
-                            <div class="text-start">
-                            {% for moneda, total in flujo_cobro_por_moneda.items() %}
-                                <div class="d-flex justify-content-between align-items-center small mb-2 {% if not loop.last %}border-bottom border-light border-opacity-25 pb-1{% endif %}">
-                                    <span class="badge bg-white bg-opacity-25 px-2" style="font-size: 0.65rem;">{{ moneda }}</span>
-                                    <span class="fw-bold">${{ "{:,.0f}".format(total) }}</span>
-                                </div>
-                            {% endfor %}
-                            </div>
-                        {% else %}
-                            <div class="d-flex justify-content-center">
-                                <h5 class="mb-0 fw-bold">${{ "{:,.0f}".format(proyeccion_manana) }}</h5>
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% if rol in ['dueno', 'gerente', 'supervisor', 'secretaria'] %}
-    <div class="col-md-3">
-        <div class="card stat-card info text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="card-title mb-0"><i class="bi bi-graph-up me-2"></i>Total en Cartera</h6>
-                </div>
-                <div class="mt-2">
-                    {% if cartera_por_moneda and cartera_por_moneda|length > 0 %}
-                        {% for moneda, total in cartera_por_moneda.items() %}
-                            <div class="d-flex justify-content-between align-items-center mb-2 pb-2 {% if not loop.last %}border-bottom border-light border-opacity-25{% endif %}">
-                                <span class="badge bg-white bg-opacity-25 px-3 py-1">{{ moneda }}</span>
-                                <h4 class="mb-0 text-end fw-bold">${{ "{:,.0f}".format(total) }}</h4>
-                            </div>
-                        {% endfor %}
-                    {% else %}
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="badge bg-white bg-opacity-25 px-3 py-1">COP</span>
-                            <h4 class="mb-0 text-end fw-bold">${{ "{:,.0f}".format(total_cartera) }}</h4>
-                        </div>
-                    {% endif %}
-                </div>
-                <small class="stat-sublabel opacity-75 d-block mt-2">Saldo por cobrar</small>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-</div>
 
-<!-- Stats Cards - Segunda Fila -->
-<div class="row g-4 mb-4">
-    <div class="col-md-3">
-        <div class="card stat-card danger text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="stat-label">En Mora</h6>
-                        <h2 class="stat-number mb-0">{{ prestamos_mora }}</h2>
-                        <small class="stat-sublabel">Más de 3 cuotas</small>
-                    </div>
-                    <i class="bi bi-exclamation-triangle-fill fs-1"></i>
-                </div>
+    <!-- Feed de Últimos Gastos (40%) -->
+    <div class="col-lg-5">
+        <div class="panel-card" style="height: 100%; display: flex; flex-direction: column;">
+            <div class="panel-title">
+                <i class="bi bi-receipt-cutoff"></i>
+                <span>Ultimos Gastos</span>
             </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card stat-card purple text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="stat-label mb-0"><i class="bi bi-piggy-bank-fill me-2"></i>Capital Prestado</h6>
-                </div>
-                <div class="mt-2">
-                    <!-- DEBUG: capital_prestado_por_moneda = {{ capital_prestado_por_moneda }} -->
-                    <!-- DEBUG: length = {{ capital_prestado_por_moneda|length }} -->
-                    {% if capital_prestado_por_moneda and capital_prestado_por_moneda|length > 0 %}
-                        {% for moneda, total in capital_prestado_por_moneda.items() %}
-                            <div class="d-flex justify-content-between align-items-center mb-2 pb-2 {% if not loop.last %}border-bottom border-light border-opacity-25{% endif %}">
-                                <span class="badge bg-white bg-opacity-25 px-3 py-1">{{ moneda }}</span>
-                                <h4 class="mb-0 text-end fw-bold">${{ "{:,.0f}".format(total) }}</h4>
-                            </div>
-                        {% endfor %}
-                    {% else %}
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="badge bg-white bg-opacity-25 px-3 py-1">COP</span>
-                            <h4 class="mb-0 text-end fw-bold">${{ "{:,.0f}".format(capital_prestado) }}</h4>
-                        </div>
-                    {% endif %}
-                </div>
-                <small class="stat-sublabel opacity-75 d-block mt-2">Dinero en la calle</small>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card stat-card success text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="card-title mb-0"><i class="bi bi-graph-up me-2"></i>Ganancia Esperada</h6>
-                </div>
-                <div class="mt-2">
-                    {% if ganancia_esperada_por_moneda and ganancia_esperada_por_moneda|length > 0 %}
-                        {% for moneda, total in ganancia_esperada_por_moneda.items() %}
-                            <div class="d-flex justify-content-between align-items-center mb-2 pb-2 {% if not loop.last %}border-bottom border-light border-opacity-25{% endif %}">
-                                <span class="badge bg-white bg-opacity-25 px-3 py-1">{{ moneda }}</span>
-                                <h4 class="mb-0 text-end fw-bold">${{ "{:,.0f}".format(total) }}</h4>
-                            </div>
-                        {% endfor %}
-                    {% else %}
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="badge bg-white bg-opacity-25 px-3 py-1">COP</span>
-                            <h4 class="mb-0 text-end fw-bold">${{ "{:,.0f}".format(ganancia_esperada) }}</h4>
-                        </div>
-                    {% endif %}
-                </div>
-                <div class="d-flex align-items-center gap-2 mt-2">
-                    <span class="kpi-badge bg-white bg-opacity-25">+{{ "{:.1f}".format(porcentaje_ganancia) }}%</span>
-                    <small class="stat-sublabel opacity-75">ROI estimado</small>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card menu-card border-0 shadow-sm">
-            <div class="card-body">
-                <h6 class="card-title fw-bold mb-3"><i class="bi bi-speedometer2 text-primary"></i> Tasa de Cobro</h6>
-                <h3 class="mb-1 fw-bold text-primary">{{ "{:.1f}".format(tasa_cobro_diaria) }}%</h3>
-                <div class="progress" style="height: 8px;">
-                    <div class="progress-bar bg-primary" role="progressbar" style="width: {{ tasa_cobro_diaria }}%"></div>
-                </div>
-                <small class="text-muted mt-1 d-block">${{ "{:,.0f}".format(total_cobrado_hoy) }} de ${{ "{:,.0f}".format(por_cobrar_hoy) }}</small>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Capital Disponible (solo para dueño y gerente) -->
-{% if rol in ['dueno', 'gerente'] and capital_total_aportado > 0 %}
-<div class="row g-4 mb-4">
-    <div class="col-12">
-        <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-            <div class="card-body text-white">
-                <div class="row align-items-center">
-                    <div class="col-md-4 text-center border-end border-light">
-                        <i class="bi bi-cash-stack fs-1 mb-2"></i>
-                        <h6 class="opacity-75">Capital Total Aportado</h6>
-                        <h2 class="fw-bold mb-0">${{ "{:,.0f}".format(capital_total_aportado) }}</h2>
-                        <small class="opacity-75">Inversión de socios</small>
-                    </div>
-                    <div class="col-md-4 text-center border-end border-light">
-                        <i class="bi bi-box-seam fs-1 mb-2"></i>
-                        <h6 class="opacity-75">Capital Invertido en Activos</h6>
-                        <h2 class="fw-bold mb-0">${{ "{:,.0f}".format(capital_invertido_activos) }}</h2>
-                        <small class="opacity-75">Motos, equipos, etc.</small>
-                    </div>
-                    <div class="col-md-4 text-center">
-                        <i class="bi bi-wallet2 fs-1 mb-2"></i>
-                        <h6 class="opacity-75">💰 Capital Disponible</h6>
-                        <h2 class="fw-bold mb-0" style="font-size: 2.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
-                            ${{ "{:,.0f}".format(capital_disponible) }}
-                        </h2>
-                        <small class="opacity-75">
-                            {% if capital_disponible > 0 %}
-                                ✓ Disponible para prestar
-                            {% elif capital_disponible == 0 %}
-                                ⚠️ Todo el capital está invertido
+            <div class="expense-feed" style="flex: 1;">
+                {% if ultimos_gastos %}
+                    {% for gasto in ultimos_gastos %}
+                    <div class="expense-item" data-currency="{{ gasto.moneda or 'COP' }}">
+                        <div class="expense-icon">
+                            {% if gasto.concepto == 'Gasolina' %}
+                                <i class="bi bi-fuel-pump"></i>
+                            {% elif gasto.concepto == 'Alimentación' %}
+                                <i class="bi bi-cup-hot"></i>
+                            {% elif gasto.concepto == 'Transporte' %}
+                                <i class="bi bi-bus-front"></i>
+                            {% elif gasto.concepto == 'Mantenimiento' %}
+                                <i class="bi bi-wrench"></i>
+                            {% elif gasto.concepto == 'Comunicaciones' %}
+                                <i class="bi bi-phone"></i>
                             {% else %}
-                                ⚠️ Déficit: revisar inversiones
+                                <i class="bi bi-receipt"></i>
                             {% endif %}
-                        </small>
+                        </div>
+                        <div class="expense-info">
+                            <div class="expense-concept">{{ gasto.concepto }}{% if gasto.descripcion %} - {{ gasto.descripcion }}{% endif %}</div>
+                            <div class="expense-meta">
+                                {{ gasto.usuario_origen.nombre if gasto.usuario_origen else 'Sistema' }}
+                                &middot; {{ gasto.fecha.strftime('%d/%m %H:%M') }}
+                            </div>
+                        </div>
+                        <div class="expense-amount">
+                            -{{ simbolos_moneda.get(gasto.moneda or 'COP', '$') }} {{ "{:,.0f}".format(gasto.monto) }}
+                        </div>
                     </div>
-                </div>
-                <div class="mt-3 text-center">
-                    <a href="{{ url_for('finanzas.capital_lista') }}" class="btn btn-outline-light btn-sm me-2">
-                        <i class="bi bi-cash-stack"></i> Ver Aportes
-                    </a>
-                    <a href="{{ url_for('finanzas.activos_lista') }}" class="btn btn-outline-light btn-sm">
-                        <i class="bi bi-box-seam"></i> Ver Activos
-                    </a>
-                </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="feed-empty">
+                        <i class="bi bi-inbox"></i>
+                        <span>Sin gastos registrados</span>
+                    </div>
+                {% endif %}
             </div>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-<!-- Gráficos -->
-<div class="row g-4 mb-4">
-    <!-- Gráfico de Cobros Últimos 7 Días -->
-    <div class="col-12">
-        <div class="chart-container">
-            <h5 class="fw-bold mb-3"><i class="bi bi-graph-up text-primary"></i> Cobros Últimos 7 Días</h5>
-            <canvas id="cobrosChart"></canvas>
-        </div>
-    </div>
-</div>
-
-<div class="row g-4 mb-4">
-    <!-- Gráfico de Estado de Préstamos -->
-    <div class="col-md-6">
-        <div class="chart-container">
-            <h5 class="fw-bold mb-3"><i class="bi bi-pie-chart text-success"></i> Estado Préstamos</h5>
-            <canvas id="estadoChart"></canvas>
-        </div>
-    </div>
-
-    <!-- Gráfico de Riesgo -->
-    <div class="col-md-6">
-        <div class="chart-container">
-            <h5 class="fw-bold mb-3"><i class="bi bi-shield-check text-warning"></i> Distribución de Riesgo</h5>
-            {% if riesgo_data and riesgo_data|sum > 0 %}
-                <canvas id="riesgoChart"></canvas>
-            {% else %}
-                <div class="d-flex flex-column align-items-center justify-content-center h-100 text-muted">
-                    <i class="bi bi-inbox fs-1 mb-2"></i>
-                    <p>No hay datos de riesgo suficientes</p>
-                </div>
-            {% endif %}
-        </div>
-    </div>
-</div>
-
-<!-- Tablas de Últimas Transacciones -->
-<div class="row g-4 mb-4">
-    <!-- Últimos Pagos -->
-    <div class="col-md-6">
-        <div class="table-widget">
-            <h5 class="fw-bold mb-3"><i class="bi bi-clock-history text-success"></i> Últimos Pagos Recibidos</h5>
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Cliente</th>
-                            <th>Monto</th>
-                            <th>Fecha</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% if ultimos_pagos %}
-                            {% for pago in ultimos_pagos %}
-                            <tr>
-                                <td>
-                                    <strong>{{ pago.prestamo.cliente.nombre }}</strong>
-                                    <br><small class="text-muted">Préstamo #{{ pago.prestamo.id }}</small>
-                                </td>
-                                <td><span class="badge bg-success">${{ "{:,.0f}".format(pago.monto) }}</span></td>
-                                <td><small>{{ pago.fecha_pago.strftime('%d/%m %H:%M') }}</small></td>
-                            </tr>
-                            {% endfor %}
-                        {% else %}
-                            <tr>
-                                <td colspan="3" class="text-center text-muted">No hay pagos registrados</td>
-                            </tr>
-                        {% endif %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- Préstamos Recientes -->
-    <div class="col-md-6">
-        <div class="table-widget">
-            <h5 class="fw-bold mb-3"><i class="bi bi-cash-stack text-primary"></i> Préstamos Recientes</h5>
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Cliente</th>
-                            <th>Monto</th>
-                            <th>Estado</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% if prestamos_recientes %}
-                            {% for prestamo in prestamos_recientes %}
-                            <tr>
-                                <td>
-                                    <strong>{{ prestamo.cliente.nombre }}</strong>
-                                    <br><small class="text-muted">{{ prestamo.fecha_inicio.strftime('%d/%m/%Y') }}</small>
-                                </td>
-                                <td>
-                                    <strong>${{ "{:,.0f}".format(prestamo.monto_prestado) }}</strong>
-                                    <br><small class="text-muted">Saldo: ${{ "{:,.0f}".format(prestamo.saldo_actual) }}</small>
-                                </td>
-                                <td>
-                                    {% if prestamo.estado == 'ACTIVO' %}
-                                        {% if prestamo.cuotas_atrasadas == 0 %}
-                                            <span class="badge bg-success">Al día</span>
-                                        {% elif prestamo.cuotas_atrasadas <= 3 %}
-                                            <span class="badge bg-warning">{{ prestamo.cuotas_atrasadas }} atraso(s)</span>
-                                        {% else %}
-                                            <span class="badge bg-danger">Mora</span>
-                                        {% endif %}
-                                    {% elif prestamo.estado == 'PAGADO' %}
-                                        <span class="badge bg-success">Pagado</span>
-                                    {% else %}
-                                        <span class="badge bg-secondary">{{ prestamo.estado }}</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        {% else %}
-                            <tr>
-                                <td colspan="3" class="text-center text-muted">No hay préstamos registrados</td>
-                            </tr>
-                        {% endif %}
-                    </tbody>
-                </table>
-            </div>
+            <a href="{{ url_for('finanzas.caja_gastos') }}" class="feed-link">
+                Ver todos los gastos <i class="bi bi-arrow-right"></i>
+            </a>
         </div>
     </div>
 </div>
@@ -775,39 +602,55 @@
 
 {% block extra_js %}
 <script>
-    // Gráfico de Cobros Últimos 7 Días
+    // ==================== CURRENCY CONTEXT SYSTEM ====================
+    const monedas = {{ monedas_activas | tojson }};
+    const simbolos = {{ simbolos_moneda | tojson }};
+    let activeCurrency = monedas[0] || 'COP';
+
+    // Chart data per currency
+    const chartDataByCurrency = {{ cobros_7_dias_por_moneda | tojson }};
+    const chartLabels = {{ labels_7_dias | tojson }};
+
+    // Initialize Chart
     const cobrosCtx = document.getElementById('cobrosChart');
+    let cobrosChart = null;
     if (cobrosCtx) {
-        new Chart(cobrosCtx, {
+        cobrosChart = new Chart(cobrosCtx, {
             type: 'line',
             data: {
-                labels: {{ labels_7_dias | tojson }},
+                labels: chartLabels,
                 datasets: [{
-                    label: 'Cobros Diarios',
-                    data: {{ cobros_ultimos_7_dias | tojson }},
-                    backgroundColor: 'rgba(0, 229, 255, 0.1)',
+                    label: 'Cobros',
+                    data: chartDataByCurrency[activeCurrency] || [],
+                    backgroundColor: 'rgba(0, 229, 255, 0.08)',
                     borderColor: '#00E5FF',
-                    borderWidth: 3,
+                    borderWidth: 2.5,
                     fill: true,
                     tension: 0.4,
                     pointBackgroundColor: '#00E5FF',
-                    pointBorderColor: '#0A0E21',
+                    pointBorderColor: '#161B22',
                     pointBorderWidth: 2,
-                    pointRadius: 5,
-                    pointHoverRadius: 7
+                    pointRadius: 4,
+                    pointHoverRadius: 6
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        display: false
-                    },
+                    legend: { display: false },
                     tooltip: {
+                        backgroundColor: '#1D1E33',
+                        titleColor: '#8B949E',
+                        bodyColor: '#fff',
+                        borderColor: 'rgba(0, 229, 255, 0.3)',
+                        borderWidth: 1,
+                        padding: 12,
+                        cornerRadius: 8,
                         callbacks: {
-                            label: function(context) {
-                                return '$' + context.parsed.y.toLocaleString('es-CO');
+                            label: function(ctx) {
+                                const sym = simbolos[activeCurrency] || '$';
+                                return sym + ' ' + ctx.parsed.y.toLocaleString('es-CO');
                             }
                         }
                     }
@@ -817,103 +660,54 @@
                         beginAtZero: true,
                         ticks: {
                             color: '#8D8E98',
-                            callback: function(value) {
-                                return '$' + (value/1000).toFixed(0) + 'K';
+                            font: { size: 11 },
+                            callback: function(v) {
+                                const sym = simbolos[activeCurrency] || '$';
+                                if (v >= 1000000) return sym + (v/1000000).toFixed(1) + 'M';
+                                if (v >= 1000) return sym + (v/1000).toFixed(0) + 'K';
+                                return sym + v;
                             }
                         },
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.05)'
-                        }
+                        grid: { color: 'rgba(255, 255, 255, 0.04)' }
                     },
                     x: {
-                        ticks: {
-                            color: '#8D8E98'
-                        },
-                        grid: {
-                            display: false
-                        }
+                        ticks: { color: '#8D8E98', font: { size: 11 } },
+                        grid: { display: false }
                     }
                 }
             }
         });
     }
 
-    // Gráfico de Estado de Préstamos
-    const estadoCtx = document.getElementById('estadoChart');
-    if (estadoCtx) {
-        new Chart(estadoCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Activos', 'Pagados', 'Cancelados'],
-                datasets: [{
-                    data: [{{ total_prestamos_activos }}, {{ prestamos_pagados }}, {{ prestamos_cancelados }}],
-                    backgroundColor: [
-                        '#00E5FF',
-                        '#00FF99',
-                        '#FF3366'
-                    ],
-                    borderColor: '#0A0E21',
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            color: '#E0E0E0',
-                            padding: 15,
-                            font: {
-                                size: 12,
-                                weight: '500'
-                            }
-                        }
-                    }
-                }
+    // ==================== SWITCH CURRENCY ====================
+    function switchCurrency(currency) {
+        activeCurrency = currency;
+
+        // Update toggle buttons
+        document.querySelectorAll('.ct-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.currency === currency);
+        });
+
+        // Show/hide all currency-dependent values
+        document.querySelectorAll('.cv').forEach(el => {
+            if (el.dataset.currency === currency) {
+                el.classList.remove('d-none');
+                el.style.display = '';
+            } else {
+                el.classList.add('d-none');
             }
         });
-    }
 
-    // Gráfico de Riesgo
-    const riesgoCtx = document.getElementById('riesgoChart');
-    if (riesgoCtx) {
-        new Chart(riesgoCtx, {
-            type: 'doughnut',
-            data: {
-                labels: {{ riesgo_labels | tojson }},
-                datasets: [{
-                    data: {{ riesgo_data | tojson }},
-                    backgroundColor: [
-                        '#00FF99', // EXCELENTE - Verde
-                        '#00E5FF', // BUENO - Cyan
-                        '#FFD700', // REGULAR - Amarillo
-                        '#FF6B6B', // ALTO - Rojo claro
-                        '#FF3366', // CRITICO - Rojo
-                        '#8D8E98'  // NUEVO - Gris
-                    ],
-                    borderColor: '#0A0E21',
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            color: '#E0E0E0',
-                            padding: 15,
-                            font: {
-                                size: 12,
-                                weight: '500'
-                            }
-                        }
-                    }
-                }
-            }
+        // Update chart data
+        if (cobrosChart) {
+            cobrosChart.data.datasets[0].data = chartDataByCurrency[currency] || [];
+            cobrosChart.update('none');
+        }
+
+        // Filter expense feed
+        document.querySelectorAll('.expense-item').forEach(el => {
+            const itemCurrency = el.dataset.currency;
+            el.style.display = (!itemCurrency || itemCurrency === currency) ? '' : 'none';
         });
     }
 </script>

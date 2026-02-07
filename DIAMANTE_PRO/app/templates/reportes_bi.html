@@ -910,19 +910,42 @@ Dashboard de Inteligencia de Negocios
                 </div>
                 <div class="col-md-3 text-center">
                     <div class="comparativa-label">Cobrado Actual</div>
-                    <div class="comparativa-value" style="color: var(--cyan-neon);">${{ "{:,.0f}".format(metricas.cobrado_periodo) }}</div>
-                    <span class="variation-badge {% if metricas.variacion_cobros >= 0 %}positive{% else %}negative{% endif %}">
-                        <i class="bi bi-{% if metricas.variacion_cobros >= 0 %}arrow-up{% else %}arrow-down{% endif %}"></i>
-                        {{ metricas.variacion_cobros }}%
-                    </span>
+                    {% if metricas.metricas_por_moneda and metricas.metricas_por_moneda|length > 0 %}
+                        {% for moneda, datos in metricas.metricas_por_moneda.items() %}
+                        <div class="d-flex justify-content-between align-items-center {% if not loop.last %}mb-1 pb-1{% endif %}" style="{% if not loop.last %}border-bottom: 1px solid rgba(255,255,255,0.1);{% endif %}">
+                            <span class="badge" style="background: rgba(0, 229, 255, 0.2); color: var(--cyan-neon); font-size: 0.7rem;">{{ moneda }}</span>
+                            <span style="color: var(--cyan-neon); font-size: 1.1rem; font-weight: 700;">${{ "{:,.0f}".format(datos.cobrado_periodo) }}</span>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="comparativa-value" style="color: var(--cyan-neon);">${{ "{:,.0f}".format(metricas.cobrado_periodo) }}</div>
+                    {% endif %}
                 </div>
                 <div class="col-md-3 text-center">
                     <div class="comparativa-label">Cobrado Anterior</div>
-                    <div class="comparativa-value text-white-50">${{ "{:,.0f}".format(metricas.periodo_anterior.cobrado_anterior) }}</div>
+                    {% if metricas.metricas_por_moneda and metricas.metricas_por_moneda|length > 0 %}
+                        {% for moneda, datos in metricas.metricas_por_moneda.items() %}
+                        <div class="d-flex justify-content-between align-items-center {% if not loop.last %}mb-1 pb-1{% endif %}" style="{% if not loop.last %}border-bottom: 1px solid rgba(255,255,255,0.1);{% endif %}">
+                            <span class="badge" style="background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.5); font-size: 0.7rem;">{{ moneda }}</span>
+                            <span style="color: rgba(255,255,255,0.5); font-size: 1.1rem; font-weight: 700;">${{ "{:,.0f}".format(datos.cobrado_anterior) }}</span>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="comparativa-value text-white-50">${{ "{:,.0f}".format(metricas.periodo_anterior.cobrado_anterior) }}</div>
+                    {% endif %}
                 </div>
                 <div class="col-md-3 text-center">
                     <div class="comparativa-label">Meta Diaria Sugerida</div>
-                    <div class="comparativa-value" style="color: var(--gold);">${{ "{:,.0f}".format(metricas.meta_diaria_sugerida) }}</div>
+                    {% if metricas.metricas_por_moneda and metricas.metricas_por_moneda|length > 0 %}
+                        {% for moneda, datos in metricas.metricas_por_moneda.items() %}
+                        <div class="d-flex justify-content-between align-items-center {% if not loop.last %}mb-1 pb-1{% endif %}" style="{% if not loop.last %}border-bottom: 1px solid rgba(255,255,255,0.1);{% endif %}">
+                            <span class="badge" style="background: rgba(255, 215, 0, 0.2); color: var(--gold); font-size: 0.7rem;">{{ moneda }}</span>
+                            <span style="color: var(--gold); font-size: 1.1rem; font-weight: 700;">${{ "{:,.0f}".format(datos.meta_diaria_sugerida) }}</span>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="comparativa-value" style="color: var(--gold);">${{ "{:,.0f}".format(metricas.meta_diaria_sugerida) }}</div>
+                    {% endif %}
                     <small class="text-white-50">Basada en promedio +10%</small>
                 </div>
             </div>
@@ -1142,7 +1165,13 @@ Dashboard de Inteligencia de Negocios
                 <i class="bi bi-pie-chart-fill"></i>
                 Distribución de Cartera
             </h5>
-            <div id="chartDistribucion" style="height: 280px;"></div>
+            {% if metricas.metricas_por_moneda and metricas.metricas_por_moneda|length > 1 %}
+                {% for moneda, datos in metricas.metricas_por_moneda.items() %}
+                <div id="chartDistribucion_{{ moneda }}" style="height: 200px;"></div>
+                {% endfor %}
+            {% else %}
+                <div id="chartDistribucion" style="height: 280px;"></div>
+            {% endif %}
 
             <!-- Leyenda personalizada por moneda (siempre mostrar por moneda) -->
             {% if metricas.metricas_por_moneda and metricas.metricas_por_moneda|length > 0 %}
@@ -1597,44 +1626,87 @@ const tendenciaOptions = {
 new ApexCharts(document.querySelector("#chartTendencia"), tendenciaOptions).render();
 
 // ==================== GRÁFICO DE DISTRIBUCIÓN DE CARTERA ====================
-const distribucionOptions = {
-    series: [
-        {{ metricas.cartera_al_dia }},
-        {{ metricas.cartera_atraso_leve }},
-        {{ metricas.cartera_mora_grave }}
-    ],
-    chart: {
-        type: 'donut',
-        height: 280,
-        background: 'transparent'
-    },
-    colors: [colors.success, colors.gold, colors.danger],
-    labels: ['Al Día', 'Atraso Leve (1-3)', 'Mora Grave (+3)'],
-    plotOptions: {
-        pie: {
-            donut: {
-                size: '70%',
-                labels: {
-                    show: true,
-                    total: {
+{% if metricas.metricas_por_moneda and metricas.metricas_por_moneda|length > 1 %}
+    {% for moneda, datos in metricas.metricas_por_moneda.items() %}
+    const distribucionOptions_{{ moneda }} = {
+        series: [
+            {{ datos.cartera_al_dia }},
+            {{ datos.cartera_atraso_leve }},
+            {{ datos.cartera_mora_grave }}
+        ],
+        chart: {
+            type: 'donut',
+            height: 200,
+            background: 'transparent'
+        },
+        colors: [colors.success, colors.gold, colors.danger],
+        labels: ['Al Día', 'Atraso Leve (1-3)', 'Mora Grave (+3)'],
+        plotOptions: {
+            pie: {
+                donut: {
+                    size: '70%',
+                    labels: {
                         show: true,
-                        label: 'Total Cartera',
-                        color: '#fff',
-                        formatter: () => '${{ "{:,.0f}".format(metricas.cartera_total / 1000) }}K'
+                        total: {
+                            show: true,
+                            label: '{{ moneda }} {% if moneda == "COP" %}Pesos{% elif moneda == "BRL" %}Reales{% endif %}',
+                            color: '#fff',
+                            formatter: () => '${{ "{:,.0f}".format(datos.cartera / 1000) }}K'
+                        }
                     }
                 }
             }
+        },
+        dataLabels: { enabled: false },
+        legend: { show: false },
+        stroke: { show: true, width: 3, colors: [colors.bgCard] },
+        tooltip: {
+            theme: 'dark',
+            y: { formatter: (val) => '$ ' + val.toLocaleString() }
         }
-    },
-    dataLabels: { enabled: false },
-    legend: { show: false },
-    stroke: { show: true, width: 3, colors: [colors.bgCard] },
-    tooltip: {
-        theme: 'dark',
-        y: { formatter: (val) => '$ ' + val.toLocaleString() }
-    }
-};
-new ApexCharts(document.querySelector("#chartDistribucion"), distribucionOptions).render();
+    };
+    new ApexCharts(document.querySelector("#chartDistribucion_{{ moneda }}"), distribucionOptions_{{ moneda }}).render();
+    {% endfor %}
+{% else %}
+    const distribucionOptions = {
+        series: [
+            {{ metricas.cartera_al_dia }},
+            {{ metricas.cartera_atraso_leve }},
+            {{ metricas.cartera_mora_grave }}
+        ],
+        chart: {
+            type: 'donut',
+            height: 280,
+            background: 'transparent'
+        },
+        colors: [colors.success, colors.gold, colors.danger],
+        labels: ['Al Día', 'Atraso Leve (1-3)', 'Mora Grave (+3)'],
+        plotOptions: {
+            pie: {
+                donut: {
+                    size: '70%',
+                    labels: {
+                        show: true,
+                        total: {
+                            show: true,
+                            label: 'Total Cartera',
+                            color: '#fff',
+                            formatter: () => '${{ "{:,.0f}".format(metricas.cartera_total / 1000) }}K'
+                        }
+                    }
+                }
+            }
+        },
+        dataLabels: { enabled: false },
+        legend: { show: false },
+        stroke: { show: true, width: 3, colors: [colors.bgCard] },
+        tooltip: {
+            theme: 'dark',
+            y: { formatter: (val) => '$ ' + val.toLocaleString() }
+        }
+    };
+    new ApexCharts(document.querySelector("#chartDistribucion"), distribucionOptions).render();
+{% endif %}
 
 // ==================== GRÁFICO DE MOROSIDAD (RADIAL) ====================
 const saludCartera = 100 - {{ metricas.tasa_morosidad }};

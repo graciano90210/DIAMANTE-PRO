@@ -344,15 +344,17 @@ def caja_gastos_guardar():
         concepto = request.form.get('concepto')
         descripcion = request.form.get('descripcion', '')
         monto = float(request.form.get('monto'))
+        moneda = request.form.get('moneda', 'COP')
         fecha_str = request.form.get('fecha')
-        
+
         fecha = datetime.strptime(fecha_str, '%Y-%m-%d') if fecha_str else datetime.now()
-        
+
         nuevo_gasto = Transaccion(
             naturaleza='EGRESO',
             concepto=concepto,
             descripcion=descripcion,
             monto=monto,
+            moneda=moneda,
             fecha=fecha,
             usuario_origen_id=session.get('usuario_id'),
             usuario_destino_id=None,

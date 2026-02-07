@@ -5,7 +5,7 @@ from flask_login import UserMixin
 from datetime import datetime
 
 # 1. LA GENTE (Staff y Usuarios)
-class Usuario(db.Model):
+class Usuario(UserMixin, db.Model):
     __tablename__ = 'usuarios'
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
@@ -393,8 +393,9 @@ class Transaccion(db.Model):
     concepto = db.Column(db.String(50), nullable=False)
     descripcion = db.Column(db.String(200))
     monto = db.Column(db.Float, nullable=False)
+    moneda = db.Column(db.String(3), default='COP')  # COP, BRL, PEN, ARS, USD
     fecha = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     usuario_origen_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
     usuario_destino_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True)
     prestamo_id = db.Column(db.Integer, db.ForeignKey('prestamos.id'), nullable=True)

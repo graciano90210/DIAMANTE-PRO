@@ -3,6 +3,7 @@ Blueprint de Autenticación - Diamante Pro
 Maneja: login, logout, home, estado
 """
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from flask_login import login_user, logout_user
 from werkzeug.security import check_password_hash
 from ..models import Usuario
 
@@ -40,9 +41,13 @@ def login():
                 password_valid = (user.password == password)
             
             if password_valid:
+                result = login_user(user, remember=True)
+                print(f"DEBUG LOGIN: login_user returned {result}, user.id={user.id}, is_active={user.is_active}")
                 session['usuario_id'] = user.id
                 session['nombre'] = user.nombre
                 session['rol'] = user.rol
+                session.modified = True
+                print(f"DEBUG LOGIN: session keys after login: {list(session.keys())}")
                 flash('Bienvenido, {}'.format(user.nombre), 'success')
                 return redirect(url_for('main.dashboard'))
         

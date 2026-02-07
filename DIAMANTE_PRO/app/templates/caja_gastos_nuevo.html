@@ -226,14 +226,27 @@
                                       placeholder="Detalles adicionales del gasto..."></textarea>
                         </div>
 
-                        <div class="mb-4">
-                            <label class="form-label">
-                                <i class="bi bi-currency-dollar me-1"></i> Monto *
-                            </label>
-                            <div class="input-group">
-                                <span class="input-group-text">$</span>
-                                <input type="number" name="monto" class="form-control" required
-                                       placeholder="0" min="0" step="0.01">
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label">
+                                    <i class="bi bi-currency-exchange me-1"></i> Moneda *
+                                </label>
+                                <select name="moneda" id="monedaSelect" class="form-select" required onchange="updateCurrencySymbol()">
+                                    <option value="COP" selected>$ COP (Pesos)</option>
+                                    <option value="BRL">R$ BRL (Reales)</option>
+                                    <option value="PEN">S/ PEN (Soles)</option>
+                                    <option value="USD">US$ USD (Dólares)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label">
+                                    <i class="bi bi-currency-dollar me-1"></i> Monto *
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text" id="currencySymbol">$</span>
+                                    <input type="number" name="monto" class="form-control" required
+                                           placeholder="0" min="0" step="0.01">
+                                </div>
                             </div>
                         </div>
                         
@@ -275,8 +288,14 @@
 <script>
     // Formatear monto mientras se escribe
     document.querySelector('input[name="monto"]').addEventListener('input', function(e) {
-        // Permitir solo números y punto decimal
         this.value = this.value.replace(/[^0-9.]/g, '');
     });
+
+    // Actualizar símbolo de moneda
+    function updateCurrencySymbol() {
+        const symbols = { 'COP': '$', 'BRL': 'R$', 'PEN': 'S/', 'USD': 'US$' };
+        const sel = document.getElementById('monedaSelect').value;
+        document.getElementById('currencySymbol').textContent = symbols[sel] || '$';
+    }
 </script>
 {% endblock %}

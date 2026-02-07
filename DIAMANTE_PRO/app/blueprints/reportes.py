@@ -555,6 +555,11 @@ def calcular_metricas_bi(fecha_inicio, fecha_fin, usuario_id=None, rol='dueno', 
         ).group_by(Usuario.nombre).order_by(func.sum(Pago.monto).desc()).all()
 
     # ==================== MÉTRICAS POR MONEDA ====================
+    # Pre-calcular fechas del período anterior para uso en el loop
+    duracion_periodo = (fecha_fin - fecha_inicio).days
+    fecha_inicio_ant = fecha_inicio - timedelta(days=duracion_periodo + 1)
+    fecha_fin_ant = fecha_inicio - timedelta(days=1)
+
     metricas_por_moneda = {}
     monedas = db.session.query(Prestamo.moneda).filter(*filtro_prestamos).distinct().all()
     for (moneda,) in monedas:
@@ -601,6 +606,63 @@ def calcular_metricas_bi(fecha_inicio, fecha_fin, usuario_id=None, rol='dueno', 
             egresos_hoy_m_query = egresos_hoy_m_query.filter(Prestamo.ruta_id == ruta_id)
         egresos_hoy_m = egresos_hoy_m_query.scalar() or 0
 
+        # Cobrado en período actual por moneda
+        cobrado_periodo_m_query = db.session.query(
+            func.coalesce(func.sum(Pago.monto), 0)
+        ).join(Prestamo).filter(
+            Pago.fecha_pago >= fecha_inicio,
+            Pago.fecha_pago <= fecha_fin,
+            Prestamo.moneda == moneda
+        )
+        if rol == 'cobrador':
+            cobrado_periodo_m_query = cobrado_periodo_m_query.filter(Prestamo.cobrador_id == usuario_id)
+        elif oficina_id and rutas_oficina_ids:
+            cobrado_periodo_m_query = cobrado_periodo_m_query.filter(Prestamo.ruta_id.in_(rutas_oficina_ids))
+        elif ruta_id:
+            cobrado_periodo_m_query = cobrado_periodo_m_query.filter(Prestamo.ruta_id == ruta_id)
+        cobrado_periodo_m = float(cobrado_periodo_m_query.scalar() or 0)
+
+        # Cobrado en período anterior por moneda
+        cobrado_anterior_m_query = db.session.query(
+            func.coalesce(func.sum(Pago.monto), 0)
+        ).join(Prestamo).filter(
+            Pago.fecha_pago >= fecha_inicio_ant,
+            Pago.fecha_pago <= fecha_fin_ant,
+            Prestamo.moneda == moneda
+        )
+        if rol == 'cobrador':
+            cobrado_anterior_m_query = cobrado_anterior_m_query.filter(Prestamo.cobrador_id == usuario_id)
+        elif oficina_id and rutas_oficina_ids:
+            cobrado_anterior_m_query = cobrado_anterior_m_query.filter(Prestamo.ruta_id.in_(rutas_oficina_ids))
+        elif ruta_id:
+            cobrado_anterior_m_query = cobrado_anterior_m_query.filter(Prestamo.ruta_id == ruta_id)
+        cobrado_anterior_m = float(cobrado_anterior_m_query.scalar() or 0)
+
+        # Variación cobros por moneda
+        variacion_cobros_m = 0
+        if cobrado_anterior_m > 0:
+            variacion_cobros_m = round(((cobrado_periodo_m - cobrado_anterior_m) / cobrado_anterior_m) * 100, 1)
+
+        # Meta diaria sugerida por moneda (30 días promedio * 1.1)
+        cobros_moneda_30d_query = db.session.query(
+            func.date(Pago.fecha_pago).label('fecha'),
+            func.coalesce(func.sum(Pago.monto), 0).label('total')
+        ).join(Prestamo).filter(
+            func.date(Pago.fecha_pago) >= hoy - timedelta(days=29),
+            func.date(Pago.fecha_pago) <= hoy,
+            Prestamo.moneda == moneda
+        )
+        if rol == 'cobrador':
+            cobros_moneda_30d_query = cobros_moneda_30d_query.filter(Prestamo.cobrador_id == usuario_id)
+        elif oficina_id and rutas_oficina_ids:
+            cobros_moneda_30d_query = cobros_moneda_30d_query.filter(Prestamo.ruta_id.in_(rutas_oficina_ids))
+        elif ruta_id:
+            cobros_moneda_30d_query = cobros_moneda_30d_query.filter(Prestamo.ruta_id == ruta_id)
+        cobros_moneda_30d = {str(r.fecha): float(r.total) for r in cobros_moneda_30d_query.group_by(func.date(Pago.fecha_pago)).all()}
+        tendencia_m = [cobros_moneda_30d.get(str(hoy - timedelta(days=29-i)), 0) for i in range(30)]
+        promedio_m = sum(tendencia_m) / 30 if tendencia_m else 0
+        meta_diaria_sugerida_m = round(promedio_m * 1.1, 0)
+
         metricas_por_moneda[moneda] = {
             'capital': float(capital_m),
             'cartera': float(cartera_m),
@@ -611,7 +673,11 @@ def calcular_metricas_bi(fecha_inicio, fecha_fin, usuario_id=None, rol='dueno', 
             'monto_en_mora': monto_en_mora_m,
             'ingresos_hoy': float(ingresos_hoy_m),
             'egresos_hoy': float(egresos_hoy_m),
-            'flujo_neto_hoy': float(ingresos_hoy_m) - float(egresos_hoy_m)
+            'flujo_neto_hoy': float(ingresos_hoy_m) - float(egresos_hoy_m),
+            'cobrado_periodo': cobrado_periodo_m,
+            'cobrado_anterior': cobrado_anterior_m,
+            'variacion_cobros': variacion_cobros_m,
+            'meta_diaria_sugerida': meta_diaria_sugerida_m,
         }
 
     # ==================== CALCULAR VARIACIONES % ====================
@@ -1910,8 +1976,7 @@ def generar_pdf_ruta_reportlab(metricas, fecha_generacion):
             if dias >= 3:
                 dias_style = sTdCRed
             elif dias >= 1:
-                dias_p_style = ParagraphStyle('sDiasWarn', fontName='Helvetica-Bold', fontSize=10, textColor=GOLD, alignment=TA_CENTER, leading=13)
-                dias_style = dias_p_style
+                dias_style = ParagraphStyle('sDiasWarn', fontName='Helvetica-Bold', fontSize=10, textColor=GOLD, alignment=TA_CENTER, leading=13)
             else:
                 dias_style = sTdC
 
@@ -1925,7 +1990,7 @@ def generar_pdf_ruta_reportlab(metricas, fecha_generacion):
     else:
         sp_rows.append([Paragraph("Todos los clientes pagaron", sNoDataOk), '', '', '', ''])
 
-    sp_tbl = Table(sp_rows, colWidths=[pw * 0.06, pw * 0.34, pw * 0.24, pw * 0.18, pw * 0.18])
+    sp_tbl = Table(sp_rows, colWidths=[pw * 0.10, pw * 0.35, pw * 0.20, pw * 0.20, pw * 0.15])
     sp_style = data_table_style(len(sp_rows), has_sp)
     if not has_sp:
         sp_style.add('SPAN', (0, 1), (-1, 1))
