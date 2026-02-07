@@ -7,15 +7,23 @@ from .extensions import db, login_manager, limiter
 def create_app():
     app = Flask(__name__)
 
-    # --- 1. CONFIGURACIÓN DE RUTA DE BASE DE DATOS ABSOLUTA ---
-    basedir = os.path.abspath(os.path.dirname(__file__))
-    root_dir = os.path.dirname(basedir)  # Subir a la carpeta raíz DIAMANTE_PRO
-    db_path = os.path.join(root_dir, 'diamante.db')
+    # --- 1. CONFIGURACIÓN DE BASE DE DATOS ---
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-secreta')
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-    print(f"DEBUG: Base de datos configurada en: {db_path}")
+    database_url = os.environ.get('DATABASE_URL')
+    if database_url:
+        # Heroku usa 'postgres://' pero SQLAlchemy requiere 'postgresql://'
+        if database_url.startswith('postgres://'):
+            database_url = database_url.replace('postgres://', 'postgresql://', 1)
+        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+        print(f"DEBUG: Base de datos configurada en: PostgreSQL (Heroku)")
+    else:
+        basedir = os.path.abspath(os.path.dirname(__file__))
+        root_dir = os.path.dirname(basedir)
+        db_path = os.path.join(root_dir, 'diamante.db')
+        app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+        print(f"DEBUG: Base de datos configurada en: {db_path}")
 
     # --- 2. INICIALIZACIÓN ---
     CORS(app)
