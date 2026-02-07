@@ -2,9 +2,10 @@
 Blueprint de Clientes - Diamante Pro
 Maneja: CRUD de clientes
 """
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
 from datetime import datetime
-from ..models import Cliente, Prestamo, Ruta, db
+from ..models import Cliente, Prestamo, Ruta, Oficina, db
+from ..services.cliente_service import ClienteService
 
 clientes_bp = Blueprint('clientes', __name__, url_prefix='/clientes')
 
@@ -55,9 +56,13 @@ def lista():
             )
     
     clientes_paginados = query.order_by(Cliente.fecha_registro.desc()).paginate(page=page, per_page=20, error_out=False)
-    
+    rutas = Ruta.query.filter_by(activo=True).order_by(Ruta.nombre).all()
+    oficinas = Oficina.query.filter_by(activo=True).order_by(Oficina.nombre).all()
+
     return render_template('clientes_lista.html',
                            clientes=clientes_paginados,
+                           rutas=rutas,
+                           oficinas=oficinas,
                            nombre=session.get('nombre'),
                            rol=session.get('rol'),
                            mensaje=request.args.get('mensaje'))
@@ -148,6 +153,49 @@ def guardar():
                                error=f'Error al guardar: {str(e)}',
                                nombre=session.get('nombre'),
                                rol=session.get('rol'))
+
+
+@clientes_bp.route('/ver/<int:cliente_id>')
+def ver(cliente_id):
+    """Ver detalle completo de un cliente"""
+    if 'usuario_id' not in session:
+        return redirect(url_for('auth.login'))
+
+    cliente = Cliente.query.get_or_404(cliente_id)
+    prestamos = Prestamo.query.filter_by(cliente_id=cliente_id).order_by(Prestamo.fecha_inicio.desc()).all()
+    estadisticas = ClienteService.get_estadisticas_cliente(cliente_id)
+    rutas = Ruta.query.filter_by(activo=True).order_by(Ruta.nombre).all()
+    oficinas = Oficina.query.filter_by(activo=True).order_by(Oficina.nombre).all()
+
+    return render_template('clientes_detalle.html',
+                           cliente=cliente,
+                           prestamos=prestamos,
+                           estadisticas=estadisticas,
+                           rutas=rutas,
+                           oficinas=oficinas,
+                           nombre=session.get('nombre'),
+                           rol=session.get('rol'))
+
+
+@clientes_bp.route('/api/por-ruta/<int:ruta_id>')
+def api_clientes_por_ruta(ruta_id):
+    """API: Devuelve clientes de una ruta para navegacion"""
+    if 'usuario_id' not in session:
+        return jsonify({'error': 'No autenticado'}), 401
+
+    clientes_ruta = db.session.query(Cliente.id, Cliente.nombre, Cliente.documento, Cliente.es_vip).filter(
+        db.or_(
+            Cliente.ruta_id == ruta_id,
+            Cliente.id.in_(
+                db.session.query(Prestamo.cliente_id).filter_by(ruta_id=ruta_id).distinct()
+            )
+        )
+    ).order_by(Cliente.nombre).all()
+
+    return jsonify([
+        {'id': c.id, 'nombre': c.nombre, 'documento': c.documento, 'es_vip': c.es_vip}
+        for c in clientes_ruta
+    ])
 
 
 @clientes_bp.route('/editar/<int:cliente_id>')

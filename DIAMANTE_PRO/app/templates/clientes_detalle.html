@@ -1,0 +1,611 @@
+{% extends "base.html" %}
+
+{% block title %}Cliente: {{ cliente.nombre }} - Diamante Pro{% endblock %}
+
+{% block page_title %}
+<i class="bi bi-person-badge me-2"></i>Perfil del Cliente
+{% endblock %}
+
+{% block page_actions %}
+<a href="{{ url_for('clientes.editar', cliente_id=cliente.id) }}" class="btn btn-warning">
+    <i class="bi bi-pencil me-1"></i> Editar
+</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-card {
+        background: #1D1E33 !important;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 20px;
+    }
+    .section-title {
+        color: #00E5FF;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid rgba(0, 229, 255, 0.3);
+    }
+    .info-card-principal {
+        background: linear-gradient(135deg, #1D1E33 0%, #2A2D4A 100%);
+        border: 1px solid rgba(0, 229, 255, 0.3);
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 20px;
+    }
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-row span:first-child { color: #888; font-size: 0.9rem; }
+    .info-row strong { color: #E0E0E0; }
+    .badge-vip {
+        background: linear-gradient(135deg, #FFD700, #FFA500);
+        color: #0A0E21;
+        font-weight: 700;
+        font-size: 0.9rem;
+        padding: 8px 15px;
+        border-radius: 20px;
+    }
+    .badge-regular-estado {
+        background: rgba(0, 229, 255, 0.2);
+        color: #00E5FF;
+        font-size: 0.9rem;
+        padding: 8px 15px;
+        border-radius: 20px;
+    }
+    .stat-box {
+        text-align: center;
+        padding: 18px 12px;
+        background: #0A0E21;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .stat-box h6 { color: #888; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .stat-box h4 { font-weight: 700; margin-bottom: 0; font-size: 1.1rem; }
+    .stat-box.prestado h4 { color: #00FF99; }
+    .stat-box.pagado h4 { color: #FFD700; }
+    .stat-box.saldo h4 { color: #00E5FF; }
+    .stat-box.activos h4 { color: #E0E0E0; }
+    .avatar-lg {
+        width: 70px; height: 70px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.8rem; font-weight: 700; color: #0A0E21;
+    }
+    .avatar-vip { background: linear-gradient(135deg, #FFD700, #FFA500); }
+    .avatar-normal { background: linear-gradient(135deg, #00FF99, #00E5FF); }
+    .score-circle {
+        width: 80px; height: 80px; border-radius: 50%;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        border: 3px solid;
+    }
+    .score-circle .score-value { font-size: 1.3rem; font-weight: 700; line-height: 1; }
+    .score-circle .score-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    .score-excelente { border-color: #00FF99; color: #00FF99; }
+    .score-bueno { border-color: #00E5FF; color: #00E5FF; }
+    .score-regular { border-color: #FFD700; color: #FFD700; }
+    .score-alto { border-color: #FF6B6B; color: #FF6B6B; }
+    .score-critico { border-color: #FF0000; color: #FF0000; }
+    .score-nuevo { border-color: #888; color: #888; }
+    /* Selector navegacion ruta */
+    .nav-ruta-card {
+        background: linear-gradient(135deg, #0A0E21, #1D1E33);
+        border: 1px solid rgba(0, 229, 255, 0.2);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .nav-ruta-card .form-select {
+        background-color: #1D1E33;
+        border: 1px solid rgba(0, 229, 255, 0.3);
+        color: #E0E0E0;
+    }
+    .nav-ruta-card .form-select:focus {
+        border-color: #00E5FF;
+        box-shadow: 0 0 0 0.2rem rgba(0, 229, 255, 0.25);
+    }
+    .cliente-nav-item {
+        display: flex; align-items: center; gap: 10px;
+        padding: 10px 12px; border-radius: 8px;
+        border: 1px solid rgba(255,255,255,0.05);
+        margin-bottom: 6px; transition: all 0.2s ease;
+        text-decoration: none; color: #E0E0E0;
+    }
+    .cliente-nav-item:hover {
+        background: rgba(0, 229, 255, 0.1);
+        border-color: rgba(0, 229, 255, 0.3);
+        color: #00E5FF;
+    }
+    .cliente-nav-item.activo {
+        background: rgba(0, 229, 255, 0.15);
+        border-color: #00E5FF;
+        color: #00E5FF;
+    }
+    .cliente-nav-avatar {
+        width: 32px; height: 32px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.8rem; font-weight: 700; color: #0A0E21;
+        background: linear-gradient(135deg, #00FF99, #00E5FF);
+        flex-shrink: 0;
+    }
+    .cliente-nav-avatar.vip { background: linear-gradient(135deg, #FFD700, #FFA500); }
+    .clientes-nav-list {
+        max-height: 350px; overflow-y: auto; padding-right: 5px;
+    }
+    .clientes-nav-list::-webkit-scrollbar { width: 5px; }
+    .clientes-nav-list::-webkit-scrollbar-track { background: #0A0E21; border-radius: 3px; }
+    .clientes-nav-list::-webkit-scrollbar-thumb { background: #00E5FF; border-radius: 3px; }
+    /* Prestamos */
+    .prestamo-item {
+        background: #0A0E21;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px; padding: 15px; margin-bottom: 12px;
+        transition: all 0.3s ease;
+    }
+    .prestamo-item:hover { border-color: rgba(0, 229, 255, 0.3); transform: translateX(5px); }
+    .badge-activo { background: linear-gradient(135deg, #00FF99, #00E5FF); color: #0A0E21; }
+    .badge-pagado { background: linear-gradient(135deg, #FFD700, #FFA500); color: #0A0E21; }
+    .badge-cancelado { background: rgba(255, 107, 107, 0.2); color: #FF6B6B; }
+    .scroll-container { max-height: 500px; overflow-y: auto; padding-right: 5px; }
+    .scroll-container::-webkit-scrollbar { width: 6px; }
+    .scroll-container::-webkit-scrollbar-track { background: #0A0E21; border-radius: 3px; }
+    .scroll-container::-webkit-scrollbar-thumb { background: #00E5FF; border-radius: 3px; }
+    .btn-volver {
+        background: transparent; border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #A0A0A0; padding: 8px 20px; border-radius: 8px;
+    }
+    .btn-volver:hover { border-color: #00E5FF; color: #00E5FF; }
+    .info-badge {
+        background: rgba(0, 229, 255, 0.15); color: #00E5FF;
+        padding: 4px 10px; border-radius: 20px; font-size: 0.8rem;
+    }
+    .btn-nuevo-prestamo {
+        background: linear-gradient(135deg, #00915A, #0097A7);
+        color: #FFFFFF; border: none; font-weight: 800;
+        padding: 10px 20px; border-radius: 8px; transition: all 0.3s ease;
+        font-size: 0.95rem; text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+    .btn-nuevo-prestamo:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 255, 153, 0.3);
+        color: #FFFFFF;
+        background: linear-gradient(135deg, #00A366, #00ACC1);
+    }
+    .nav-count { color: #00E5FF; font-size: 0.8rem; font-weight: 600; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col">
+        <a href="{{ url_for('clientes.lista') }}" class="btn btn-volver">
+            <i class="bi bi-arrow-left me-2"></i>Volver a Clientes
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- COLUMNA IZQUIERDA: Info del cliente -->
+    <div class="col-lg-8">
+        <!-- Card Principal: Identidad -->
+        <div class="info-card-principal">
+            <div class="d-flex align-items-center mb-4">
+                <div class="avatar-lg {{ 'avatar-vip' if cliente.es_vip else 'avatar-normal' }} me-3">
+                    {{ cliente.nombre[0] | upper }}
+                </div>
+                <div class="flex-grow-1">
+                    <h3 class="mb-1" style="color: #E0E0E0;">
+                        {{ cliente.nombre }}
+                        {% if cliente.es_vip %}
+                        <span class="badge badge-vip ms-2"><i class="bi bi-star-fill me-1"></i>VIP</span>
+                        {% else %}
+                        <span class="badge badge-regular-estado ms-2">Regular</span>
+                        {% endif %}
+                    </h3>
+                    <div>
+                        <span class="info-badge me-2"><i class="bi bi-hash me-1"></i>ID: {{ cliente.id }}</span>
+                        <span class="info-badge me-2"><i class="bi bi-calendar me-1"></i>{{ cliente.fecha_registro.strftime('%d/%m/%Y') }}</span>
+                        {% if cliente.ruta %}
+                        <span class="info-badge"><i class="bi bi-signpost-split me-1"></i>{{ cliente.ruta.nombre }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div>
+                    {% set score_class = 'score-' + (cliente.nivel_riesgo|lower if cliente.nivel_riesgo else 'nuevo') %}
+                    <div class="score-circle {{ score_class }}">
+                        <span class="score-value">{{ cliente.score_crediticio or 0 }}</span>
+                        <span class="score-label">{{ cliente.nivel_riesgo or 'NUEVO' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Datos Personales -->
+        <div class="form-card">
+            <h5 class="section-title"><i class="bi bi-person me-2"></i>Datos Personales</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="info-row">
+                        <span>Documento:</span>
+                        <strong>{{ cliente.documento }}</strong>
+                    </div>
+                    <div class="info-row">
+                        <span>Tipo Documento:</span>
+                        <strong>{{ cliente.tipo_documento or 'CPF' }}</strong>
+                    </div>
+                    <div class="info-row">
+                        <span>Fecha Nacimiento:</span>
+                        <strong>{{ cliente.fecha_nacimiento.strftime('%d/%m/%Y') if cliente.fecha_nacimiento else 'N/A' }}</strong>
+                    </div>
+                    <div class="info-row">
+                        <span>Estado Civil:</span>
+                        <strong>{{ cliente.estado_civil or 'N/A' }}</strong>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="info-row">
+                        <span>Telefono:</span>
+                        <strong>
+                            {% if cliente.telefono %}
+                            <a href="tel:{{ cliente.telefono }}" style="color: #00FF99; text-decoration: none;">
+                                <i class="bi bi-telephone me-1"></i>{{ cliente.telefono }}
+                            </a>
+                            {% else %}N/A{% endif %}
+                        </strong>
+                    </div>
+                    <div class="info-row">
+                        <span>WhatsApp:</span>
+                        <strong>
+                            {% if cliente.whatsapp_numero %}
+                            <a href="https://wa.me/{{ cliente.whatsapp_codigo_pais }}{{ cliente.whatsapp_numero }}" target="_blank" style="color: #25D366; text-decoration: none;">
+                                <i class="bi bi-whatsapp me-1"></i>+{{ cliente.whatsapp_codigo_pais }} {{ cliente.whatsapp_numero }}
+                            </a>
+                            {% else %}N/A{% endif %}
+                        </strong>
+                    </div>
+                    <div class="info-row">
+                        <span>Email:</span>
+                        <strong>{{ cliente.email or 'N/A' }}</strong>
+                    </div>
+                    <div class="info-row">
+                        <span>Personas a Cargo:</span>
+                        <strong>{{ cliente.personas_a_cargo or 0 }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Datos del Negocio -->
+        <div class="form-card">
+            <h5 class="section-title"><i class="bi bi-shop me-2"></i>Datos del Negocio</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="info-row">
+                        <span>Tipo de Negocio:</span>
+                        <strong>{{ cliente.tipo_negocio or 'N/A' }}</strong>
+                    </div>
+                    <div class="info-row">
+                        <span>Nombre Negocio:</span>
+                        <strong>{{ cliente.nombre_negocio or 'N/A' }}</strong>
+                    </div>
+                    <div class="info-row">
+                        <span>Antiguedad:</span>
+                        <strong>{{ cliente.antiguedad_negocio_meses or 0 }} meses</strong>
+                    </div>
+                    <div class="info-row">
+                        <span>Local Propio:</span>
+                        <strong>
+                            {% if cliente.local_propio %}
+                            <span style="color: #00FF99;"><i class="bi bi-check-circle-fill"></i> Si</span>
+                            {% else %}
+                            <span style="color: #FF6B6B;"><i class="bi bi-x-circle-fill"></i> No</span>
+                            {% endif %}
+                        </strong>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="info-row">
+                        <span>Direccion Negocio:</span>
+                        <strong>{{ cliente.direccion_negocio or 'N/A' }}</strong>
+                    </div>
+                    <div class="info-row">
+                        <span>CEP Negocio:</span>
+                        <strong>{{ cliente.cep_negocio or 'N/A' }}</strong>
+                    </div>
+                    <div class="info-row">
+                        <span>Ingresos Diarios:</span>
+                        <strong style="color: #00FF99;">{{ "${:,.0f}".format(cliente.ingresos_diarios_estimados) if cliente.ingresos_diarios_estimados else 'N/A' }}</strong>
+                    </div>
+                    <div class="info-row">
+                        <span>Gastos Mensuales:</span>
+                        <strong style="color: #FF6B6B;">{{ "${:,.0f}".format(cliente.gastos_mensuales_promedio) if cliente.gastos_mensuales_promedio else 'N/A' }}</strong>
+                    </div>
+                </div>
+            </div>
+            {% if cliente.gps_latitud and cliente.gps_longitud %}
+            <div class="mt-3 text-center">
+                <a href="https://www.google.com/maps?q={{ cliente.gps_latitud }},{{ cliente.gps_longitud }}" target="_blank" class="btn btn-sm" style="background: rgba(0,229,255,0.15); color: #00E5FF; border: 1px solid rgba(0,229,255,0.3);">
+                    <i class="bi bi-geo-alt me-1"></i>Ver en Google Maps
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Datos de Residencia -->
+        <div class="form-card">
+            <h5 class="section-title"><i class="bi bi-house me-2"></i>Datos de Residencia</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="info-row">
+                        <span>Direccion Casa:</span>
+                        <strong>{{ cliente.direccion_casa or 'N/A' }}</strong>
+                    </div>
+                    <div class="info-row">
+                        <span>CEP Casa:</span>
+                        <strong>{{ cliente.cep_casa or 'N/A' }}</strong>
+                    </div>
+                    <div class="info-row">
+                        <span>Tiempo Residencia:</span>
+                        <strong>{{ cliente.tiempo_residencia_meses or 0 }} meses</strong>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="info-row">
+                        <span>Comprobante Residencia:</span>
+                        <strong>
+                            {% if cliente.tiene_comprobante_residencia %}
+                            <span style="color: #00FF99;"><i class="bi bi-check-circle-fill"></i> Si</span>
+                            {% else %}
+                            <span style="color: #FF6B6B;"><i class="bi bi-x-circle-fill"></i> No</span>
+                            {% endif %}
+                        </strong>
+                    </div>
+                    <div class="info-row">
+                        <span>A Nombre Propio:</span>
+                        <strong>
+                            {% if cliente.comprobante_a_nombre_propio %}
+                            <span style="color: #00FF99;"><i class="bi bi-check-circle-fill"></i> Si</span>
+                            {% else %}
+                            <span style="color: #888;">No</span>
+                            {% endif %}
+                        </strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Datos Fiscales -->
+        <div class="form-card">
+            <h5 class="section-title"><i class="bi bi-file-earmark-text me-2"></i>Datos Fiscales</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="info-row">
+                        <span>CNPJ/Doc. Fiscal:</span>
+                        <strong>{{ cliente.documento_fiscal_negocio or 'N/A' }}</strong>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="info-row">
+                        <span>Negocio Formalizado:</span>
+                        <strong>
+                            {% if cliente.negocio_formalizado %}
+                            <span style="color: #00FF99;"><i class="bi bi-check-circle-fill"></i> Si</span>
+                            {% else %}
+                            <span style="color: #FF6B6B;"><i class="bi bi-x-circle-fill"></i> No</span>
+                            {% endif %}
+                        </strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen Financiero -->
+        <div class="form-card">
+            <h5 class="section-title"><i class="bi bi-bar-chart me-2"></i>Resumen Financiero</h5>
+            {% if estadisticas %}
+            <div class="row g-3 mb-3">
+                <div class="col-md-3 col-6">
+                    <div class="stat-box prestado">
+                        <h6>Total Prestado</h6>
+                        <h4>{{ "{:,.0f}".format(estadisticas.total_prestado) }}</h4>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="stat-box pagado">
+                        <h6>Total Pagado</h6>
+                        <h4>{{ "{:,.0f}".format(estadisticas.total_pagado) }}</h4>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="stat-box saldo">
+                        <h6>Saldo Actual</h6>
+                        <h4>{{ "{:,.0f}".format(estadisticas.saldo_actual) }}</h4>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="stat-box activos">
+                        <h6>Prestamos Activos</h6>
+                        <h4>{{ estadisticas.prestamos_activos }}</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center">
+                <span style="color: #888; font-size: 0.85rem;">Total: {{ estadisticas.total_prestamos }} prestamos | Pagados: {{ estadisticas.prestamos_pagados }}</span>
+            </div>
+            {% else %}
+            <div class="text-center py-3" style="color: #888;">
+                <i class="bi bi-info-circle me-1"></i>Sin datos financieros
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- COLUMNA DERECHA: Navegacion por ruta + prestamos -->
+    <div class="col-lg-4">
+        <!-- Estado Crediticio -->
+        <div class="form-card">
+            <h5 class="section-title"><i class="bi bi-shield-check me-2"></i>Estado Crediticio</h5>
+            <div class="text-center mb-3">
+                {% set score_class = 'score-' + (cliente.nivel_riesgo|lower if cliente.nivel_riesgo else 'nuevo') %}
+                <div class="score-circle {{ score_class }}" style="width: 100px; height: 100px; margin: 0 auto;">
+                    <span class="score-value" style="font-size: 1.6rem;">{{ cliente.score_crediticio or 0 }}</span>
+                    <span class="score-label">{{ cliente.nivel_riesgo or 'NUEVO' }}</span>
+                </div>
+            </div>
+            <div class="info-row">
+                <span>Limite Sugerido:</span>
+                <strong style="color: #00FF99;">{{ "{:,.0f}".format(cliente.limite_credito_sugerido) if cliente.limite_credito_sugerido else 'N/A' }}</strong>
+            </div>
+            <div class="info-row">
+                <span>Credito:</span>
+                <strong>
+                    {% if cliente.credito_bloqueado %}
+                    <span style="color: #FF6B6B;"><i class="bi bi-lock-fill"></i> Bloqueado</span>
+                    {% else %}
+                    <span style="color: #00FF99;"><i class="bi bi-unlock-fill"></i> Habilitado</span>
+                    {% endif %}
+                </strong>
+            </div>
+            {% if cliente.motivo_bloqueo %}
+            <div class="info-row">
+                <span>Motivo:</span>
+                <strong style="color: #FF6B6B; font-size: 0.85rem;">{{ cliente.motivo_bloqueo }}</strong>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Historial de Prestamos -->
+        <div class="form-card">
+            <h5 class="section-title"><i class="bi bi-clock-history me-2"></i>Prestamos ({{ prestamos|length }})</h5>
+            <div class="scroll-container">
+                {% if prestamos %}
+                    {% for prestamo in prestamos %}
+                    <a href="{{ url_for('prestamos.detalle', prestamo_id=prestamo.id) }}" class="text-decoration-none">
+                        <div class="prestamo-item">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span style="color: #00E5FF; font-weight: 600;">Prestamo #{{ prestamo.id }}</span>
+                                <span class="badge {% if prestamo.estado == 'ACTIVO' %}badge-activo{% elif prestamo.estado in ['COMPLETADO', 'PAGADO'] %}badge-pagado{% else %}badge-cancelado{% endif %}" style="font-size: 0.75rem; padding: 4px 10px; border-radius: 12px;">
+                                    {{ prestamo.estado }}
+                                </span>
+                            </div>
+                            <div class="d-flex justify-content-between" style="font-size: 0.85rem;">
+                                <span style="color: #888;">Monto:</span>
+                                <strong style="color: #00FF99;">{{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.monto_prestado) }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between" style="font-size: 0.85rem;">
+                                <span style="color: #888;">Saldo:</span>
+                                <strong style="color: #00E5FF;">{{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.saldo_actual) }}</strong>
+                            </div>
+                            <div style="font-size: 0.75rem; color: #666; margin-top: 5px;">
+                                {{ prestamo.fecha_inicio.strftime('%d/%m/%Y') }} | {{ prestamo.numero_cuotas }} cuotas
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4" style="color: #888;">
+                        <i class="bi bi-inbox" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
+                        No hay prestamos
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Accion rapida -->
+        <div class="d-grid">
+            <a href="{{ url_for('prestamos.nuevo') }}?cliente_id={{ cliente.id }}" class="btn btn-nuevo-prestamo">
+                <i class="bi bi-plus-circle me-2"></i>Nuevo Prestamo
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const clienteActualId = {{ cliente.id }};
+
+// Filtrar rutas por oficina
+document.getElementById('selectOficina').addEventListener('change', function() {
+    const oficinaId = this.value;
+    const selectRuta = document.getElementById('selectRuta');
+    const opciones = selectRuta.querySelectorAll('option');
+
+    opciones.forEach(opt => {
+        if (opt.value === '') { opt.style.display = ''; return; }
+        const optOficina = opt.dataset.oficina;
+        opt.style.display = (!oficinaId || optOficina === oficinaId) ? '' : 'none';
+    });
+
+    // Resetear si la seleccion actual no es visible
+    const seleccionada = selectRuta.options[selectRuta.selectedIndex];
+    if (seleccionada && seleccionada.style.display === 'none') {
+        selectRuta.value = '';
+        ocultarListaClientes();
+    }
+});
+
+// Cargar clientes al seleccionar ruta
+document.getElementById('selectRuta').addEventListener('change', function() {
+    const rutaId = this.value;
+    if (!rutaId) { ocultarListaClientes(); return; }
+    cargarClientesRuta(rutaId);
+});
+
+function cargarClientesRuta(rutaId) {
+    const container = document.getElementById('clientesRutaContainer');
+    const empty = document.getElementById('clientesRutaEmpty');
+    const lista = document.getElementById('listaClientesRuta');
+    const count = document.getElementById('countClientes');
+
+    lista.innerHTML = '<div class="text-center py-2" style="color: #888;"><i class="bi bi-hourglass-split"></i> Cargando...</div>';
+    container.style.display = 'block';
+    empty.style.display = 'none';
+
+    fetch('/clientes/api/por-ruta/' + rutaId)
+        .then(r => r.json())
+        .then(clientes => {
+            count.textContent = clientes.length;
+            if (clientes.length === 0) {
+                lista.innerHTML = '<div class="text-center py-2" style="color: #666;">No hay clientes en esta ruta</div>';
+                return;
+            }
+            lista.innerHTML = clientes.map(c => {
+                const esActivo = c.id === clienteActualId;
+                return '<a href="/clientes/ver/' + c.id + '" class="cliente-nav-item ' + (esActivo ? 'activo' : '') + '">' +
+                    '<div class="cliente-nav-avatar ' + (c.es_vip ? 'vip' : '') + '">' + c.nombre.charAt(0).toUpperCase() + '</div>' +
+                    '<div style="overflow:hidden;">' +
+                        '<div style="font-size:0.85rem;font-weight:' + (esActivo ? '700' : '500') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + c.nombre + '</div>' +
+                        '<div style="font-size:0.72rem;color:#888;">' + c.documento + '</div>' +
+                    '</div>' +
+                    (esActivo ? '<i class="bi bi-caret-right-fill ms-auto" style="color:#00E5FF;"></i>' : '') +
+                '</a>';
+            }).join('');
+        })
+        .catch(() => {
+            lista.innerHTML = '<div class="text-center py-2" style="color: #FF6B6B;">Error al cargar</div>';
+        });
+}
+
+function ocultarListaClientes() {
+    document.getElementById('clientesRutaContainer').style.display = 'none';
+    document.getElementById('clientesRutaEmpty').style.display = 'block';
+}
+
+// Si el cliente tiene ruta asignada, cargar automaticamente
+{% if cliente.ruta_id %}
+document.addEventListener('DOMContentLoaded', function() {
+    cargarClientesRuta({{ cliente.ruta_id }});
+});
+{% endif %}
+</script>
+{% endblock %}

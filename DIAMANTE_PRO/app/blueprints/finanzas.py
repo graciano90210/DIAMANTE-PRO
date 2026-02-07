@@ -237,63 +237,118 @@ def caja_inicio():
     usuario_id = session.get('usuario_id')
     rol = session.get('rol')
     hoy = datetime.now().date()
-    
+
+    # Obtener rutas disponibles para el selector
+    if rol == 'cobrador':
+        rutas = Ruta.query.filter_by(cobrador_id=usuario_id, activo=True).all()
+    else:
+        rutas = Ruta.query.filter_by(activo=True).order_by(Ruta.nombre).all()
+
+    # Filtro por ruta seleccionada
+    ruta_id = request.args.get('ruta_id', type=int)
+    ruta_seleccionada = None
+    if ruta_id:
+        ruta_seleccionada = Ruta.query.get(ruta_id)
+
     # Calcular ingresos del día
     if rol == 'cobrador':
-        pagos_hoy = Pago.query.join(Prestamo).filter(
+        q_pagos_hoy = Pago.query.join(Prestamo).filter(
             func.date(Pago.fecha_pago) == hoy,
             Prestamo.cobrador_id == usuario_id
-        ).all()
-        traslados_recibidos_hoy = Transaccion.query.filter(
+        )
+        if ruta_id:
+            q_pagos_hoy = q_pagos_hoy.filter(Prestamo.ruta_id == ruta_id)
+        pagos_hoy = q_pagos_hoy.all()
+
+        q_traslados_hoy = Transaccion.query.filter(
             func.date(Transaccion.fecha) == hoy,
             Transaccion.usuario_destino_id == usuario_id,
             Transaccion.naturaleza == 'TRASLADO'
-        ).all()
+        )
+        if ruta_id:
+            q_traslados_hoy = q_traslados_hoy.filter(Transaccion.ruta_destino_id == ruta_id)
+        traslados_recibidos_hoy = q_traslados_hoy.all()
     else:
-        pagos_hoy = Pago.query.filter(func.date(Pago.fecha_pago) == hoy).all()
+        q_pagos_hoy = Pago.query.join(Prestamo).filter(func.date(Pago.fecha_pago) == hoy)
+        if ruta_id:
+            q_pagos_hoy = q_pagos_hoy.filter(Prestamo.ruta_id == ruta_id)
+        pagos_hoy = q_pagos_hoy.all()
         traslados_recibidos_hoy = []
-    
+
     total_cobrado_hoy = sum(p.monto for p in pagos_hoy)
     total_traslados_recibidos = sum(t.monto for t in traslados_recibidos_hoy)
-    
+
     # Calcular gastos del día
     if rol == 'cobrador':
-        gastos_hoy = Transaccion.query.filter(
+        q_gastos_hoy = Transaccion.query.filter(
             func.date(Transaccion.fecha) == hoy,
             Transaccion.usuario_origen_id == usuario_id
-        ).all()
+        )
+        if ruta_id:
+            q_gastos_hoy = q_gastos_hoy.filter(Transaccion.ruta_origen_id == ruta_id)
+        gastos_hoy = q_gastos_hoy.all()
     else:
-        gastos_hoy = Transaccion.query.filter(func.date(Transaccion.fecha) == hoy).all()
-    
+        q_gastos_hoy = Transaccion.query.filter(func.date(Transaccion.fecha) == hoy)
+        if ruta_id:
+            q_gastos_hoy = q_gastos_hoy.filter(
+                db.or_(Transaccion.ruta_origen_id == ruta_id, Transaccion.ruta_destino_id == ruta_id)
+            )
+        gastos_hoy = q_gastos_hoy.all()
+
     total_gastos_hoy = sum(g.monto for g in gastos_hoy)
     balance_dia = total_cobrado_hoy + total_traslados_recibidos - total_gastos_hoy
-    
+
     # Estadísticas del mes
     inicio_mes = datetime(hoy.year, hoy.month, 1)
     if rol == 'cobrador':
-        pagos_mes = Pago.query.join(Prestamo).filter(
+        q_pagos_mes = Pago.query.join(Prestamo).filter(
             Pago.fecha_pago >= inicio_mes,
             Prestamo.cobrador_id == usuario_id
-        ).all()
-        traslados_recibidos_mes = Transaccion.query.filter(
+        )
+        if ruta_id:
+            q_pagos_mes = q_pagos_mes.filter(Prestamo.ruta_id == ruta_id)
+        pagos_mes = q_pagos_mes.all()
+
+        q_traslados_mes = Transaccion.query.filter(
             Transaccion.fecha >= inicio_mes,
             Transaccion.usuario_destino_id == usuario_id,
             Transaccion.naturaleza == 'TRASLADO'
-        ).all()
-        gastos_mes = Transaccion.query.filter(
+        )
+        if ruta_id:
+            q_traslados_mes = q_traslados_mes.filter(Transaccion.ruta_destino_id == ruta_id)
+        traslados_recibidos_mes = q_traslados_mes.all()
+
+        q_gastos_mes = Transaccion.query.filter(
             Transaccion.fecha >= inicio_mes,
             Transaccion.usuario_origen_id == usuario_id
-        ).all()
+        )
+        if ruta_id:
+            q_gastos_mes = q_gastos_mes.filter(Transaccion.ruta_origen_id == ruta_id)
+        gastos_mes = q_gastos_mes.all()
     else:
-        pagos_mes = Pago.query.filter(Pago.fecha_pago >= inicio_mes).all()
+        q_pagos_mes = Pago.query.join(Prestamo).filter(Pago.fecha_pago >= inicio_mes)
+        if ruta_id:
+            q_pagos_mes = q_pagos_mes.filter(Prestamo.ruta_id == ruta_id)
+        pagos_mes = q_pagos_mes.all()
         traslados_recibidos_mes = []
-        gastos_mes = Transaccion.query.filter(Transaccion.fecha >= inicio_mes).all()
-    
+
+        q_gastos_mes = Transaccion.query.filter(Transaccion.fecha >= inicio_mes)
+        if ruta_id:
+            q_gastos_mes = q_gastos_mes.filter(
+                db.or_(Transaccion.ruta_origen_id == ruta_id, Transaccion.ruta_destino_id == ruta_id)
+            )
+        gastos_mes = q_gastos_mes.all()
+
     total_cobrado_mes = sum(p.monto for p in pagos_mes)
     total_traslados_mes = sum(t.monto for t in traslados_recibidos_mes)
     total_gastos_mes = sum(g.monto for g in gastos_mes)
     balance_mes = total_cobrado_mes + total_traslados_mes - total_gastos_mes
-    
+
+    # Símbolo de moneda según ruta seleccionada
+    simbolo = '$'
+    if ruta_seleccionada and ruta_seleccionada.simbolo_moneda:
+        simbolo = ruta_seleccionada.simbolo_moneda
+
     return render_template('caja_inicio.html',
         total_cobrado_hoy=total_cobrado_hoy,
         total_gastos_hoy=total_gastos_hoy,
@@ -305,7 +360,10 @@ def caja_inicio():
         balance_mes=balance_mes,
         fecha_hoy=hoy.strftime('%d/%m/%Y'),
         nombre=session.get('nombre'),
-        rol=session.get('rol'))
+        rol=session.get('rol'),
+        rutas=rutas,
+        ruta_id=ruta_id,
+        simbolo=simbolo)
 
 
 @finanzas_bp.route('/caja/gastos')

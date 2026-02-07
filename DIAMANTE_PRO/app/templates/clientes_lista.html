@@ -73,11 +73,27 @@
 <div class="card mb-4">
     <div class="card-body">
         <div class="row g-3">
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="input-group">
                     <span class="input-group-text"><i class="bi bi-search"></i></span>
                     <input type="text" class="form-control" id="buscarCliente" placeholder="Buscar cliente...">
                 </div>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="filtroOficina">
+                    <option value="">Todas las oficinas</option>
+                    {% for oficina in oficinas %}
+                    <option value="{{ oficina.id }}">{{ oficina.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="filtroRuta">
+                    <option value="">Todas las rutas</option>
+                    {% for ruta in rutas %}
+                    <option value="{{ ruta.id }}" data-oficina="{{ ruta.oficina_id or '' }}">{{ ruta.nombre }}</option>
+                    {% endfor %}
+                </select>
             </div>
             <div class="col-md-3">
                 <select class="form-select" id="filtroVip">
@@ -110,20 +126,20 @@
                 </thead>
                 <tbody>
                     {% for cliente in clientes.items %}
-                    <tr data-vip="{{ 'vip' if cliente.es_vip else 'regular' }}">
+                    <tr data-vip="{{ 'vip' if cliente.es_vip else 'regular' }}" data-ruta="{{ cliente.ruta_id or '' }}">
                         <td><span class="badge bg-secondary">#{{ cliente.id }}</span></td>
                         <td>
-                            <div class="d-flex align-items-center">
+                            <a href="{{ url_for('clientes.ver', cliente_id=cliente.id) }}" class="d-flex align-items-center text-decoration-none">
                                 <div class="avatar-sm bg-primary bg-opacity-10 text-primary rounded-circle me-2 d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
                                     {{ cliente.nombre[0] | upper }}
                                 </div>
                                 <div>
-                                    <strong>{{ cliente.nombre }}</strong>
+                                    <strong style="color: #E0E0E0;">{{ cliente.nombre }}</strong>
                                     {% if cliente.es_vip %}
                                     <span class="badge bg-warning text-dark ms-1"><i class="bi bi-star-fill"></i> VIP</span>
                                     {% endif %}
                                 </div>
-                            </div>
+                            </a>
                         </td>
                         <td>{{ cliente.documento }}</td>
                         <td>
@@ -146,11 +162,15 @@
                         <td>{{ cliente.fecha_registro.strftime('%d/%m/%Y') }}</td>
                         <td class="text-center">
                             <div class="btn-group" role="group">
-                                <a href="{{ url_for('prestamos.nuevo') }}?cliente_id={{ cliente.id }}" 
+                                <a href="{{ url_for('clientes.ver', cliente_id=cliente.id) }}"
+                                   class="btn btn-sm" style="background: #FFFFFF; color: #0A0E21; font-weight: 700; border: 1px solid #FFFFFF;" title="Ver Detalle">
+                                    <i class="bi bi-eye-fill"></i>
+                                </a>
+                                <a href="{{ url_for('prestamos.nuevo') }}?cliente_id={{ cliente.id }}"
                                    class="btn btn-sm btn-success" title="Nuevo Crédito">
                                     <i class="bi bi-cash-stack"></i>
                                 </a>
-                                <a href="{{ url_for('clientes.editar', cliente_id=cliente.id) }}" 
+                                <a href="{{ url_for('clientes.editar', cliente_id=cliente.id) }}"
                                    class="btn btn-sm btn-warning" title="Editar">
                                     <i class="bi bi-pencil"></i>
                                 </a>
@@ -176,29 +196,63 @@
 
 {% block extra_js %}
 <script>
-// Filtro de búsqueda
+// Filtro de búsqueda por texto
 document.getElementById('buscarCliente').addEventListener('input', function() {
-    const filtro = this.value.toLowerCase();
-    const filas = document.querySelectorAll('#tablaClientes tbody tr');
-    
-    filas.forEach(fila => {
-        const texto = fila.textContent.toLowerCase();
-        fila.style.display = texto.includes(filtro) ? '' : 'none';
+    aplicarFiltros();
+});
+
+// Filtrar rutas por oficina seleccionada
+document.getElementById('filtroOficina').addEventListener('change', function() {
+    const oficinaId = this.value;
+    const selectRuta = document.getElementById('filtroRuta');
+    const opciones = selectRuta.querySelectorAll('option');
+
+    opciones.forEach(opt => {
+        if (opt.value === '') { opt.style.display = ''; return; }
+        opt.style.display = (!oficinaId || opt.dataset.oficina === oficinaId) ? '' : 'none';
     });
+
+    const seleccionada = selectRuta.options[selectRuta.selectedIndex];
+    if (seleccionada && seleccionada.style.display === 'none') {
+        selectRuta.value = '';
+    }
+    aplicarFiltros();
+});
+
+// Filtro por Ruta
+document.getElementById('filtroRuta').addEventListener('change', function() {
+    aplicarFiltros();
 });
 
 // Filtro VIP
 document.getElementById('filtroVip').addEventListener('change', function() {
-    const filtro = this.value;
-    const filas = document.querySelectorAll('#tablaClientes tbody tr');
-    
-    filas.forEach(fila => {
-        if (!filtro) {
-            fila.style.display = '';
-        } else {
-            fila.style.display = fila.dataset.vip === filtro ? '' : 'none';
-        }
-    });
+    aplicarFiltros();
 });
+
+function aplicarFiltros() {
+    const textoBusqueda = document.getElementById('buscarCliente').value.toLowerCase();
+    const filtroRuta = document.getElementById('filtroRuta').value;
+    const filtroVip = document.getElementById('filtroVip').value;
+    const filas = document.querySelectorAll('#tablaClientes tbody tr');
+
+    filas.forEach(fila => {
+        let visible = true;
+
+        // Filtro texto
+        if (textoBusqueda && !fila.textContent.toLowerCase().includes(textoBusqueda)) {
+            visible = false;
+        }
+        // Filtro ruta
+        if (filtroRuta && fila.dataset.ruta !== filtroRuta) {
+            visible = false;
+        }
+        // Filtro VIP
+        if (filtroVip && fila.dataset.vip !== filtroVip) {
+            visible = false;
+        }
+
+        fila.style.display = visible ? '' : 'none';
+    });
+}
 </script>
 {% endblock %}

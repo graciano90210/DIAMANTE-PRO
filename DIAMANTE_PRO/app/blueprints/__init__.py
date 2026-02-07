@@ -2,8 +2,10 @@
 # Este módulo contiene todos los blueprints organizados por funcionalidad
 
 # Blueprints ACTIVOS (migrados)
+
 from .auth import auth_bp
 from .clientes import clientes_bp
+from .prestamos import prestamos_bp
 
 # Blueprints en PREPARACIÓN (aún no migrados - las rutas están en routes.py)
 # from .prestamos import prestamos_bp
@@ -16,8 +18,8 @@ from .clientes import clientes_bp
 __all__ = [
     'auth_bp',
     'clientes_bp',
+    'prestamos_bp',
     # Los siguientes se activarán cuando se migren:
-    # 'prestamos_bp',
     # 'cobros_bp',
     # 'rutas_bp',
     # 'sociedades_bp',

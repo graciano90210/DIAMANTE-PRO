@@ -107,14 +107,24 @@
         transition: all 0.3s ease;
     }
     .btn-pago {
-        background: linear-gradient(135deg, #00FF99, #00E5FF);
-        color: #0A0E21;
+        background: linear-gradient(135deg, #00915A, #0097A7);
+        color: #FFFFFF;
+        border: none;
+        font-size: 1rem;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+    .btn-pago:disabled, .btn-pago.disabled {
+        background: #3a5a5a !important;
+        color: #aaa !important;
+        opacity: 0.7 !important;
+        text-shadow: none !important;
         border: none;
     }
     .btn-pago:hover {
         transform: translateY(-2px);
-        box-shadow: 0 5px 20px rgba(0, 255, 153, 0.4);
-        color: #0A0E21;
+        box-shadow: 0 5px 20px rgba(0, 255, 153, 0.3);
+        color: #FFFFFF;
+        background: linear-gradient(135deg, #00A366, #00ACC1);
     }
     .btn-comprobante {
         background: transparent;
@@ -319,9 +329,15 @@
         <!-- Acciones Rápidas -->
         <div class="form-card">
             <div class="d-grid gap-3">
+                {% if prestamo.saldo_actual > 0 and prestamo.cuotas_pagadas < prestamo.numero_cuotas %}
                 <a href="/cobro/registrar/{{ prestamo.id }}" class="btn btn-accion btn-pago">
                     <i class="bi bi-cash me-2"></i>Registrar Nuevo Pago
                 </a>
+                {% else %}
+                <button class="btn btn-accion btn-pago" type="button" disabled>
+                    <i class="bi bi-cash me-2"></i>Registrar Nuevo Pago
+                </button>
+                {% endif %}
                 <a href="/prestamos/comprobante-imagen/{{ prestamo.id }}" class="btn btn-accion btn-comprobante" download>
                     <i class="bi bi-download me-2"></i>Descargar Comprobante Original del Crédito
                 </a>

@@ -4,25 +4,176 @@
 
 {% block extra_css %}
 <style>
-    .stat-card-gradient {
-        border: none;
+    .stat-card {
+        background: var(--card-dark, #161B22);
+        border: 1px solid var(--border-subtle, #30363D);
         border-radius: 16px;
-        transition: transform 0.2s;
+        transition: all 0.3s ease;
+        padding: 1.25rem;
     }
-    .stat-card-gradient:hover {
-        transform: translateY(-5px);
+    .stat-card:hover {
+        transform: translateY(-4px);
     }
-    .bg-ingreso { background: linear-gradient(135deg, #00b09b, #96c93d); }
-    .bg-egreso { background: linear-gradient(135deg, #e52d27, #b31217); }
-    .bg-balance { background: linear-gradient(135deg, #667eea, #764ba2); }
-    .icon-box {
-        width: 60px;
-        height: 60px;
+    .stat-card.card-ingreso {
+        border-left: 4px solid var(--neon-green, #00D67F);
+    }
+    .stat-card.card-ingreso:hover {
+        box-shadow: 0 8px 25px rgba(0, 214, 127, 0.15);
+    }
+    .stat-card.card-egreso {
+        border-left: 4px solid var(--neon-red, #FF4757);
+    }
+    .stat-card.card-egreso:hover {
+        box-shadow: 0 8px 25px rgba(255, 71, 87, 0.15);
+    }
+    .stat-card.card-balance {
+        border-left: 4px solid var(--neon-purple, #A855F7);
+    }
+    .stat-card.card-balance:hover {
+        box-shadow: 0 8px 25px rgba(168, 85, 247, 0.15);
+    }
+    .stat-card .stat-label {
+        font-size: 0.85rem;
+        color: var(--text-muted, #8B949E);
+        margin-bottom: 4px;
+    }
+    .stat-card .stat-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #fff;
+    }
+    .stat-card .stat-sub {
+        font-size: 0.8rem;
+        color: var(--text-muted, #8B949E);
+    }
+    .stat-card .icon-box {
+        width: 52px;
+        height: 52px;
         border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.8rem;
+        font-size: 1.5rem;
+    }
+    .icon-box.ib-green {
+        background: rgba(0, 214, 127, 0.12);
+        color: var(--neon-green, #00D67F);
+        border: 1px solid rgba(0, 214, 127, 0.25);
+    }
+    .icon-box.ib-red {
+        background: rgba(255, 71, 87, 0.12);
+        color: var(--neon-red, #FF4757);
+        border: 1px solid rgba(255, 71, 87, 0.25);
+    }
+    .icon-box.ib-purple {
+        background: rgba(168, 85, 247, 0.12);
+        color: var(--neon-purple, #A855F7);
+        border: 1px solid rgba(168, 85, 247, 0.25);
+    }
+    /* Acciones rápidas - dark tech */
+    .action-card {
+        background: var(--card-dark, #161B22);
+        border: 1px solid var(--border-subtle, #30363D);
+        border-radius: 16px;
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+    .action-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--neon-green, #00D67F);
+        box-shadow: 0 8px 25px rgba(0, 214, 127, 0.15);
+    }
+    .action-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        margin: 0 auto 1rem;
+    }
+    .action-icon.icon-danger {
+        background: rgba(255, 71, 87, 0.12);
+        color: var(--neon-red, #FF4757);
+        border: 1px solid rgba(255, 71, 87, 0.25);
+    }
+    .action-icon.icon-primary {
+        background: rgba(0, 214, 127, 0.12);
+        color: var(--neon-green, #00D67F);
+        border: 1px solid rgba(0, 214, 127, 0.25);
+    }
+    .action-icon.icon-success {
+        background: rgba(168, 85, 247, 0.12);
+        color: var(--neon-purple, #A855F7);
+        border: 1px solid rgba(168, 85, 247, 0.25);
+    }
+    .btn-action {
+        border: none !important;
+        border-radius: 10px !important;
+        padding: 10px 24px !important;
+        font-weight: 600 !important;
+        transition: all 0.3s ease;
+        text-decoration: none !important;
+        color: #fff !important;
+    }
+    .btn-action-danger {
+        background: linear-gradient(135deg, var(--neon-red, #FF4757), #cc2952) !important;
+        box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3);
+    }
+    .btn-action-danger:hover {
+        box-shadow: 0 6px 25px rgba(255, 71, 87, 0.5) !important;
+        transform: translateY(-2px);
+        color: #fff !important;
+    }
+    .btn-action-primary {
+        background: linear-gradient(135deg, var(--neon-green, #00D67F), #00a862) !important;
+        box-shadow: 0 4px 15px rgba(0, 214, 127, 0.3);
+    }
+    .btn-action-primary:hover {
+        box-shadow: 0 6px 25px rgba(0, 214, 127, 0.5) !important;
+        transform: translateY(-2px);
+        color: #fff !important;
+    }
+    .btn-action-success {
+        background: linear-gradient(135deg, var(--neon-purple, #A855F7), #7c3aed) !important;
+        box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
+    }
+    .btn-action-success:hover {
+        box-shadow: 0 6px 25px rgba(168, 85, 247, 0.5) !important;
+        transform: translateY(-2px);
+        color: #fff !important;
+    }
+    .action-card h5 {
+        color: #fff !important;
+    }
+    .action-card p {
+        color: var(--text-muted, #8B949E) !important;
+    }
+    /* Selector de ruta */
+    .ruta-selector {
+        background: var(--card-dark, #161B22) !important;
+        border: 1px solid var(--border-subtle, #30363D) !important;
+        color: #fff !important;
+        border-radius: 10px !important;
+        padding: 8px 36px 8px 14px !important;
+        font-size: 0.9rem;
+        min-width: 200px;
+        cursor: pointer;
+        appearance: none;
+        -webkit-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2300D67F' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E") !important;
+        background-repeat: no-repeat !important;
+        background-position: calc(100% - 12px) center !important;
+    }
+    .ruta-selector:focus {
+        border-color: var(--neon-green, #00D67F) !important;
+        box-shadow: 0 0 0 2px rgba(0, 214, 127, 0.2) !important;
+        outline: none;
+    }
+    .ruta-selector option {
+        background: var(--card-dark, #161B22);
+        color: #fff;
     }
 </style>
 {% endblock %}
@@ -31,62 +182,60 @@
 <i class="bi bi-cash-stack me-2"></i>Control de Caja
 {% endblock %}
 
-{% block page_actions %}
-<span class="text-muted me-3">Fecha: <strong>{{ fecha_hoy }}</strong></span>
-<a href="{{ url_for('finanzas.caja_gastos_nuevo') }}" class="btn btn-danger">
-    <i class="bi bi-plus-circle me-1"></i> Registrar Gasto
-</a>
+{% block navbar_actions %}
+<select class="ruta-selector" id="rutaSelector" onchange="filtrarPorRuta(this.value)">
+    <option value="">Todas las Rutas</option>
+    {% for ruta in rutas %}
+    <option value="{{ ruta.id }}" {{ 'selected' if ruta_id == ruta.id }}>
+        {{ ruta.nombre }} ({{ ruta.moneda }})
+    </option>
+    {% endfor %}
+</select>
 {% endblock %}
 
 {% block content %}
 <!-- Resumen del Día -->
 <div class="row g-3 mb-4">
     <div class="col-md-4">
-        <div class="card stat-card-gradient bg-ingreso text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <p class="mb-1 opacity-75">Ingresos Hoy</p>
-                        <h3 class="mb-0">${{ "{:,.0f}".format(total_cobrado_hoy) }}</h3>
-                        <small>{{ num_pagos_hoy }} pagos</small>
-                    </div>
-                    <div class="icon-box bg-white bg-opacity-25">
-                        <i class="bi bi-arrow-down-circle"></i>
-                    </div>
+        <div class="stat-card card-ingreso">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label">Ingresos Hoy</div>
+                    <div class="stat-value">{{ simbolo }}{{ "{:,.0f}".format(total_cobrado_hoy) }}</div>
+                    <div class="stat-sub">{{ num_pagos_hoy }} pagos</div>
+                </div>
+                <div class="icon-box ib-green">
+                    <i class="bi bi-arrow-down-circle"></i>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="col-md-4">
-        <div class="card stat-card-gradient bg-egreso text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <p class="mb-1 opacity-75">Gastos Hoy</p>
-                        <h3 class="mb-0">${{ "{:,.0f}".format(total_gastos_hoy) }}</h3>
-                        <small>{{ num_gastos_hoy }} gastos</small>
-                    </div>
-                    <div class="icon-box bg-white bg-opacity-25">
-                        <i class="bi bi-arrow-up-circle"></i>
-                    </div>
+        <div class="stat-card card-egreso">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label">Gastos Hoy</div>
+                    <div class="stat-value">{{ simbolo }}{{ "{:,.0f}".format(total_gastos_hoy) }}</div>
+                    <div class="stat-sub">{{ num_gastos_hoy }} gastos</div>
+                </div>
+                <div class="icon-box ib-red">
+                    <i class="bi bi-arrow-up-circle"></i>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="col-md-4">
-        <div class="card stat-card-gradient bg-balance text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <p class="mb-1 opacity-75">Balance Hoy</p>
-                        <h3 class="mb-0">${{ "{:,.0f}".format(balance_dia) }}</h3>
-                        <small>Efectivo esperado</small>
-                    </div>
-                    <div class="icon-box bg-white bg-opacity-25">
-                        <i class="bi bi-wallet2"></i>
-                    </div>
+        <div class="stat-card card-balance">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label">Balance Hoy</div>
+                    <div class="stat-value">{{ simbolo }}{{ "{:,.0f}".format(balance_dia) }}</div>
+                    <div class="stat-sub">Efectivo esperado</div>
+                </div>
+                <div class="icon-box ib-purple">
+                    <i class="bi bi-wallet2"></i>
                 </div>
             </div>
         </div>
@@ -103,15 +252,15 @@
             <div class="card-body">
                 <div class="row text-center">
                     <div class="col-md-4">
-                        <h4 class="text-success">${{ "{:,.0f}".format(total_cobrado_mes) }}</h4>
+                        <h4 class="text-success">{{ simbolo }}{{ "{:,.0f}".format(total_cobrado_mes) }}</h4>
                         <p class="text-muted mb-0">Total Cobrado</p>
                     </div>
                     <div class="col-md-4">
-                        <h4 class="text-danger">${{ "{:,.0f}".format(total_gastos_mes) }}</h4>
+                        <h4 class="text-danger">{{ simbolo }}{{ "{:,.0f}".format(total_gastos_mes) }}</h4>
                         <p class="text-muted mb-0">Total Gastos</p>
                     </div>
                     <div class="col-md-4">
-                        <h4 class="text-primary">${{ "{:,.0f}".format(balance_mes) }}</h4>
+                        <h4 class="text-primary">{{ simbolo }}{{ "{:,.0f}".format(balance_mes) }}</h4>
                         <p class="text-muted mb-0">Balance del Mes</p>
                     </div>
                 </div>
@@ -123,14 +272,14 @@
 <!-- Acciones Rápidas -->
 <div class="row g-3">
     <div class="col-md-4">
-        <div class="card h-100">
-            <div class="card-body text-center">
-                <div class="stat-icon bg-danger bg-opacity-10 text-danger mx-auto mb-3" style="width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem;">
+        <div class="action-card h-100">
+            <div class="card-body text-center p-4">
+                <div class="action-icon icon-danger">
                     <i class="bi bi-receipt"></i>
                 </div>
-                <h5>Gastos</h5>
-                <p class="text-muted">Ver y registrar gastos operativos</p>
-                <a href="{{ url_for('finanzas.caja_gastos') }}" class="btn btn-danger">
+                <h5 class="text-white mb-2">Gastos</h5>
+                <p class="text-secondary mb-3">Ver y registrar gastos operativos</p>
+                <a href="{{ url_for('finanzas.caja_gastos') }}" class="btn btn-action btn-action-danger">
                     <i class="bi bi-list-ul me-1"></i> Ver Gastos
                 </a>
             </div>
@@ -138,14 +287,14 @@
     </div>
 
     <div class="col-md-4">
-        <div class="card h-100">
-            <div class="card-body text-center">
-                <div class="stat-icon bg-primary bg-opacity-10 text-primary mx-auto mb-3" style="width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem;">
+        <div class="action-card h-100">
+            <div class="card-body text-center p-4">
+                <div class="action-icon icon-primary">
                     <i class="bi bi-calculator"></i>
                 </div>
-                <h5>Cuadre de Caja</h5>
-                <p class="text-muted">Balance detallado del día</p>
-                <a href="{{ url_for('finanzas.caja_cuadre') }}" class="btn btn-primary">
+                <h5 class="text-white mb-2">Cuadre de Caja</h5>
+                <p class="text-secondary mb-3">Balance detallado del día</p>
+                <a href="{{ url_for('finanzas.caja_cuadre') }}" class="btn btn-action btn-action-primary">
                     <i class="bi bi-calculator me-1"></i> Hacer Cuadre
                 </a>
             </div>
@@ -153,18 +302,28 @@
     </div>
 
     <div class="col-md-4">
-        <div class="card h-100">
-            <div class="card-body text-center">
-                <div class="stat-icon bg-success bg-opacity-10 text-success mx-auto mb-3" style="width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem;">
+        <div class="action-card h-100">
+            <div class="card-body text-center p-4">
+                <div class="action-icon icon-success">
                     <i class="bi bi-graph-up"></i>
                 </div>
-                <h5>Reportes</h5>
-                <p class="text-muted">Estadísticas y análisis</p>
-                <a href="{{ url_for('reportes.reportes') }}" class="btn btn-success">
+                <h5 class="text-white mb-2">Reportes</h5>
+                <p class="text-secondary mb-3">Estadísticas y análisis</p>
+                <a href="{{ url_for('reportes.reportes') }}" class="btn btn-action btn-action-success">
                     <i class="bi bi-bar-chart me-1"></i> Ver Reportes
                 </a>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+function filtrarPorRuta(rutaId) {
+    if (rutaId) {
+        window.location.href = '{{ url_for("finanzas.caja_inicio") }}?ruta_id=' + rutaId;
+    } else {
+        window.location.href = '{{ url_for("finanzas.caja_inicio") }}';
+    }
+}
+</script>
 {% endblock %}

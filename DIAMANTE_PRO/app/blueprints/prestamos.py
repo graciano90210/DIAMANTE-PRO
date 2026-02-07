@@ -4,7 +4,7 @@ Maneja: CRUD de préstamos, cálculos, comprobantes
 """
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, send_file
 from datetime import datetime, timedelta
-from ..models import Cliente, Prestamo, Pago, Ruta, Usuario, db
+from ..models import Cliente, Prestamo, Pago, Ruta, Oficina, Usuario, db
 from sqlalchemy import func
 from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
@@ -86,6 +86,8 @@ def lista():
 
     clientes = Cliente.query.order_by(Cliente.nombre).all()
     cobradores = Usuario.query.filter(Usuario.rol.in_(['admin', 'cobrador'])).all()
+    oficinas = Oficina.query.filter_by(activo=True).order_by(Oficina.nombre).all()
+    rutas = Ruta.query.filter_by(activo=True).order_by(Ruta.nombre).all()
 
     # Obtener lista de préstamos según el rol
     query_prestamos = Prestamo.query.order_by(Prestamo.fecha_inicio.desc())
@@ -112,7 +114,9 @@ def lista():
         total_prestado=total_prestado,
         total_cartera=total_cartera,
         ganancia_esperada=ganancia_esperada,
-        stats_por_moneda=stats_por_moneda)
+        stats_por_moneda=stats_por_moneda,
+        oficinas=oficinas,
+        rutas=rutas)
 
 
 @prestamos_bp.route('/guardar', methods=['POST'])
@@ -390,3 +394,27 @@ def comprobante_imagen(prestamo_id):
         as_attachment=True,
         download_name=f'Comprobante_Credito_{prestamo.id}_{cliente.nombre.replace(" ", "_")}.png'
     )
+
+
+@prestamos_bp.route('/eliminar/<int:prestamo_id>', methods=['POST'])
+@login_required
+def eliminar(prestamo_id):
+    """Eliminar un préstamo y sus pagos asociados (solo dueño/gerente/admin)"""
+    rol = session.get('rol')
+    if rol not in ['dueno', 'gerente', 'admin']:
+        flash('No tienes permisos para eliminar créditos.', 'danger')
+        return redirect(url_for('prestamos.lista'))
+
+    prestamo = Prestamo.query.get_or_404(prestamo_id)
+
+    try:
+        # Eliminar pagos asociados primero
+        Pago.query.filter_by(prestamo_id=prestamo.id).delete()
+        db.session.delete(prestamo)
+        db.session.commit()
+        flash('Crédito eliminado correctamente.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al eliminar crédito: {str(e)}', 'danger')
+
+    return redirect(url_for('prestamos.lista'))

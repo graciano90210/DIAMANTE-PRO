@@ -8,10 +8,39 @@
     .badge-cancelado { background: #6c757d; }
     .badge-mora { background: var(--neon-red); }
     .progress-cuotas {
-        height: 25px;
-        font-size: 0.85rem;
+        height: 22px;
+        font-size: 0.75rem;
         border-radius: 8px;
     }
+    /* Forzar que el content-area no desborde */
+    .content-area { overflow-x: hidden; }
+    /* Contenedor con scroll horizontal */
+    .card-tabla-prestamos .card-body { padding: 0.5rem; overflow-x: auto; }
+    #tablaPrestamos {
+        font-size: 0.78rem;
+        white-space: nowrap;
+        margin-bottom: 0;
+    }
+    #tablaPrestamos th, #tablaPrestamos td {
+        padding: 0.4rem 0.5rem;
+    }
+    /* Botones de accion uniformes */
+    .acciones-prestamo {
+        display: flex;
+        gap: 4px;
+        justify-content: center;
+    }
+    .acciones-prestamo .btn {
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        font-size: 0.75rem;
+    }
+    .acciones-prestamo form { margin: 0; }
 </style>
 {% endblock %}
 
@@ -116,7 +145,23 @@
 <div class="card mb-4">
     <div class="card-body">
         <div class="row g-3">
-            <div class="col-md-3">
+            <div class="col-md-2">
+                <select class="form-select" id="filtroOficina">
+                    <option value="">Todas las oficinas</option>
+                    {% for oficina in oficinas %}
+                    <option value="{{ oficina.id }}">{{ oficina.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" id="filtroRuta">
+                    <option value="">Todas las rutas</option>
+                    {% for ruta in rutas %}
+                    <option value="{{ ruta.id }}" data-oficina="{{ ruta.oficina_id or '' }}">{{ ruta.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
                 <select class="form-select" id="filtroEstado">
                     <option value="">Todos los estados</option>
                     <option value="ACTIVO">Activos</option>
@@ -149,29 +194,28 @@
 </div>
 
 <!-- Tabla de Préstamos -->
-<div class="card">
+<div class="card card-tabla-prestamos">
     <div class="card-body">
         {% if prestamos %}
-        <div class="table-responsive">
             <table class="table table-hover align-middle" id="tablaPrestamos">
                 <thead>
                     <tr>
                         <th>ID</th>
                         <th>Cliente</th>
-                        <th>Monto Prestado</th>
-                        <th>Total a Pagar</th>
-                        <th>Saldo Actual</th>
+                        <th>Prestado</th>
+                        <th>Total</th>
+                        <th>Saldo</th>
                         <th>Progreso</th>
                         <th>Cuota</th>
-                        <th>Frecuencia</th>
+                        <th>Frec.</th>
                         <th>Estado</th>
                         <th>Cobrador</th>
-                        <th class="text-center">Acciones</th>
+                        <th class="text-center">Acc.</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for prestamo in prestamos %}
-                    <tr data-estado="{{ prestamo.estado }}" data-moneda="{{ prestamo.moneda }}">
+                    <tr data-estado="{{ prestamo.estado }}" data-moneda="{{ prestamo.moneda }}" data-ruta="{{ prestamo.ruta_id or '' }}" data-oficina="{{ prestamo.ruta.oficina_id if prestamo.ruta and prestamo.ruta.oficina_id else '' }}">
                         <td><span class="badge bg-secondary">#{{ prestamo.id }}</span></td>
                         <td>
                             <strong>{{ prestamo.cliente.nombre }}</strong><br>
@@ -184,7 +228,7 @@
                                 {{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.saldo_actual) }}
                             </strong>
                         </td>
-                        <td style="min-width: 180px;">
+                        <td>
                             {% set progreso = (prestamo.cuotas_pagadas / prestamo.numero_cuotas * 100) | int %}
                             <div class="progress progress-cuotas">
                                 <div class="progress-bar bg-success" style="width: {{ progreso }}%">
@@ -194,7 +238,7 @@
                         </td>
                         <td>{{ prestamo.moneda }} {{ "{:,.0f}".format(prestamo.valor_cuota) }}</td>
                         <td>
-                            <span class="badge bg-info">{{ prestamo.frecuencia }}</span>
+                            <span class="badge bg-info" style="font-size: 0.65rem;">{{ prestamo.frecuencia|replace('_', ' ') }}</span>
                         </td>
                         <td>
                             {% if prestamo.estado == 'ACTIVO' %}
@@ -208,15 +252,22 @@
                         <td>
                             <small>{{ prestamo.cobrador.nombre if prestamo.cobrador else 'N/A' }}</small>
                         </td>
-                        <td class="text-center">
-                            <div class="btn-group" role="group">
-                                <a href="{{ url_for('prestamos.detalle', prestamo_id=prestamo.id) }}" class="btn btn-sm btn-info" title="Ver Detalles">
-                                    <i class="bi bi-eye"></i>
+                        <td>
+                            <div class="acciones-prestamo">
+                                <a href="{{ url_for('prestamos.detalle', prestamo_id=prestamo.id) }}" class="btn" style="background: #FFFFFF; color: #0A0E21;" title="Ver Detalles">
+                                    <i class="bi bi-eye-fill"></i>
                                 </a>
                                 {% if prestamo.estado == 'ACTIVO' %}
-                                <a href="{{ url_for('cobros.registrar', prestamo_id=prestamo.id) }}" class="btn btn-sm btn-success" title="Cobrar">
+                                <a href="{{ url_for('cobros.registrar', prestamo_id=prestamo.id) }}" class="btn btn-success" title="Cobrar">
                                     <i class="bi bi-cash"></i>
                                 </a>
+                                {% endif %}
+                                {% if rol in ['dueno', 'gerente', 'admin'] %}
+                                <form method="POST" action="{{ url_for('prestamos.eliminar', prestamo_id=prestamo.id) }}" onsubmit="return confirm('¿Seguro que deseas eliminar este crédito? Esta acción no se puede deshacer.');">
+                                    <button type="submit" class="btn btn-danger" title="Eliminar">
+                                        <i class="bi bi-trash-fill"></i>
+                                    </button>
+                                </form>
                                 {% endif %}
                             </div>
                         </td>
@@ -224,7 +275,6 @@
                     {% endfor %}
                 </tbody>
             </table>
-        </div>
         {% else %}
         <div class="text-center py-5">
             <i class="bi bi-cash-stack fs-1 text-muted"></i>
@@ -240,26 +290,48 @@
 
 {% block extra_js %}
 <script>
-// Filtros
+// Filtrar rutas por oficina seleccionada
+document.getElementById('filtroOficina').addEventListener('change', function() {
+    const oficinaId = this.value;
+    const selectRuta = document.getElementById('filtroRuta');
+    const opciones = selectRuta.querySelectorAll('option');
+
+    opciones.forEach(opt => {
+        if (opt.value === '') { opt.style.display = ''; return; }
+        opt.style.display = (!oficinaId || opt.dataset.oficina === oficinaId) ? '' : 'none';
+    });
+
+    const seleccionada = selectRuta.options[selectRuta.selectedIndex];
+    if (seleccionada && seleccionada.style.display === 'none') {
+        selectRuta.value = '';
+    }
+    aplicarFiltros();
+});
+
+document.getElementById('filtroRuta').addEventListener('change', aplicarFiltros);
+document.getElementById('filtroEstado').addEventListener('change', aplicarFiltros);
+document.getElementById('buscarCliente').addEventListener('input', aplicarFiltros);
+document.getElementById('filtroMoneda').addEventListener('change', aplicarFiltros);
+
 function aplicarFiltros() {
+    const oficina = document.getElementById('filtroOficina').value;
+    const ruta = document.getElementById('filtroRuta').value;
     const estado = document.getElementById('filtroEstado').value;
     const texto = document.getElementById('buscarCliente').value.toLowerCase();
     const moneda = document.getElementById('filtroMoneda').value;
     const filas = document.querySelectorAll('#tablaPrestamos tbody tr');
-    
+
     filas.forEach(fila => {
         let mostrar = true;
-        
+
+        if (oficina && fila.dataset.oficina !== oficina) mostrar = false;
+        if (ruta && fila.dataset.ruta !== ruta) mostrar = false;
         if (estado && fila.dataset.estado !== estado) mostrar = false;
         if (moneda && fila.dataset.moneda !== moneda) mostrar = false;
         if (texto && !fila.textContent.toLowerCase().includes(texto)) mostrar = false;
-        
+
         fila.style.display = mostrar ? '' : 'none';
     });
 }
-
-document.getElementById('filtroEstado').addEventListener('change', aplicarFiltros);
-document.getElementById('buscarCliente').addEventListener('input', aplicarFiltros);
-document.getElementById('filtroMoneda').addEventListener('change', aplicarFiltros);
 </script>
 {% endblock %}

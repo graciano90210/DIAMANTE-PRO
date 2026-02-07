@@ -494,9 +494,6 @@
                 <div class="menu-item" data-bs-toggle="collapse" data-bs-target="#menuCreditos" aria-expanded="false">
                     <i class="bi bi-cash-stack"></i>
                     <span>Mant. de Créditos</span>
-                    {% if solicitudes_pendientes is defined and solicitudes_pendientes > 0 %}
-                    <span class="badge badge-pending">{{ solicitudes_pendientes }}</span>
-                    {% endif %}
                     <i class="bi bi-chevron-right arrow"></i>
                 </div>
                 <div class="submenu collapse" id="menuCreditos">
@@ -506,20 +503,6 @@
                     <a href="{{ url_for('prestamos.nuevo') }}" class="submenu-item">
                         <i class="bi bi-plus-circle"></i> Nuevo Préstamo
                     </a>
-                    <a href="{{ url_for('cobros.lista') }}" class="submenu-item">
-                        <i class="bi bi-wallet2"></i> Recorrido de Cobro
-                    </a>
-                    {% if rol in ['dueno', 'gerente', 'supervisor'] %}
-                    <a href="#" class="submenu-item" onclick="alert('Próximamente: Aprobación de Solicitudes')">
-                        <i class="bi bi-check-circle"></i> Aprobar Solicitudes
-                        {% if solicitudes_pendientes is defined and solicitudes_pendientes > 0 %}
-                        <span class="badge badge-pending ms-2">{{ solicitudes_pendientes }}</span>
-                        {% endif %}
-                    </a>
-                    <a href="#" class="submenu-item" onclick="alert('Próximamente: Desembolsar')">
-                        <i class="bi bi-box-arrow-up"></i> Desembolsar
-                    </a>
-                    {% endif %}
                 </div>
 
                 <!-- CAJA -->
