@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Caja General del Dueño{% endblock %}
+{% block page_title %}Caja General del Dueño{% endblock %}
+{% block extra_css %}
+<style>
+    .caja-card {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: 1px solid #00E5FF33;
+        border-radius: 16px;
+        padding: 24px;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .caja-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0, 229, 255, 0.15);
+    }
+    .moneda-badge {
+        background: linear-gradient(135deg, #00E5FF, #0091EA);
+        color: #000;
+        font-weight: 700;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+    }
+    .saldo-valor {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #00E5FF;
+    }
+    .trans-table {
+        background: #0A0E21;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .trans-table th {
+        background: #1a1a2e;
+        color: #00E5FF;
+        border: none;
+        padding: 12px 16px;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+    }
+    .trans-table td {
+        color: #ccc;
+        border-bottom: 1px solid #ffffff10;
+        padding: 10px 16px;
+        font-size: 0.9rem;
+    }
+    .btn-trasladar {
+        background: linear-gradient(135deg, #00E5FF, #0091EA);
+        border: none;
+        color: #000;
+        font-weight: 600;
+        padding: 8px 20px;
+        border-radius: 8px;
+    }
+    .btn-trasladar:hover {
+        background: linear-gradient(135deg, #0091EA, #00E5FF);
+        color: #000;
+    }
+</style>
+{% endblock %}
+{% block content %}
+<div class="container-fluid px-4 mt-3">
+    <!-- Tarjetas de saldo por moneda -->
+    <div class="row g-3 mb-4">
+        {% for caja in cajas %}
+        <div class="col-md-4 col-sm-6">
+            <div class="caja-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="moneda-badge">{{ caja.moneda }}</span>
+                    <i class="bi bi-safe" style="font-size: 1.5rem; color: #00E5FF55;"></i>
+                </div>
+                <div class="saldo-valor mb-2">
+                    {{ simbolos.get(caja.moneda, '$') }} {{ '{:,.2f}'.format(caja.saldo) }}
+                </div>
+                <p class="text-muted mb-3" style="font-size: 0.85rem;">Saldo disponible</p>
+                <a href="{{ url_for('finanzas.traslado_caja', moneda=caja.moneda) }}" class="btn btn-trasladar btn-sm">
+                    <i class="bi bi-arrow-left-right me-1"></i> Trasladar
+                </a>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <div class="caja-card text-center py-5">
+                <i class="bi bi-safe" style="font-size: 3rem; color: #00E5FF33;"></i>
+                <p class="text-muted mt-3">No hay cajas registradas. Se crearán automáticamente al tener rutas activas.</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Últimos movimientos -->
+    {% if transacciones %}
+    <h5 class="text-white mb-3"><i class="bi bi-clock-history me-2"></i>Últimos Movimientos</h5>
+    <div class="trans-table">
+        <table class="table table-dark mb-0">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Concepto</th>
+                    <th>Descripción</th>
+                    <th class="text-end">Monto</th>
+                    <th>Moneda</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in transacciones %}
+                <tr>
+                    <td>{{ t.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td><span class="badge bg-secondary">{{ t.concepto }}</span></td>
+                    <td>{{ t.descripcion or '-' }}</td>
+                    <td class="text-end fw-bold {% if 'destino' in (t.descripcion or '') %}text-success{% else %}text-danger{% endif %}">
+                        {{ simbolos.get(t.moneda, '$') }} {{ '{:,.2f}'.format(t.monto) }}
+                    </td>
+                    <td>{{ t.moneda }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

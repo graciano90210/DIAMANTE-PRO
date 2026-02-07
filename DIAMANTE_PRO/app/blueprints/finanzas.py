@@ -4,8 +4,12 @@ Maneja: Capital, Activos, Caja, Traslados
 """
 from flask import Blueprint, render_template, request, redirect, url_for, session
 from datetime import datetime
-from ..models import AporteCapital, Activo, Transaccion, Sociedad, Usuario, Ruta, Pago, Prestamo, db
+from ..models import AporteCapital, Activo, Transaccion, Sociedad, Usuario, Ruta, Pago, Prestamo, CajaRuta, CajaDueno, db
 from sqlalchemy import func
+from ..services.caja_service import (
+    asegurar_cajas_dueno, asegurar_todas_las_cajas_ruta,
+    calcular_saldo_cobrador, ejecutar_traslado
+)
 
 finanzas_bp = Blueprint('finanzas', __name__)
 
@@ -60,8 +64,14 @@ def capital_lista():
 def capital_nuevo():
     """Formulario para nuevo aporte de capital"""
     sociedades = Sociedad.query.order_by(Sociedad.nombre).all()
+    rutas = Ruta.query.order_by(Ruta.nombre).all()
+    entidades_sociedades = [{'id': s.id, 'nombre': s.nombre} for s in sociedades]
+    entidades_rutas = [{'id': r.id, 'nombre': r.nombre} for r in rutas]
     return render_template('capital_nuevo.html',
         sociedades=sociedades,
+        rutas=rutas,
+        entidades_sociedades=entidades_sociedades,
+        entidades_rutas=entidades_rutas,
         nombre=session.get('nombre'),
         rol=session.get('rol'))
 
@@ -72,7 +82,14 @@ def capital_nuevo():
 def capital_guardar():
     """Guardar nuevo aporte de capital"""
     try:
-        sociedad_id = request.form['sociedad_id']
+        entidad_tipo = request.form.get('entidad_tipo')
+        entidad_id = request.form.get('entidad_id')
+        sociedad_id = None
+        ruta_id = None
+        if entidad_tipo == 'sociedad':
+            sociedad_id = entidad_id
+        elif entidad_tipo == 'ruta':
+            ruta_id = entidad_id
         nombre_aportante = request.form['nombre_aportante']
         monto = float(request.form['monto'])
         moneda = request.form['moneda']
@@ -83,6 +100,7 @@ def capital_guardar():
         
         nuevo_aporte = AporteCapital(
             sociedad_id=sociedad_id,
+            ruta_id=ruta_id,
             nombre_aportante=nombre_aportante,
             monto=monto,
             moneda=moneda,
@@ -93,10 +111,11 @@ def capital_guardar():
         db.session.add(nuevo_aporte)
         
         # Registrar en caja
+        entidad_desc = f'Sociedad {sociedad_id}' if sociedad_id else f'Ruta {ruta_id}'
         ingreso_caja = Transaccion(
             naturaleza='INGRESO',
             concepto='APORTE_CAPITAL',
-            descripcion=f'Aporte Capital: {nombre_aportante} ({sociedad_id}) - {moneda}',
+            descripcion=f'Aporte Capital: {nombre_aportante} ({entidad_desc}) - {moneda}',
             monto=monto,
             fecha=fecha_aporte,
             usuario_origen_id=session.get('usuario_id'),
@@ -111,8 +130,10 @@ def capital_guardar():
     except Exception as e:
         db.session.rollback()
         sociedades = Sociedad.query.order_by(Sociedad.nombre).all()
+        rutas = Ruta.query.order_by(Ruta.nombre).all()
         return render_template('capital_nuevo.html',
             sociedades=sociedades,
+            rutas=rutas,
             error=f'Error al guardar aporte: {str(e)}',
             nombre=session.get('nombre'),
             rol=session.get('rol'))
@@ -704,3 +725,221 @@ def cuadre_usuarios():
         nombre=session.get('nombre'),
         rol=session.get('rol'))
 
+
+# ==================== CAJA DUEÑO / RUTA / COBRADOR / TRASLADO ====================
+
+@finanzas_bp.route('/caja/dueno')
+@login_required
+@admin_required
+def caja_dueno():
+    """Consulta caja general del dueño - todas las monedas"""
+    usuario_id = session.get('usuario_id')
+    rol = session.get('rol')
+
+    # Auto-crear cajas por moneda activa
+    cajas = asegurar_cajas_dueno(usuario_id)
+    db.session.commit()
+
+    # Transacciones recientes de estas cajas
+    ids_cajas = [c.id for c in cajas]
+    transacciones = []
+    if ids_cajas:
+        transacciones = Transaccion.query.filter(
+            db.or_(
+                Transaccion.caja_dueno_origen_id.in_(ids_cajas),
+                Transaccion.caja_dueno_destino_id.in_(ids_cajas)
+            )
+        ).order_by(Transaccion.fecha.desc()).limit(20).all()
+
+    simbolos = {'COP': '$', 'BRL': 'R$', 'USD': 'US$', 'PEN': 'S/', 'ARS': '$'}
+
+    return render_template('caja_dueno.html',
+        cajas=cajas,
+        transacciones=transacciones,
+        simbolos=simbolos,
+        nombre=session.get('nombre'),
+        rol=rol)
+
+
+@finanzas_bp.route('/caja/ruta')
+@login_required
+@admin_required
+def caja_ruta():
+    """Consulta caja general de todas las rutas"""
+    # Auto-crear cajas para rutas que no tengan
+    asegurar_todas_las_cajas_ruta()
+    db.session.commit()
+
+    # Obtener cajas con info de ruta
+    cajas = CajaRuta.query.join(Ruta).filter(Ruta.activo == True).all()
+
+    # Totales por moneda
+    totales_por_moneda = {}
+    for caja in cajas:
+        m = caja.moneda
+        totales_por_moneda[m] = totales_por_moneda.get(m, 0) + caja.saldo
+
+    simbolos = {'COP': '$', 'BRL': 'R$', 'USD': 'US$', 'PEN': 'S/', 'ARS': '$'}
+
+    return render_template('caja_ruta.html',
+        cajas=cajas,
+        totales_por_moneda=totales_por_moneda,
+        simbolos=simbolos,
+        nombre=session.get('nombre'),
+        rol=session.get('rol'))
+
+
+@finanzas_bp.route('/caja/cobrador')
+@login_required
+@admin_required
+def caja_cobrador():
+    """Vista de saldos acumulativos calculados de cobradores"""
+    cobradores = Usuario.query.filter(
+        Usuario.rol.in_(['cobrador', 'supervisor']),
+        Usuario.activo == True
+    ).order_by(Usuario.nombre).all()
+
+    moneda_filtro = request.args.get('moneda', None)
+
+    datos_cobradores = []
+    for cobrador in cobradores:
+        rutas_cobrador = Ruta.query.filter_by(cobrador_id=cobrador.id, activo=True).all()
+        monedas_cobrador = list(set(r.moneda for r in rutas_cobrador if r.moneda))
+        if not monedas_cobrador:
+            monedas_cobrador = ['COP']
+
+        saldos_por_moneda = {}
+        for moneda in monedas_cobrador:
+            if moneda_filtro and moneda != moneda_filtro:
+                continue
+            saldos_por_moneda[moneda] = calcular_saldo_cobrador(cobrador.id, moneda)
+
+        if saldos_por_moneda:
+            datos_cobradores.append({
+                'cobrador': cobrador,
+                'rutas': rutas_cobrador,
+                'saldos': saldos_por_moneda
+            })
+
+    # Monedas activas para filtro
+    monedas_q = db.session.query(Ruta.moneda).filter(
+        Ruta.activo == True, Ruta.moneda.isnot(None)
+    ).distinct().all()
+    monedas_activas = sorted(set(m[0] for m in monedas_q if m[0]))
+
+    simbolos = {'COP': '$', 'BRL': 'R$', 'USD': 'US$', 'PEN': 'S/', 'ARS': '$'}
+
+    return render_template('caja_cobrador.html',
+        datos_cobradores=datos_cobradores,
+        monedas_activas=monedas_activas,
+        moneda_filtro=moneda_filtro,
+        simbolos=simbolos,
+        nombre=session.get('nombre'),
+        rol=session.get('rol'))
+
+
+@finanzas_bp.route('/caja/traslado', methods=['GET'])
+@login_required
+@admin_required
+def traslado_caja():
+    """Formulario unificado para traslados entre TODAS las cajas"""
+    usuario_id = session.get('usuario_id')
+    moneda = request.args.get('moneda', 'COP')
+    error = request.args.get('error', None)
+
+    # Asegurar que existan las cajas
+    asegurar_cajas_dueno(usuario_id)
+    asegurar_todas_las_cajas_ruta()
+    db.session.commit()
+
+    # Cajas del dueño para esta moneda
+    cajas_dueno = CajaDueno.query.filter_by(usuario_id=usuario_id, moneda=moneda).all()
+    cajas_dueno_data = [{'id': c.id, 'nombre': f'Caja Dueño ({c.moneda})', 'saldo': c.saldo} for c in cajas_dueno]
+
+    # Cajas de ruta para esta moneda
+    cajas_ruta = CajaRuta.query.filter_by(moneda=moneda).all()
+    cajas_ruta_data = []
+    for c in cajas_ruta:
+        ruta = Ruta.query.get(c.ruta_id)
+        if ruta and ruta.activo:
+            cobrador_nombre = ''
+            if ruta.cobrador_id:
+                cob = Usuario.query.get(ruta.cobrador_id)
+                cobrador_nombre = cob.nombre if cob else ''
+            cajas_ruta_data.append({
+                'id': ruta.id,
+                'nombre': f'{ruta.nombre}',
+                'cobrador': cobrador_nombre,
+                'saldo': c.saldo
+            })
+
+    # Cobradores que manejan esta moneda
+    cobradores_data = []
+    cobradores = Usuario.query.filter(
+        Usuario.rol.in_(['cobrador', 'supervisor']),
+        Usuario.activo == True
+    ).all()
+    for c in cobradores:
+        tiene_ruta_moneda = Ruta.query.filter_by(cobrador_id=c.id, activo=True, moneda=moneda).first()
+        if tiene_ruta_moneda:
+            saldo_info = calcular_saldo_cobrador(c.id, moneda)
+            cobradores_data.append({
+                'id': c.id,
+                'nombre': c.nombre,
+                'saldo': saldo_info['balance']
+            })
+
+    # Monedas activas para tabs
+    monedas_q = db.session.query(Ruta.moneda).filter(
+        Ruta.activo == True, Ruta.moneda.isnot(None)
+    ).distinct().all()
+    monedas_activas = sorted(set(m[0] for m in monedas_q if m[0]))
+    if not monedas_activas:
+        monedas_activas = ['COP']
+
+    simbolos = {'COP': '$', 'BRL': 'R$', 'USD': 'US$', 'PEN': 'S/', 'ARS': '$'}
+
+    return render_template('traslado_caja.html',
+        cajas_dueno=cajas_dueno_data,
+        cajas_ruta=cajas_ruta_data,
+        cobradores=cobradores_data,
+        moneda=moneda,
+        monedas_activas=monedas_activas,
+        simbolos=simbolos,
+        error=error,
+        nombre=session.get('nombre'),
+        rol=session.get('rol'))
+
+
+@finanzas_bp.route('/caja/traslado', methods=['POST'])
+@login_required
+@admin_required
+def traslado_caja_guardar():
+    """Procesa traslado unificado entre cualquier tipo de caja"""
+    try:
+        tipo_origen = request.form['tipo_origen']
+        origen_id = int(request.form['origen_id'])
+        tipo_destino = request.form['tipo_destino']
+        destino_id = int(request.form['destino_id'])
+        monto = float(request.form['monto'])
+        moneda = request.form['moneda']
+        descripcion = request.form.get('descripcion', '')
+        usuario_id = session.get('usuario_id')
+
+        if tipo_origen == tipo_destino and origen_id == destino_id:
+            raise ValueError('El origen y destino no pueden ser la misma caja')
+
+        transaccion = ejecutar_traslado(
+            tipo_origen, origen_id,
+            tipo_destino, destino_id,
+            monto, moneda, descripcion,
+            usuario_id
+        )
+        db.session.commit()
+        return redirect(url_for('finanzas.traslados_exito', traslado_id=transaccion.id))
+
+    except (ValueError, Exception) as e:
+        db.session.rollback()
+        return redirect(url_for('finanzas.traslado_caja',
+                               moneda=request.form.get('moneda', 'COP'),
+                               error=str(e)))

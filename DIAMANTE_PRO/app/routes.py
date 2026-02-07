@@ -291,7 +291,36 @@ def dashboard():
         balance_dia_cop=balance_dia_por_moneda.get('COP', 0)
     )
 
-# --- RUTAS AUXILIARES ---
+@main.route('/rutas/guardar', methods=['POST'])
+@login_required
+def rutas_guardar():
+    nombre = request.form.get('nombre')
+    cobrador_id = request.form.get('cobrador_id')
+    sociedad_id = request.form.get('sociedad_id')
+    moneda = request.form.get('moneda')
+    descripcion = request.form.get('descripcion')
+    if not nombre or not cobrador_id or not moneda:
+        flash('Todos los campos obligatorios deben ser completados.', 'danger')
+        return redirect(url_for('main.rutas_nueva'))
+    nueva_ruta = Ruta(
+        nombre=nombre,
+        cobrador_id=cobrador_id,
+        sociedad_id=sociedad_id if sociedad_id else None,
+        moneda=moneda,
+        descripcion=descripcion
+    )
+    db.session.add(nueva_ruta)
+    db.session.commit()
+    # Crear caja general de la ruta
+    nueva_caja = CajaRuta(
+        ruta_id=nueva_ruta.id,
+        saldo=0,
+        moneda=moneda
+    )
+    db.session.add(nueva_caja)
+    db.session.commit()
+    flash('Ruta creada correctamente.', 'success')
+    return redirect(url_for('main.dashboard'))
 
 @main.route('/seleccionar-ruta/<int:ruta_id>')
 @login_required
@@ -350,3 +379,43 @@ def usuarios_nuevo():
     return render_template('usuarios_nuevo.html',
         nombre=current_user.nombre,
         rol=current_user.rol)
+
+# --- Ruta para editar usuario ---
+@main.route('/usuarios/editar/<int:usuario_id>')
+@login_required
+def usuarios_editar(usuario_id):
+    if current_user.rol not in ['dueno', 'gerente']:
+        return redirect(url_for('main.dashboard'))
+    usuario = Usuario.query.get_or_404(usuario_id)
+    return render_template('usuarios_editar.html', usuario=usuario, nombre=current_user.nombre, rol=current_user.rol)
+
+# --- Ruta para guardar nuevo usuario ---
+@main.route('/usuarios/guardar', methods=['POST'])
+@login_required
+def usuarios_guardar():
+    if current_user.rol not in ['dueno', 'gerente']:
+        return redirect(url_for('main.dashboard'))
+    nombre = request.form.get('nombre')
+    usuario_login = request.form.get('usuario')
+    password = request.form.get('password')
+    rol = request.form.get('rol')
+    # Validación básica
+    if not nombre or not usuario_login or not password or not rol:
+        error = 'Todos los campos son obligatorios.'
+        return render_template('usuarios_nuevo.html', error=error, nombre=current_user.nombre, rol=current_user.rol)
+    # Verificar si el usuario ya existe
+    if Usuario.query.filter_by(usuario=usuario_login).first():
+        error = 'El usuario ya existe.'
+        return render_template('usuarios_nuevo.html', error=error, nombre=current_user.nombre, rol=current_user.rol)
+    # Crear usuario
+    from werkzeug.security import generate_password_hash
+    nuevo_usuario = Usuario(
+        nombre=nombre,
+        usuario=usuario_login,
+        password=generate_password_hash(password),
+        rol=rol
+    )
+    db.session.add(nuevo_usuario)
+    db.session.commit()
+    flash('Usuario creado exitosamente.', 'success')
+    return redirect(url_for('main.usuarios_lista'))

@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+{% block title %}Traslado entre Cajas{% endblock %}
+{% block page_title %}Traslado entre Cajas{% endblock %}
+{% block extra_css %}
+<style>
+    .traslado-form {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: 1px solid #00E5FF22;
+        border-radius: 16px;
+        padding: 30px;
+    }
+    .moneda-tab {
+        background: #0A0E21;
+        color: #aaa;
+        border: 1px solid #ffffff15;
+        padding: 8px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+    }
+    .moneda-tab:hover { color: #00E5FF; border-color: #00E5FF55; }
+    .moneda-tab.active {
+        background: linear-gradient(135deg, #00E5FF, #0091EA);
+        color: #000;
+        border-color: transparent;
+    }
+    .form-label-custom {
+        color: #00E5FF;
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+    }
+    .form-select-dark, .form-control-dark {
+        background: #0A0E21;
+        border: 1px solid #ffffff20;
+        color: #fff;
+        border-radius: 10px;
+        padding: 10px 14px;
+    }
+    .form-select-dark:focus, .form-control-dark:focus {
+        border-color: #00E5FF;
+        box-shadow: 0 0 0 2px rgba(0, 229, 255, 0.15);
+        background: #0A0E21;
+        color: #fff;
+    }
+    .form-select-dark option { background: #0A0E21; }
+    .arrow-divider {
+        text-align: center;
+        padding: 16px 0;
+    }
+    .arrow-divider i {
+        font-size: 2.5rem;
+        color: #00E5FF;
+        animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+    .btn-traslado {
+        background: linear-gradient(135deg, #00E5FF, #0091EA);
+        border: none;
+        color: #000;
+        font-weight: 700;
+        padding: 12px 32px;
+        border-radius: 10px;
+        font-size: 1rem;
+        width: 100%;
+    }
+    .btn-traslado:hover { color: #000; opacity: 0.9; }
+    .saldo-info {
+        font-size: 0.8rem;
+        color: #00E5FF;
+        margin-top: 4px;
+    }
+    .alert-error {
+        background: #b71c1c22;
+        border: 1px solid #ef535055;
+        color: #ef9a9a;
+        border-radius: 10px;
+        padding: 12px 16px;
+    }
+    .section-label {
+        background: #00E5FF15;
+        color: #00E5FF;
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        display: inline-block;
+        margin-bottom: 12px;
+    }
+</style>
+{% endblock %}
+{% block content %}
+<div class="container-fluid px-4 mt-3">
+    <!-- Tabs de moneda -->
+    <div class="d-flex gap-2 mb-4 flex-wrap">
+        {% for m in monedas_activas %}
+        <a href="{{ url_for('finanzas.traslado_caja', moneda=m) }}"
+           class="moneda-tab {% if moneda == m %}active{% endif %}">
+            {{ m }}
+        </a>
+        {% endfor %}
+    </div>
+
+    {% if error %}
+    <div class="alert-error mb-4">
+        <i class="bi bi-exclamation-triangle me-2"></i>{{ error }}
+    </div>
+    {% endif %}
+
+    <div class="traslado-form">
+        <form method="POST" action="{{ url_for('finanzas.traslado_caja_guardar') }}" id="formTraslado">
+            <input type="hidden" name="moneda" value="{{ moneda }}">
+
+            <!-- ORIGEN -->
+            <div class="section-label"><i class="bi bi-box-arrow-up me-1"></i> ORIGEN</div>
+            <div class="row g-3 mb-2">
+                <div class="col-md-4">
+                    <label class="form-label-custom">Tipo Origen</label>
+                    <select class="form-select-dark form-select" name="tipo_origen" id="tipoOrigen" onchange="actualizarSelect('origen')" required>
+                        <option value="">-- Seleccionar --</option>
+                        <option value="DUENO">Caja del Dueño</option>
+                        <option value="RUTA">Caja de Ruta</option>
+                        <option value="COBRADOR">Cobrador</option>
+                    </select>
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label-custom">Seleccionar Origen</label>
+                    <select class="form-select-dark form-select" name="origen_id" id="selectOrigen" required>
+                        <option value="">-- Primero selecciona tipo --</option>
+                    </select>
+                    <div class="saldo-info" id="saldoOrigen"></div>
+                </div>
+            </div>
+
+            <!-- Flecha -->
+            <div class="arrow-divider">
+                <i class="bi bi-arrow-down-circle-fill"></i>
+            </div>
+
+            <!-- DESTINO -->
+            <div class="section-label"><i class="bi bi-box-arrow-down me-1"></i> DESTINO</div>
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <label class="form-label-custom">Tipo Destino</label>
+                    <select class="form-select-dark form-select" name="tipo_destino" id="tipoDestino" onchange="actualizarSelect('destino')" required>
+                        <option value="">-- Seleccionar --</option>
+                        <option value="DUENO">Caja del Dueño</option>
+                        <option value="RUTA">Caja de Ruta</option>
+                        <option value="COBRADOR">Cobrador</option>
+                    </select>
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label-custom">Seleccionar Destino</label>
+                    <select class="form-select-dark form-select" name="destino_id" id="selectDestino" required>
+                        <option value="">-- Primero selecciona tipo --</option>
+                    </select>
+                    <div class="saldo-info" id="saldoDestino"></div>
+                </div>
+            </div>
+
+            <!-- MONTO Y DESCRIPCION -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-5">
+                    <label class="form-label-custom">Monto ({{ moneda }})</label>
+                    <div class="input-group">
+                        <span class="input-group-text" style="background: #00E5FF; color: #000; font-weight: 700; border: none;">
+                            {{ simbolos.get(moneda, '$') }}
+                        </span>
+                        <input type="number" class="form-control-dark form-control" name="monto" step="0.01" min="1" placeholder="0.00" required>
+                    </div>
+                </div>
+                <div class="col-md-7">
+                    <label class="form-label-custom">Descripción (opcional)</label>
+                    <input type="text" class="form-control-dark form-control" name="descripcion" placeholder="Motivo del traslado...">
+                </div>
+            </div>
+
+            <button type="submit" class="btn-traslado" id="btnTraslado">
+                <i class="bi bi-arrow-left-right me-2"></i> Realizar Traslado
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Datos inyectados desde el servidor
+    const dataCajasDueno = {{ cajas_dueno | tojson }};
+    const dataCajasRuta = {{ cajas_ruta | tojson }};
+    const dataCobradores = {{ cobradores | tojson }};
+    const simbolo = '{{ simbolos.get(moneda, "$") }}';
+
+    function formatMoney(val) {
+        return simbolo + ' ' + Number(val).toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+
+    function actualizarSelect(tipo) {
+        const selectTipo = document.getElementById(tipo === 'origen' ? 'tipoOrigen' : 'tipoDestino');
+        const select = document.getElementById(tipo === 'origen' ? 'selectOrigen' : 'selectDestino');
+        const saldoDiv = document.getElementById(tipo === 'origen' ? 'saldoOrigen' : 'saldoDestino');
+        const tipoVal = selectTipo.value;
+
+        select.innerHTML = '<option value="">-- Seleccionar --</option>';
+        saldoDiv.textContent = '';
+
+        let items = [];
+        if (tipoVal === 'DUENO') {
+            items = dataCajasDueno;
+            items.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.nombre + ' (Saldo: ' + formatMoney(c.saldo) + ')';
+                opt.dataset.saldo = c.saldo;
+                select.appendChild(opt);
+            });
+        } else if (tipoVal === 'RUTA') {
+            items = dataCajasRuta;
+            items.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                let label = c.nombre;
+                if (c.cobrador) label += ' (' + c.cobrador + ')';
+                label += ' - Saldo: ' + formatMoney(c.saldo);
+                opt.textContent = label;
+                opt.dataset.saldo = c.saldo;
+                select.appendChild(opt);
+            });
+        } else if (tipoVal === 'COBRADOR') {
+            items = dataCobradores;
+            items.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.nombre + ' (Saldo: ' + formatMoney(c.saldo) + ')';
+                opt.dataset.saldo = c.saldo;
+                select.appendChild(opt);
+            });
+        }
+
+        select.onchange = function() {
+            const sel = select.options[select.selectedIndex];
+            if (sel && sel.dataset.saldo !== undefined) {
+                saldoDiv.textContent = 'Saldo disponible: ' + formatMoney(sel.dataset.saldo);
+            } else {
+                saldoDiv.textContent = '';
+            }
+        };
+    }
+</script>
+{% endblock %}

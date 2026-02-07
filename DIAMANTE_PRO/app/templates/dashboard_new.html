@@ -309,6 +309,140 @@
         border-radius: 3px;
     }
 
+    /* ==================== BI DASHBOARD BANNER ==================== */
+    @keyframes bi-gradient-shift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    @keyframes bi-pulse-glow {
+        0%, 100% { box-shadow: 0 0 15px rgba(0, 229, 255, 0.1), inset 0 0 15px rgba(0, 229, 255, 0.03); }
+        50% { box-shadow: 0 0 25px rgba(0, 229, 255, 0.25), inset 0 0 25px rgba(0, 229, 255, 0.06); }
+    }
+    @keyframes bi-float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+    }
+    @keyframes bi-dot-pulse {
+        0%, 100% { opacity: 1; box-shadow: 0 0 6px #00FF99; }
+        50% { opacity: 0.2; box-shadow: 0 0 2px #00FF99; }
+    }
+    @keyframes bi-sweep {
+        0% { left: -60%; }
+        100% { left: 120%; }
+    }
+    @keyframes bi-border-flow {
+        0% { background-position: 0% 0%; }
+        100% { background-position: 200% 0%; }
+    }
+    .bi-banner {
+        position: relative;
+        display: block;
+        padding: 18px 24px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #0B1120 0%, #111D35 30%, #1A1040 60%, #0F2847 100%);
+        background-size: 250% 250%;
+        animation: bi-gradient-shift 10s ease infinite, bi-pulse-glow 4s ease-in-out infinite;
+        border: 1px solid transparent;
+        overflow: hidden;
+        text-decoration: none !important;
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    .bi-banner::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 14px;
+        padding: 1px;
+        background: linear-gradient(90deg, #00E5FF, #7B61FF, #00FF99, #00E5FF);
+        background-size: 200% 100%;
+        animation: bi-border-flow 4s linear infinite;
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        pointer-events: none;
+    }
+    .bi-banner::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -60%;
+        width: 40%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.04), transparent);
+        animation: bi-sweep 5s ease-in-out infinite;
+        pointer-events: none;
+    }
+    .bi-banner:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 40px rgba(0, 229, 255, 0.2), 0 0 60px rgba(123, 97, 255, 0.1) !important;
+    }
+    .bi-banner:hover .bi-banner-icon-wrap {
+        transform: scale(1.1);
+        box-shadow: 0 0 30px rgba(0, 229, 255, 0.4);
+    }
+    .bi-banner:hover .bi-banner-go {
+        transform: translateX(5px);
+        opacity: 1;
+    }
+    .bi-banner-icon-wrap {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, rgba(0, 229, 255, 0.15) 0%, rgba(123, 97, 255, 0.15) 100%);
+        border: 1px solid rgba(0, 229, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: all 0.4s ease;
+        animation: bi-float 3s ease-in-out infinite;
+    }
+    .bi-banner-icon-wrap i {
+        font-size: 1.5rem;
+        background: linear-gradient(135deg, #00E5FF, #7B61FF);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .bi-banner-live-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 10px;
+        border-radius: 20px;
+        background: rgba(0, 255, 153, 0.08);
+        border: 1px solid rgba(0, 255, 153, 0.25);
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 1.2px;
+        color: #00FF99;
+        text-transform: uppercase;
+    }
+    .bi-banner-live-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #00FF99;
+        animation: bi-dot-pulse 1.5s ease-in-out infinite;
+    }
+    .bi-banner-go {
+        color: rgba(0, 229, 255, 0.5);
+        font-size: 1.4rem;
+        transition: all 0.3s ease;
+        opacity: 0.5;
+    }
+    .bi-banner-grid-bg {
+        position: absolute;
+        inset: 0;
+        background-image:
+            radial-gradient(circle at 20% 80%, rgba(0, 229, 255, 0.04) 0%, transparent 50%),
+            radial-gradient(circle at 80% 20%, rgba(123, 97, 255, 0.04) 0%, transparent 50%);
+        pointer-events: none;
+    }
+
     /* ==================== RESPONSIVE ==================== */
     @media (max-width: 768px) {
         .command-toolbar { gap: 8px; }
@@ -316,6 +450,11 @@
         .cmd-btn span { display: none; }
         .kpi-value { font-size: 1.3rem; }
         .currency-toggle .ct-btn { padding: 5px 10px; font-size: 0.75rem; }
+        .bi-banner { padding: 14px 16px; }
+        .bi-banner-icon-wrap { width: 40px; height: 40px; }
+        .bi-banner-icon-wrap i { font-size: 1.2rem; }
+        .bi-banner h5 { font-size: 0.9rem !important; }
+        .bi-banner .bi-sub { display: none; }
     }
 </style>
 {% endblock %}
@@ -361,12 +500,15 @@
         {% if todas_las_rutas %}
         <li><hr class="dropdown-divider"></li>
         <li><h6 class="dropdown-header"><i class="bi bi-signpost-2 me-2"></i>Rutas</h6></li>
-        {% for ruta in todas_las_rutas %}
         <li>
+            <input type="text" class="form-control mb-2" id="rutaSearchInput" placeholder="Buscar ruta..." onkeyup="filterRutas()">
+        </li>
+        {% for ruta in todas_las_rutas %}
+        <li class="ruta-item">
             <a class="dropdown-item {% if ruta_seleccionada and ruta_seleccionada.id == ruta.id %}active{% endif %}"
                href="/seleccionar-ruta/{{ ruta.id }}">
                 <i class="bi bi-signpost-2 me-2 text-success"></i>
-                <span>{{ ruta.nombre }}</span>
+                <span class="ruta-nombre">{{ ruta.nombre }}</span>
                 {% if ruta.moneda %}
                 <span class="badge bg-{% if ruta.moneda == 'BRL' %}success{% else %}primary{% endif %} ms-auto">{{ ruta.moneda }}</span>
                 {% endif %}
@@ -416,6 +558,34 @@
     </div>
 </div>
 {% endif %}
+
+<!-- ==================== BANNER BI DASHBOARD ==================== -->
+<a href="/reportes" class="bi-banner mb-4">
+    <div class="bi-banner-grid-bg"></div>
+    <div class="d-flex align-items-center justify-content-between position-relative" style="z-index: 2;">
+        <div class="d-flex align-items-center gap-3">
+            <div class="bi-banner-icon-wrap">
+                <i class="bi bi-bar-chart-line-fill"></i>
+            </div>
+            <div>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <h5 class="mb-0 text-white fw-bold" style="font-size: 1rem; letter-spacing: 0.3px;">Dashboard Inteligencia de Negocios</h5>
+                    <span class="bi-banner-live-tag">
+                        <span class="bi-banner-live-dot"></span>
+                        EN VIVO
+                    </span>
+                </div>
+                <p class="bi-sub mb-0 mt-1" style="color: rgba(255,255,255,0.4); font-size: 0.78rem;">
+                    KPIs en tiempo real &bull; Cartera multi-moneda &bull; Metas &bull; Morosos &bull; Exportar PDF
+                </p>
+            </div>
+        </div>
+        <div class="bi-banner-go d-none d-md-flex align-items-center gap-2">
+            <span style="font-size: 0.75rem; color: rgba(255,255,255,0.3); font-weight: 500;">Abrir</span>
+            <i class="bi bi-arrow-right-short" style="font-size: 1.6rem;"></i>
+        </div>
+    </div>
+</a>
 
 <!-- ==================== ZONA 1: BARRA DE COMANDO ==================== -->
 <div class="command-toolbar mb-4">
@@ -602,6 +772,17 @@
 
 {% block extra_js %}
 <script>
+    // ==================== SEARCHABLE RUTA SELECTOR ====================
+    function filterRutas() {
+        var input = document.getElementById('rutaSearchInput');
+        var filter = input.value.toLowerCase();
+        var items = document.querySelectorAll('.ruta-item');
+        items.forEach(function(item) {
+            var nombre = item.querySelector('.ruta-nombre').textContent.toLowerCase();
+            item.style.display = nombre.includes(filter) ? '' : 'none';
+        });
+    }
+
     // ==================== CURRENCY CONTEXT SYSTEM ====================
     const monedas = {{ monedas_activas | tojson }};
     const simbolos = {{ simbolos_moneda | tojson }};

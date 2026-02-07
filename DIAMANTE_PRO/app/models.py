@@ -1,6 +1,21 @@
-
-# Imports correctos para usar el Patrón de Extensiones
 from .extensions import db
+# --- CAJA GENERAL DE RUTA ---
+class CajaRuta(db.Model):
+    __tablename__ = 'cajas_ruta'
+    id = db.Column(db.Integer, primary_key=True)
+    ruta_id = db.Column(db.Integer, db.ForeignKey('rutas.id'), nullable=False)
+    saldo = db.Column(db.Float, default=0)
+    moneda = db.Column(db.String(3), nullable=False)
+    ruta = db.relationship('Ruta', backref=db.backref('caja_general', uselist=False))
+
+# --- CAJA GENERAL DEL DUEÑO ---
+class CajaDueno(db.Model):
+    __tablename__ = 'cajas_dueno'
+    id = db.Column(db.Integer, primary_key=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
+    saldo = db.Column(db.Float, default=0)
+    moneda = db.Column(db.String(3), nullable=False)
+    usuario = db.relationship('Usuario', backref=db.backref('cajas_generales', lazy='dynamic'))
 from flask_login import UserMixin
 from datetime import datetime
 
@@ -400,10 +415,18 @@ class Transaccion(db.Model):
     usuario_destino_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True)
     prestamo_id = db.Column(db.Integer, db.ForeignKey('prestamos.id'), nullable=True)
     foto_evidencia = db.Column(db.String(300))
-    
+
+    # Campos para rastreo de cajas en traslados
+    ruta_origen_id = db.Column(db.Integer, db.ForeignKey('rutas.id'), nullable=True)
+    ruta_destino_id = db.Column(db.Integer, db.ForeignKey('rutas.id'), nullable=True)
+    caja_dueno_origen_id = db.Column(db.Integer, db.ForeignKey('cajas_dueno.id'), nullable=True)
+    caja_dueno_destino_id = db.Column(db.Integer, db.ForeignKey('cajas_dueno.id'), nullable=True)
+
     # Relaciones
     usuario_origen = db.relationship('Usuario', foreign_keys=[usuario_origen_id], backref='transacciones_origen')
     usuario_destino = db.relationship('Usuario', foreign_keys=[usuario_destino_id], backref='transacciones_destino')
+    ruta_origen = db.relationship('Ruta', foreign_keys=[ruta_origen_id])
+    ruta_destino = db.relationship('Ruta', foreign_keys=[ruta_destino_id])
 
 # 6. APORTES DE CAPITAL
 class AporteCapital(db.Model):

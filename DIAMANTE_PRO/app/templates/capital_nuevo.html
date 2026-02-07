@@ -133,16 +133,28 @@
                     </div>
                     {% endif %}
 
-                    <form method="POST" action="/capital/guardar">
+                    <form method="POST" action="{{ url_for('finanzas.capital_guardar') }}">
                         <div class="mb-4">
-                            <label class="form-label fw-bold">Sociedad *</label>
-                            <select name="sociedad_id" class="form-select" required>
-                                <option value="">Seleccione una sociedad</option>
-                                {% for sociedad in sociedades %}
-                                <option value="{{ sociedad.id }}">{{ sociedad.nombre }}</option>
-                                {% endfor %}
+                            <label class="form-label fw-bold">Sociedad o Ruta *</label>
+                            <select name="entidad_tipo" class="form-select mb-2" required>
+                                <option value="">Seleccione tipo</option>
+                                <option value="sociedad">Sociedad</option>
+                                <option value="ruta">Ruta</option>
                             </select>
-                            <small class="form-text">Sociedad a la que pertenece este aporte</small>
+                            <select name="entidad_id" class="form-select" required>
+                                <option value="">Seleccione una entidad</option>
+                                {% if entidades_sociedades %}
+                                    {% for sociedad in entidades_sociedades %}
+                                    <option value="{{ sociedad.id }}">Sociedad: {{ sociedad.nombre }}</option>
+                                    {% endfor %}
+                                {% endif %}
+                                {% if entidades_rutas %}
+                                    {% for ruta in entidades_rutas %}
+                                    <option value="{{ ruta.id }}">Ruta: {{ ruta.nombre }}</option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                            <small class="form-text">Seleccione la sociedad o ruta a la que pertenece este aporte</small>
                         </div>
 
                         <div class="mb-4">
@@ -161,8 +173,15 @@
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Moneda *</label>
                                 <select name="moneda" class="form-select" required>
-                                    <option value="PESOS">Pesos Colombianos (COP)</option>
-                                    <option value="REALES">Reales Brasileños (BRL)</option>
+                                    <option value="COP">Pesos Colombianos (COP)</option>
+                                    <option value="BRL">Reales Brasileños (BRL)</option>
+                                    <option value="PEN">Soles Peruanos (PEN)</option>
+                                    <option value="ARS">Pesos Argentinos (ARS)</option>
+                                    <option value="CLP">Pesos Chilenos (CLP)</option>
+                                    <option value="USD">Dólares Americanos (USD)</option>
+                                    <option value="UYU">Pesos Uruguayos (UYU)</option>
+                                    <option value="PYG">Guaraníes Paraguayos (PYG)</option>
+                                    <option value="BOB">Bolivianos (BOB)</option>
                                 </select>
                             </div>
                         </div>
@@ -195,6 +214,25 @@
                             </a>
                         </div>
                     </form>
+                    <script>
+                        // Actualizar entidades según tipo seleccionado
+                        const tipoSelect = document.querySelector('select[name="entidad_tipo"]');
+                        const entidadSelect = document.querySelector('select[name="entidad_id"]');
+                        const sociedades = {{ entidades_sociedades|tojson|safe }};
+                        const rutas = {{ entidades_rutas|tojson|safe }};
+                        tipoSelect.addEventListener('change', function() {
+                            entidadSelect.innerHTML = '<option value="">Seleccione una entidad</option>';
+                            if (this.value === 'sociedad') {
+                                sociedades.forEach(s => {
+                                    entidadSelect.innerHTML += `<option value="${s.id}">Sociedad: ${s.nombre}</option>`;
+                                });
+                            } else if (this.value === 'ruta') {
+                                rutas.forEach(r => {
+                                    entidadSelect.innerHTML += `<option value="${r.id}">Ruta: ${r.nombre}</option>`;
+                                });
+                            }
+                        });
+                    </script>
                 </div>
             </div>
         </div>

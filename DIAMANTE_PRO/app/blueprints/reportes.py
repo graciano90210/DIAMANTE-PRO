@@ -542,8 +542,9 @@ def calcular_metricas_bi(fecha_inicio, fecha_fin, usuario_id=None, rol='dueno', 
         Prestamo.saldo_actual.desc()
     ).limit(5).all()
 
-    # Cobros por cobrador (solo para admin)
+    # Cobros por cobrador (solo para admin, excluyendo roles administrativos)
     cobros_por_cobrador = []
+    roles_no_cobradores = ['dueno', 'gerente', 'secretaria']
     if rol in ['dueno', 'gerente']:
         cobros_por_cobrador = db.session.query(
             Usuario.nombre,
@@ -551,7 +552,8 @@ def calcular_metricas_bi(fecha_inicio, fecha_fin, usuario_id=None, rol='dueno', 
             func.coalesce(func.sum(Pago.monto), 0).label('total_cobrado')
         ).join(Pago, Usuario.id == Pago.cobrador_id).filter(
             Pago.fecha_pago >= fecha_inicio,
-            Pago.fecha_pago <= fecha_fin
+            Pago.fecha_pago <= fecha_fin,
+            Usuario.rol.notin_(roles_no_cobradores)
         ).group_by(Usuario.nombre).order_by(func.sum(Pago.monto).desc()).all()
 
     # ==================== MÉTRICAS POR MONEDA ====================
@@ -875,9 +877,9 @@ def reportes():
     todas_las_rutas = Ruta.query.order_by(Ruta.nombre).all()
     todas_las_oficinas = Oficina.query.filter_by(activo=True).order_by(Oficina.nombre).all()
 
-    # Cargar cobradores para filtro
+    # Cargar cobradores para filtro (solo roles operativos, no administrativos)
     todos_los_cobradores = Usuario.query.filter(
-        Usuario.rol.in_(['cobrador', 'gerente', 'dueno'])
+        Usuario.rol.notin_(['dueno', 'gerente', 'secretaria'])
     ).order_by(Usuario.nombre).all()
 
     ruta_seleccionada = None

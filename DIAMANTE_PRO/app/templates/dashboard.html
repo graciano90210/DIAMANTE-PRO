@@ -97,6 +97,119 @@
             width: 120px;
             height: 120px;
         }
+        /* --- BI Dashboard Banner --- */
+        @keyframes bi-gradient-flow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        @keyframes bi-glow-pulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(0, 229, 255, 0.15), 0 0 60px rgba(0, 229, 255, 0.05); }
+            50% { box-shadow: 0 0 30px rgba(0, 229, 255, 0.3), 0 0 80px rgba(0, 229, 255, 0.1); }
+        }
+        @keyframes bi-icon-float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-6px) rotate(3deg); }
+        }
+        @keyframes bi-live-blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        @keyframes bi-shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        .bi-dashboard-banner {
+            position: relative;
+            background: linear-gradient(135deg, #0a0e21 0%, #0d1f3c 25%, #1a1040 50%, #0d2a4a 75%, #0a0e21 100%);
+            background-size: 300% 300%;
+            animation: bi-gradient-flow 8s ease infinite, bi-glow-pulse 3s ease-in-out infinite;
+            border-radius: 16px;
+            border: 1px solid rgba(0, 229, 255, 0.25);
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-decoration: none !important;
+        }
+        .bi-dashboard-banner::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, transparent 30%, rgba(0, 229, 255, 0.03) 50%, transparent 70%);
+            pointer-events: none;
+        }
+        .bi-dashboard-banner::after {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -100%;
+            width: 60%;
+            height: calc(100% + 4px);
+            background: linear-gradient(90deg, transparent, rgba(0, 229, 255, 0.08), transparent);
+            animation: bi-shimmer 4s ease-in-out infinite;
+            pointer-events: none;
+        }
+        .bi-dashboard-banner:hover {
+            transform: translateY(-4px) scale(1.005);
+            border-color: rgba(0, 229, 255, 0.5);
+            box-shadow: 0 12px 40px rgba(0, 229, 255, 0.2), 0 0 80px rgba(0, 229, 255, 0.1) !important;
+        }
+        .bi-dashboard-banner:hover .bi-banner-icon {
+            transform: scale(1.15) rotate(5deg);
+            filter: drop-shadow(0 0 20px rgba(0, 229, 255, 0.8));
+        }
+        .bi-dashboard-banner:hover .bi-banner-arrow {
+            transform: translateX(6px);
+            opacity: 1;
+        }
+        .bi-banner-icon {
+            font-size: 2.8rem;
+            color: #00E5FF;
+            filter: drop-shadow(0 0 12px rgba(0, 229, 255, 0.5));
+            animation: bi-icon-float 3s ease-in-out infinite;
+            transition: all 0.4s ease;
+        }
+        .bi-banner-live {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 229, 255, 0.1);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #00E5FF;
+        }
+        .bi-banner-live-dot {
+            width: 7px;
+            height: 7px;
+            background: #00FF99;
+            border-radius: 50%;
+            animation: bi-live-blink 1.5s ease-in-out infinite;
+            box-shadow: 0 0 6px #00FF99;
+        }
+        .bi-banner-arrow {
+            font-size: 1.5rem;
+            color: #00E5FF;
+            opacity: 0.5;
+            transition: all 0.3s ease;
+        }
+        .bi-banner-grid {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image:
+                linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+        }
+
         .stat-number {
             font-size: 2.5rem;
             font-weight: 700;
@@ -230,6 +343,37 @@
                      <h6 class="fw-bold mb-0 text-white">Reportes</h6>
                 </div>
              </div>
+        </div>
+
+        <!-- Banner BI Dashboard -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <a href="/reportes" class="bi-dashboard-banner d-block p-4" style="text-decoration:none;">
+                    <div class="bi-banner-grid"></div>
+                    <div class="d-flex align-items-center justify-content-between position-relative" style="z-index:2;">
+                        <div class="d-flex align-items-center gap-4">
+                            <div class="bi-banner-icon">
+                                <i class="bi bi-bar-chart-line-fill"></i>
+                            </div>
+                            <div>
+                                <div class="d-flex align-items-center gap-3 mb-1">
+                                    <h5 class="mb-0 fw-bold text-white" style="letter-spacing: 0.5px;">Dashboard de Inteligencia de Negocios</h5>
+                                    <span class="bi-banner-live">
+                                        <span class="bi-banner-live-dot"></span>
+                                        EN VIVO
+                                    </span>
+                                </div>
+                                <p class="mb-0" style="color: rgba(255,255,255,0.55); font-size: 0.9rem;">
+                                    KPIs en tiempo real &bull; Cartera multi-moneda &bull; Metas diarias &bull; Morosos &bull; Exportar PDF
+                                </p>
+                            </div>
+                        </div>
+                        <div class="bi-banner-arrow d-none d-md-block">
+                            <i class="bi bi-arrow-right-circle-fill"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
         </div>
 
         <div class="row">

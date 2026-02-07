@@ -74,4 +74,18 @@ def create_app():
     # Crear tablas al inicio
     with app.app_context():
         db.create_all()
+
+        # Auto-crear cajas para dueños/gerentes y rutas activas
+        try:
+            from .services.caja_service import asegurar_cajas_dueno, asegurar_todas_las_cajas_ruta
+            duenos = Usuario.query.filter(Usuario.rol.in_(['dueno', 'gerente'])).all()
+            for dueno in duenos:
+                asegurar_cajas_dueno(dueno.id)
+            asegurar_todas_las_cajas_ruta()
+            db.session.commit()
+            print("DEBUG: Cajas auto-creadas correctamente")
+        except Exception as e:
+            print(f"ALERTA: Error auto-creando cajas: {e}")
+            db.session.rollback()
+
     return app

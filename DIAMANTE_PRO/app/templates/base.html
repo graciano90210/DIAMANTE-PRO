@@ -535,8 +535,20 @@
                     <a href="{{ url_for('finanzas.caja_gastos') }}" class="submenu-item">
                         <i class="bi bi-receipt"></i> Ingresos y Egresos
                     </a>
+                    <a href="{{ url_for('finanzas.caja_dueno') }}" class="submenu-item">
+                        <i class="bi bi-person-badge"></i> Caja General del Dueño
+                    </a>
+                    <a href="{{ url_for('finanzas.caja_ruta') }}" class="submenu-item">
+                        <i class="bi bi-signpost-2"></i> Caja General de Ruta
+                    </a>
+                    <a href="{{ url_for('finanzas.caja_cobrador') }}" class="submenu-item">
+                        <i class="bi bi-person-walking"></i> Caja del Cobrador
+                    </a>
+                    <a href="{{ url_for('finanzas.traslado_caja') }}" class="submenu-item">
+                        <i class="bi bi-arrow-left-right"></i> Traslado entre Cajas
+                    </a>
                     {% if rol in ['dueno', 'gerente'] %}
-                    <a href="#" class="submenu-item" onclick="alert('Próximamente: Cuadre de Caja')">
+                    <a href="{{ url_for('finanzas.caja_cuadre') }}" class="submenu-item">
                         <i class="bi bi-calculator"></i> Cuadre de Caja
                     </a>
                     {% endif %}

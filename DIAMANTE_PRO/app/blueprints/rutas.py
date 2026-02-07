@@ -100,8 +100,14 @@ def guardar():
         )
         
         db.session.add(nueva_ruta)
+        db.session.flush()
+
+        # Auto-crear CajaRuta para la nueva ruta
+        from ..services.caja_service import asegurar_caja_ruta
+        asegurar_caja_ruta(nueva_ruta)
+
         db.session.commit()
-        
+
         return redirect(url_for('rutas.lista'))
         
     except Exception as e:

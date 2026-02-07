@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block title %}Caja del Cobrador{% endblock %}
+{% block page_title %}Caja del Cobrador{% endblock %}
+{% block extra_css %}
+<style>
+    .filter-tab {
+        background: #0A0E21;
+        color: #aaa;
+        border: 1px solid #ffffff15;
+        padding: 8px 18px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: all 0.2s;
+    }
+    .filter-tab:hover { color: #00E5FF; border-color: #00E5FF55; }
+    .filter-tab.active {
+        background: linear-gradient(135deg, #00E5FF, #0091EA);
+        color: #000;
+        border-color: transparent;
+    }
+    .cobrador-card {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: 1px solid #00E5FF22;
+        border-radius: 14px;
+        padding: 24px;
+        transition: transform 0.2s;
+    }
+    .cobrador-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0, 229, 255, 0.1);
+    }
+    .cobrador-nombre {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #fff;
+    }
+    .cobrador-rutas {
+        font-size: 0.8rem;
+        color: #888;
+    }
+    .balance-valor {
+        font-size: 1.8rem;
+        font-weight: 700;
+    }
+    .balance-positivo { color: #00E676; }
+    .balance-negativo { color: #FF5252; }
+    .balance-cero { color: #FFD740; }
+    .desglose-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        border-bottom: 1px solid #ffffff08;
+        font-size: 0.85rem;
+    }
+    .desglose-label { color: #aaa; }
+    .desglose-valor { font-weight: 600; }
+    .desglose-positivo { color: #69F0AE; }
+    .desglose-negativo { color: #FF8A80; }
+    .moneda-header {
+        background: #00E5FF15;
+        color: #00E5FF;
+        padding: 4px 12px;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: inline-block;
+        margin-bottom: 10px;
+    }
+    .btn-trasladar {
+        background: linear-gradient(135deg, #00E5FF, #0091EA);
+        border: none;
+        color: #000;
+        font-weight: 600;
+        padding: 6px 16px;
+        border-radius: 8px;
+        font-size: 0.82rem;
+    }
+    .btn-trasladar:hover { color: #000; }
+    .info-badge {
+        background: #0A0E21;
+        color: #aaa;
+        padding: 8px 14px;
+        border-radius: 10px;
+        font-size: 0.8rem;
+        border: 1px solid #ffffff10;
+    }
+</style>
+{% endblock %}
+{% block content %}
+<div class="container-fluid px-4 mt-3">
+    <!-- Info -->
+    <div class="info-badge mb-3">
+        <i class="bi bi-info-circle me-1"></i>
+        El saldo del cobrador es <strong>acumulativo histórico</strong>: suma todos los cobros, traslados recibidos, menos gastos, préstamos otorgados y traslados enviados.
+    </div>
+
+    <!-- Filtro de moneda -->
+    <div class="d-flex gap-2 mb-4 flex-wrap">
+        <a href="{{ url_for('finanzas.caja_cobrador') }}"
+           class="filter-tab {% if not moneda_filtro %}active{% endif %}">
+            Todas
+        </a>
+        {% for m in monedas_activas %}
+        <a href="{{ url_for('finanzas.caja_cobrador', moneda=m) }}"
+           class="filter-tab {% if moneda_filtro == m %}active{% endif %}">
+            {{ m }}
+        </a>
+        {% endfor %}
+    </div>
+
+    <!-- Cards de cobradores -->
+    <div class="row g-3">
+        {% for dato in datos_cobradores %}
+        <div class="col-lg-6 col-xl-4">
+            <div class="cobrador-card">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <div class="cobrador-nombre">
+                            <i class="bi bi-person-circle me-2" style="color: #00E5FF;"></i>{{ dato.cobrador.nombre }}
+                        </div>
+                        <div class="cobrador-rutas">
+                            <i class="bi bi-signpost-2 me-1"></i>
+                            {% for r in dato.rutas %}{{ r.nombre }}{% if not loop.last %}, {% endif %}{% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                {% for moneda, info in dato.saldos.items() %}
+                <div class="mt-3">
+                    <span class="moneda-header">{{ moneda }}</span>
+                    <div class="balance-valor mb-2 {% if info.balance > 0 %}balance-positivo{% elif info.balance < 0 %}balance-negativo{% else %}balance-cero{% endif %}">
+                        {{ simbolos.get(moneda, '$') }} {{ '{:,.2f}'.format(info.balance) }}
+                    </div>
+
+                    <!-- Desglose -->
+                    <div class="desglose-row">
+                        <span class="desglose-label"><i class="bi bi-plus-circle me-1"></i> Cobros</span>
+                        <span class="desglose-valor desglose-positivo">{{ simbolos.get(moneda, '$') }} {{ '{:,.2f}'.format(info.cobros) }}</span>
+                    </div>
+                    <div class="desglose-row">
+                        <span class="desglose-label"><i class="bi bi-plus-circle me-1"></i> Traslados Recibidos</span>
+                        <span class="desglose-valor desglose-positivo">{{ simbolos.get(moneda, '$') }} {{ '{:,.2f}'.format(info.traslados_recibidos) }}</span>
+                    </div>
+                    <div class="desglose-row">
+                        <span class="desglose-label"><i class="bi bi-dash-circle me-1"></i> Gastos</span>
+                        <span class="desglose-valor desglose-negativo">{{ simbolos.get(moneda, '$') }} {{ '{:,.2f}'.format(info.gastos) }}</span>
+                    </div>
+                    <div class="desglose-row">
+                        <span class="desglose-label"><i class="bi bi-dash-circle me-1"></i> Préstamos Otorgados</span>
+                        <span class="desglose-valor desglose-negativo">{{ simbolos.get(moneda, '$') }} {{ '{:,.2f}'.format(info.prestamos_otorgados) }}</span>
+                    </div>
+                    <div class="desglose-row">
+                        <span class="desglose-label"><i class="bi bi-dash-circle me-1"></i> Traslados Enviados</span>
+                        <span class="desglose-valor desglose-negativo">{{ simbolos.get(moneda, '$') }} {{ '{:,.2f}'.format(info.traslados_enviados) }}</span>
+                    </div>
+
+                    <div class="mt-3">
+                        <a href="{{ url_for('finanzas.traslado_caja', moneda=moneda) }}" class="btn btn-trasladar btn-sm">
+                            <i class="bi bi-arrow-left-right me-1"></i> Trasladar
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <div class="cobrador-card text-center py-5">
+                <i class="bi bi-person-circle" style="font-size: 3rem; color: #00E5FF33;"></i>
+                <p class="text-muted mt-3">No hay cobradores activos con rutas asignadas.</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

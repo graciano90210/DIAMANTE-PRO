@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Caja General de Ruta{% endblock %}
+{% block page_title %}Caja General de Ruta{% endblock %}
+{% block extra_css %}
+<style>
+    .summary-card {
+        background: linear-gradient(135deg, #0d47a1 0%, #1565c0 100%);
+        border-radius: 12px;
+        padding: 16px 20px;
+        color: white;
+    }
+    .summary-card .moneda-label {
+        font-size: 0.8rem;
+        opacity: 0.8;
+        text-transform: uppercase;
+    }
+    .summary-card .total-valor {
+        font-size: 1.6rem;
+        font-weight: 700;
+    }
+    .ruta-card {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: 1px solid #00E5FF22;
+        border-radius: 14px;
+        padding: 20px;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .ruta-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0, 229, 255, 0.12);
+    }
+    .ruta-nombre {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #fff;
+    }
+    .ruta-cobrador {
+        font-size: 0.82rem;
+        color: #aaa;
+    }
+    .ruta-saldo {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #00E5FF;
+    }
+    .moneda-pill {
+        background: #00E5FF22;
+        color: #00E5FF;
+        padding: 4px 12px;
+        border-radius: 16px;
+        font-size: 0.78rem;
+        font-weight: 600;
+    }
+    .btn-trasladar {
+        background: linear-gradient(135deg, #00E5FF, #0091EA);
+        border: none;
+        color: #000;
+        font-weight: 600;
+        padding: 6px 16px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+    }
+    .btn-trasladar:hover { color: #000; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="container-fluid px-4 mt-3">
+    <!-- Resumen por moneda -->
+    {% if totales_por_moneda %}
+    <div class="row g-3 mb-4">
+        {% for moneda, total in totales_por_moneda.items() %}
+        <div class="col-md-3 col-sm-6">
+            <div class="summary-card">
+                <div class="moneda-label">Total {{ moneda }}</div>
+                <div class="total-valor">{{ simbolos.get(moneda, '$') }} {{ '{:,.2f}'.format(total) }}</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Cards de rutas -->
+    <div class="row g-3">
+        {% for caja in cajas %}
+        <div class="col-md-4 col-sm-6">
+            <div class="ruta-card">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <div class="ruta-nombre"><i class="bi bi-signpost-2 me-2"></i>{{ caja.ruta.nombre }}</div>
+                        <div class="ruta-cobrador">
+                            {% if caja.ruta.cobrador %}
+                            <i class="bi bi-person me-1"></i>{{ caja.ruta.cobrador.nombre }}
+                            {% else %}
+                            <i class="bi bi-person me-1"></i>Sin cobrador asignado
+                            {% endif %}
+                        </div>
+                    </div>
+                    <span class="moneda-pill">{{ caja.moneda }}</span>
+                </div>
+                <div class="ruta-saldo mt-3">
+                    {{ simbolos.get(caja.moneda, '$') }} {{ '{:,.2f}'.format(caja.saldo) }}
+                </div>
+                <p class="text-muted mb-3" style="font-size: 0.8rem;">Saldo en caja de ruta</p>
+                <a href="{{ url_for('finanzas.traslado_caja', moneda=caja.moneda) }}" class="btn btn-trasladar btn-sm">
+                    <i class="bi bi-arrow-left-right me-1"></i> Trasladar
+                </a>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <div class="ruta-card text-center py-5">
+                <i class="bi bi-signpost-2" style="font-size: 3rem; color: #00E5FF33;"></i>
+                <p class="text-muted mt-3">No hay rutas activas con cajas registradas.</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
