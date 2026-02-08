@@ -1,1 +1,1 @@
-web: cd DIAMANTE_PRO && gunicorn run:app
+web: gunicorn app:app
