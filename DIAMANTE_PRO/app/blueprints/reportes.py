@@ -177,9 +177,9 @@ def calcular_ciclo_vida_prestamos(filtro_prestamos):
 
     tiempos_finalizacion = []
     for p in prestamos_finalizados:
-        if p.fecha_inicio and p.fecha_fin:
+        if p.fecha_inicio and p.fecha_fin_estimada:
             inicio = p.fecha_inicio.date() if hasattr(p.fecha_inicio, 'date') else p.fecha_inicio
-            fin = p.fecha_fin.date() if hasattr(p.fecha_fin, 'date') else p.fecha_fin
+            fin = p.fecha_fin_estimada.date() if hasattr(p.fecha_fin_estimada, 'date') else p.fecha_fin_estimada
             dias = (fin - inicio).days
             if dias > 0:
                 tiempos_finalizacion.append(dias)
@@ -413,14 +413,14 @@ def calcular_metricas_bi(fecha_inicio, fecha_fin, usuario_id=None, rol='dueno', 
     total_prestamos_activos = len(prestamos_activos)
 
     prestamos_al_dia = sum(1 for p in prestamos_activos if p.cuotas_atrasadas == 0)
-    prestamos_atrasados = sum(1 for p in prestamos_activos if p.cuotas_atrasadas > 0)
-    prestamos_mora_grave = sum(1 for p in prestamos_activos if p.cuotas_atrasadas > 3)
+    prestamos_atrasados = sum(1 for p in prestamos_activos if 0 < p.cuotas_atrasadas <= 4)
+    prestamos_mora_grave = sum(1 for p in prestamos_activos if p.cuotas_atrasadas > 4)
 
     tasa_morosidad = (prestamos_atrasados / total_prestamos_activos * 100) if total_prestamos_activos > 0 else 0
     tasa_mora_grave = (prestamos_mora_grave / total_prestamos_activos * 100) if total_prestamos_activos > 0 else 0
 
-    # Monto en mora
-    monto_en_mora = sum(float(p.saldo_actual) for p in prestamos_activos if p.cuotas_atrasadas > 0)
+    # Monto en mora (solo mora crítica: más de 4 cuotas)
+    monto_en_mora = sum(float(p.saldo_actual) for p in prestamos_activos if p.cuotas_atrasadas > 4)
 
     # ==================== FLUJO DE CAJA HOY ====================
     # Ingresos de hoy (pagos recibidos)
@@ -514,10 +514,10 @@ def calcular_metricas_bi(fecha_inicio, fecha_fin, usuario_id=None, rol='dueno', 
     )
 
     # ==================== DISTRIBUCIÓN DE CARTERA ====================
-    # Por estado de morosidad
+    # Por estado de morosidad (Ajustado: 1-4 cuotas = atraso, 5+ = mora crítica)
     cartera_al_dia = sum(float(p.saldo_actual) for p in prestamos_activos if p.cuotas_atrasadas == 0)
-    cartera_atraso_leve = sum(float(p.saldo_actual) for p in prestamos_activos if 0 < p.cuotas_atrasadas <= 3)
-    cartera_mora_grave = sum(float(p.saldo_actual) for p in prestamos_activos if p.cuotas_atrasadas > 3)
+    cartera_atraso_leve = sum(float(p.saldo_actual) for p in prestamos_activos if 0 < p.cuotas_atrasadas <= 4)
+    cartera_mora_grave = sum(float(p.saldo_actual) for p in prestamos_activos if p.cuotas_atrasadas > 4)
 
     # Por frecuencia
     distribucion_frecuencia_query = db.session.query(
@@ -571,12 +571,12 @@ def calcular_metricas_bi(fecha_inicio, fecha_fin, usuario_id=None, rol='dueno', 
         capital_m = db.session.query(func.coalesce(func.sum(Prestamo.monto_prestado), 0)).filter(*filtro_moneda).scalar() or 0
         cartera_m = db.session.query(func.coalesce(func.sum(Prestamo.saldo_actual), 0)).filter(*filtro_moneda).scalar() or 0
 
-        # Cartera por estado de morosidad por moneda
+        # Cartera por estado de morosidad por moneda (Ajustado: 1-4 cuotas = atraso, 5+ = mora crítica)
         prestamos_moneda = [p for p in prestamos_activos if (p.moneda or 'COP') == moneda]
         cartera_al_dia_m = sum(float(p.saldo_actual) for p in prestamos_moneda if p.cuotas_atrasadas == 0)
-        cartera_atraso_leve_m = sum(float(p.saldo_actual) for p in prestamos_moneda if 0 < p.cuotas_atrasadas <= 3)
-        cartera_mora_grave_m = sum(float(p.saldo_actual) for p in prestamos_moneda if p.cuotas_atrasadas > 3)
-        monto_en_mora_m = sum(float(p.saldo_actual) for p in prestamos_moneda if p.cuotas_atrasadas > 0)
+        cartera_atraso_leve_m = sum(float(p.saldo_actual) for p in prestamos_moneda if 0 < p.cuotas_atrasadas <= 4)
+        cartera_mora_grave_m = sum(float(p.saldo_actual) for p in prestamos_moneda if p.cuotas_atrasadas > 4)
+        monto_en_mora_m = sum(float(p.saldo_actual) for p in prestamos_moneda if p.cuotas_atrasadas > 4)
 
         # Ingresos de hoy por moneda
         ingresos_hoy_m_query = db.session.query(
@@ -732,13 +732,13 @@ def calcular_metricas_bi(fecha_inicio, fecha_fin, usuario_id=None, rol='dueno', 
             'mensaje': f'Solo se ha cobrado el {tasa_cobro_hoy}% de lo esperado'
         })
 
-    # Alerta de mora grave
+    # Alerta de mora grave (Ajustado: más de 4 cuotas)
     if prestamos_mora_grave > 5:
         alertas.append({
             'tipo': 'danger',
             'icono': 'person-x-fill',
-            'titulo': 'Mora Grave',
-            'mensaje': f'{prestamos_mora_grave} préstamos con más de 3 cuotas atrasadas'
+            'titulo': 'Mora Crítica',
+            'mensaje': f'{prestamos_mora_grave} préstamos con más de 4 cuotas atrasadas'
         })
 
     # Alerta positiva de buen desempeño

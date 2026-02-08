@@ -43,14 +43,15 @@ def lista():
         clientes_ids = db.session.query(Prestamo.cliente_id).filter_by(cobrador_id=usuario_id).distinct()
         query = query.filter(Cliente.id.in_(clientes_ids))
     else:
-        # Dueño, gerente y secretaria ven todos o filtrados por ruta
-        ruta_seleccionada_id = session.get('ruta_seleccionada_id')
-        if ruta_seleccionada_id:
+        # Dueño, gerente y secretaria ven todos por defecto
+        # Solo filtrar si hay una ruta explícitamente seleccionada en los parámetros GET
+        ruta_filtro = request.args.get('ruta_id', type=int)
+        if ruta_filtro:
             # Clientes asignados directamente a la ruta O que tienen préstamos en esa ruta
-            clientes_con_prestamos = db.session.query(Prestamo.cliente_id).filter_by(ruta_id=ruta_seleccionada_id).distinct()
+            clientes_con_prestamos = db.session.query(Prestamo.cliente_id).filter_by(ruta_id=ruta_filtro).distinct()
             query = query.filter(
                 db.or_(
-                    Cliente.ruta_id == ruta_seleccionada_id,
+                    Cliente.ruta_id == ruta_filtro,
                     Cliente.id.in_(clientes_con_prestamos)
                 )
             )

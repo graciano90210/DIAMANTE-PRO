@@ -63,10 +63,10 @@ def dashboard():
     prestamos_activos = query_prestamos.all()
     total_prestamos_activos = len(prestamos_activos)
 
-    # 4. Estadísticas Derivadas
-    prestamos_al_dia = sum(1 for p in prestamos_activos if p.cuotas_atrasadas == 0)
-    prestamos_atrasados = sum(1 for p in prestamos_activos if p.cuotas_atrasadas > 0)
-    prestamos_mora = sum(1 for p in prestamos_activos if p.cuotas_atrasadas > 3) # Mora > 3
+    # 4. Estadísticas Derivadas (con margen de gracia de 2 días)
+    prestamos_al_dia = sum(1 for p in prestamos_activos if p.cuotas_atrasadas <= 2)
+    prestamos_atrasados = sum(1 for p in prestamos_activos if p.cuotas_atrasadas > 2)
+    prestamos_mora = sum(1 for p in prestamos_activos if p.cuotas_atrasadas > 5) # Mora grave > 5
     
     capital_prestado = sum(p.monto_prestado for p in prestamos_activos)
     total_cartera = sum(p.saldo_actual for p in prestamos_activos)

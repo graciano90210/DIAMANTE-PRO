@@ -97,6 +97,7 @@ def capital_guardar():
         descripcion = request.form.get('observaciones', '')
         
         fecha_aporte = datetime.strptime(fecha_aporte_str, '%Y-%m-%d')
+        usuario_id = session.get('usuario_id')
         
         nuevo_aporte = AporteCapital(
             sociedad_id=sociedad_id,
@@ -106,20 +107,34 @@ def capital_guardar():
             moneda=moneda,
             fecha_aporte=fecha_aporte,
             descripcion=descripcion,
-            registrado_por_id=session.get('usuario_id')
+            registrado_por_id=usuario_id
         )
         db.session.add(nuevo_aporte)
         
-        # Registrar en caja
-        entidad_desc = f'Sociedad {sociedad_id}' if sociedad_id else f'Ruta {ruta_id}'
+        # CRÍTICO: Actualizar CajaDueno con el aporte
+        from ..services.caja_service import asegurar_cajas_dueno
+        asegurar_cajas_dueno(usuario_id)
+        
+        caja_dueno = CajaDueno.query.filter_by(usuario_id=usuario_id, moneda=moneda).first()
+        if caja_dueno:
+            caja_dueno.saldo += monto
+        else:
+            # Crear caja si no existe
+            caja_dueno = CajaDueno(usuario_id=usuario_id, saldo=monto, moneda=moneda)
+            db.session.add(caja_dueno)
+        
+        # Registrar transacción de ingreso
+        entidad_desc = f'Sociedad {sociedad_id}' if sociedad_id else f'Ruta {ruta_id}' if ruta_id else 'General'
         ingreso_caja = Transaccion(
             naturaleza='INGRESO',
             concepto='APORTE_CAPITAL',
             descripcion=f'Aporte Capital: {nombre_aportante} ({entidad_desc}) - {moneda}',
             monto=monto,
+            moneda=moneda,
             fecha=fecha_aporte,
-            usuario_origen_id=session.get('usuario_id'),
-            usuario_destino_id=session.get('usuario_id'),
+            usuario_origen_id=usuario_id,
+            usuario_destino_id=usuario_id,
+            caja_dueno_destino_id=caja_dueno.id,
             prestamo_id=None
         )
         db.session.add(ingreso_caja)
@@ -379,6 +394,7 @@ def caja_gastos():
     # Filtrar SOLO egresos, excluir traslados
     query = Transaccion.query.filter(Transaccion.naturaleza == 'EGRESO')
     
+    # Solo filtrar por usuario si es cobrador, dueño/gerente ven todos
     if rol == 'cobrador':
         query = query.filter_by(usuario_origen_id=usuario_id)
     
